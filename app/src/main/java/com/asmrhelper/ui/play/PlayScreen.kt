@@ -59,6 +59,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
@@ -1273,6 +1277,7 @@ private fun TriggerEffectOverlay(
 
     // Read frameTick to force recomposition on every frame
     val now = frameTick
+    val textMeasurer = rememberTextMeasurer()
 
     Canvas(modifier = modifier) {
         particles.forEach { p ->
@@ -1314,14 +1319,24 @@ private fun TriggerEffectOverlay(
                 }
             }
 
-            drawCircle(p.color.copy(alpha = alpha), particleSize, Offset(px, py))
-
             if (p.emoji.isNotEmpty()) {
-                drawCircle(
-                    p.color.copy(alpha = alpha * 0.3f),
-                    particleSize * 2f,
-                    Offset(px, py)
+                // Draw glow behind emoji
+                drawCircle(p.color.copy(alpha = alpha * 0.3f), particleSize * 2f, Offset(px, py))
+                // Draw the actual emoji text
+                val textLayoutResult = textMeasurer.measure(
+                    text = AnnotatedString(p.emoji),
+                    style = TextStyle(fontSize = 20.sp)
                 )
+                drawText(
+                    textLayoutResult,
+                    topLeft = Offset(
+                        px - textLayoutResult.size.width / 2f,
+                        py - textLayoutResult.size.height / 2f
+                    ),
+                    alpha = alpha
+                )
+            } else {
+                drawCircle(p.color.copy(alpha = alpha), particleSize, Offset(px, py))
             }
         }
     }

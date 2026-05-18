@@ -9,6 +9,7 @@ import com.asmrhelper.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -35,7 +36,15 @@ class BackgroundViewModel @Inject constructor(
 
     fun deleteImage(id: Long) {
         viewModelScope.launch {
+            val imagePath = backgroundImages.value.find { it.id == id }?.filePath
             settingsRepository.deleteBackgroundImage(id)
+            // If the deleted image is the current global background, clear it
+            if (imagePath != null) {
+                val currentPath = settingsRepository.getCurrentBgImagePath().first()
+                if (currentPath == imagePath) {
+                    settingsRepository.setCurrentBgImagePath(null)
+                }
+            }
         }
     }
 

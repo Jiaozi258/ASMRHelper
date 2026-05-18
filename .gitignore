@@ -70,6 +70,13 @@ google-services.json
 # Kotlin
 .kotlin/
 
+# Android SDK (local, not project code)
+android-sdk/
+
+# Gradle distribution (downloaded by gradlew, not project code)
+gradle-dist/
+gradle*.zip
+
 # Misc
 *.swp
 *.swo

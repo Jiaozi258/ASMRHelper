@@ -64,6 +64,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val next = (bgColorIndex.value + 1) % bgColorOptions.size
             settingsRepository.setBgColorIndex(next)
+            settingsRepository.setCurrentBgImagePath(null) // clear background image when switching to solid color
         }
     }
 
