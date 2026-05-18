@@ -1,0 +1,29 @@
+<h2>依赖注入方案</h2>
+<p class="subtitle">ViewModel / Repository / ExoPlayer 实例需要一套管理机制</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>手动注入 + Application 单例</h3>
+      <p>在 Application 类中创建依赖容器，手动将 Repository 传给 ViewModelFactory。<br/>零依赖，完全掌控，但样板代码稍多。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Hilt (推荐)</h3>
+      <p>Google 官方 DI，基于 Dagger。对 Service（MediaService）注入支持最好。<br/>编译时验证，但会增加构建时间。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Koin</h3>
+      <p>纯 Kotlin DSL，运行时注入。上手简单，无需注解处理器。<br/>但缺少编译时检查，大型项目维护成本上升。</p>
+    </div>
+  </div>
+</div>
+
+<h3>推荐 B — Hilt</h3>
+<p>因为我们的 <code>AsmrMediaService</code> 是一个 Foreground Service，需要注入两个 ExoPlayer 实例和 Room DAO。<br/>Hilt 对 Android Service 的 <code>@AndroidEntryPoint</code> 支持是最成熟、最稳定的。</p>

@@ -1,0 +1,76 @@
+# Built application files
+*.apk
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+
+# Gradle files
+.gradle/
+build/
+
+# Local configuration file (sdk path, etc.)
+local.properties
+
+# Android Studio
+*.iml
+.idea/
+!.idea/codeStyles/
+!.idea/runConfigurations/
+*.iws
+/.navigation/
+
+# Keystore files
+*.jks
+*.keystore
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Proguard
+proguard/
+
+# Captures
+captures/
+
+# Freeline
+freeline.py
+freeline/
+freeline_project_description.json
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/readme.md
+
+# Version Control
+vcs.xml
+
+# Google Services
+google-services.json
+
+# Android Profiler
+*.hprof
+
+# Kotlin
+.kotlin/
+
+# Misc
+*.swp
+*.swo
+*~

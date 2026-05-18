@@ -1,0 +1,110 @@
+<h2>设计总览 — ASMRHelper</h2>
+<p class="subtitle">单模块 Clean Architecture + Compose + Hilt + Room</p>
+
+<h3>1. 包结构</h3>
+<div class="mockup">
+  <div class="mockup-body">
+    <pre style="font-size:11px;line-height:1.8;margin:0">
+com.asmrhelper/
+├── AsmrApplication.kt          (Hilt @HiltAndroidApp)
+├── MainActivity.kt             (单 Activity，宿主)
+│
+├── ui/                         <b>← Compose UI 层</b>
+│   ├── navigation/
+│   │   ├── AsmrNavHost.kt      (导航图，AnimatedContent 过渡)
+│   │   └── BottomNavBar.kt     (底部三 Tab + 动效)
+│   ├── play/                   (播放页)
+│   ├── profile/                (主页/账户)
+│   ├── settings/               (设置)
+│   └── components/             (共享组件：下拉菜单等)
+│
+├── domain/                     <b>← 纯 Kotlin 业务层</b>
+│   ├── model/                  (Audio, Playlist, BgImage...)
+│   ├── usecase/                (PlayAudio, ScanFiles...)
+│   └── repository/             (接口定义)
+│
+├── data/                       <b>← 数据层</b>
+│   ├── local/
+│   │   ├── db/                 (Room DB, DAO, Entities)
+│   │   └── scanner/            (本地音频扫描)
+│   ├── repository/             (接口实现)
+│   └── mapper/                 (Entity ↔ Domain 映射)
+│
+├── player/                     <b>← 双轨播放引擎</b>
+│   ├── AsmrMediaService.kt     (Foreground Service)
+│   ├── PlayerManager.kt        (双 ExoPlayer 管理)
+│   └── PlayerState.kt          (状态封装)
+│
+├── di/                         <b>← Hilt 模块</b>
+│   ├── DatabaseModule.kt
+│   ├── PlayerModule.kt
+│   └── RepositoryModule.kt
+│
+└── util/                       (扩展函数、常量)
+    </pre>
+  </div>
+</div>
+
+<h3>2. 导航与动画策略</h3>
+<div class="mockup">
+  <div class="mockup-header">NavHost + AnimatedContent 联合驱动</div>
+  <div class="mockup-body">
+    <ul style="font-size:13px;line-height:1.8">
+      <li><b>底部三 Tab</b> → <code>BottomNavBar</code> 切换时触发 <code>AnimatedContent</code>（fade + slide）</li>
+      <li><b>右上角菜单</b> → <code>DropdownMenu</code> + <code>animateFloatAsState</code> 弹性弹出</li>
+      <li><b>播放按钮</b> → <code>animateFloatAsState</code> 控制 scale，按下缩至 0.85，回弹至 1.0 (spring)</li>
+      <li><b>背景过渡</b> → <code>Crossfade</code> 实现绑定图片切换</li>
+    </ul>
+  </div>
+</div>
+
+<h3>3. 核心数据流（播放链路）</h3>
+<div class="mockup">
+  <div class="mockup-body">
+    <pre style="font-size:11px;line-height:1.8;margin:0">
+User 点击播放
+  → PlayViewModel.play(audio)
+    → PlaybackUseCase.prepareAndPlay(audio)
+      → PlayerManager (持有 mainPlayer + bgPlayer)
+        → AsmrMediaService (Foreground, 发通知)
+          → ExoPlayer.setMediaItem() + play()
+        → StateFlow&lt;PlayerUiState&gt; 回流
+          → Compose UI collectAsState() 自动重组
+    </pre>
+  </div>
+</div>
+
+<h3>4. Room 实体关系</h3>
+<div class="mockup">
+  <div class="mockup-body">
+    <pre style="font-size:11px;line-height:1.8;margin:0">
+AudioEntity ──┐
+              ├── AudioBgBinding (交叉引用: audioId → imageId)
+BackgroundImageEntity ──┘
+
+PlaylistEntity
+  ├── id, name, createdAt
+  │
+PlaylistAudioCrossRef (交叉引用: playlistId → audioId)
+  │
+AudioEntity
+    </pre>
+  </div>
+</div>
+
+<h3>5. 关键设计决策</h3>
+<div class="pros-cons">
+  <div class="pros"><h4>采用</h4><ul>
+    <li>单 Activity + Compose Navigation</li>
+    <li>Foreground Service 保活播放</li>
+    <li>StateFlow + collectAsState 驱动 UI</li>
+    <li>Room + Flow 响应式查询</li>
+    <li>Coil 加载背景图（Compose 原生）</li>
+  </ul></div>
+  <div class="cons"><h4>暂不做</h4><ul>
+    <li>云同步（只留接口）</li>
+    <li>Widget（后续迭代）</li>
+    <li>画中画</li>
+    <li>音频可视化/均衡器</li>
+  </ul></div>
+</div>

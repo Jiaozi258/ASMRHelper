@@ -1,0 +1,48 @@
+<h2>项目架构选择</h2>
+<p class="subtitle">你的 spec 要求"高度模块化 (UI, Domain, Data 层分离)"，有两种实现方式：</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-body">
+          <pre style="font-size:12px;line-height:1.6;margin:0">
+app/
+├── ui/          (Compose screens)
+├── domain/      (UseCases, models)
+├── data/        (Room, repository)
+├── service/     (MediaService)
+└── di/          (手动注入)
+          </pre>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 单模块 + 包分层</h3>
+      <p>一个 Gradle module，靠 package 划分层级。<br/>最快启动，适合个人项目。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-body">
+          <pre style="font-size:12px;line-height:1.6;margin:0">
+:app          (Compose UI)
+:domain       (纯 Kotlin)
+:data         (Room, repository)
+:player       (ExoPlayer service)
+:core         (共享工具)
+          </pre>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 多模块 Gradle 工程</h3>
+      <p>每个层是独立 Gradle module。<br/>编译隔离更严格，初期配置成本较高。</p>
+    </div>
+  </div>
+</div>
+
+<h3>推荐 A — 单模块 + 包分层</h3>
+<p>对于个人项目，单模块配合严格的 package 边界完全够用。后期如果需要多模块，重构成本也不高。你觉得呢？</p>
