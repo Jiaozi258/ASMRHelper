@@ -188,8 +188,7 @@ fun PlayScreen(
                 MenuItem("file_manager", "文件管理器"),
                 MenuItem("background", "背景图库"),
                 MenuItem("trigger_pad", "触发器面板"),
-                MenuItem("sleep_journal", "睡眠记录"),
-                MenuItem("playback_settings", "播放设置")
+                MenuItem("sleep_journal", "睡眠记录")
             ),
             onItemClick = { item ->
                 when (item.id) {
@@ -200,7 +199,6 @@ fun PlayScreen(
                     "trigger_pad" -> onNavigateToTriggerPad()
                     "background" -> onNavigateToBackground()
                     "sleep_journal" -> onNavigateToSleepJournal()
-                    "playback_settings" -> onNavigateToSettings()
                 }
             },
             modifier = Modifier.align(Alignment.TopEnd)

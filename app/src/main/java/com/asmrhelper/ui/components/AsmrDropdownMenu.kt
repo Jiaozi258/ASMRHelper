@@ -1,17 +1,23 @@
 package com.asmrhelper.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -26,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -74,39 +81,50 @@ fun AsmrDropdownMenu(
                     ) { expanded = false },
                 contentAlignment = Alignment.TopEnd
             ) {
-                Column(
-                    modifier = Modifier
-                        .width(200.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(DarkSurfaceVariant)
-                        .padding(4.dp)
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn() + slideInVertically { -it / 4 },
+                    exit = fadeOut() + slideOutVertically { -it / 4 }
                 ) {
-                    IconButton(
-                        onClick = { expanded = false },
-                        modifier = Modifier.align(Alignment.End)
+                    Column(
+                        modifier = Modifier
+                            .width(200.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(DarkSurfaceVariant)
+                            .padding(4.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "关闭菜单",
-                            tint = TextHint
-                        )
-                    }
-
-                    items.forEachIndexed { index, item ->
-                        Text(
-                            text = item.label,
-                            color = TextPrimary,
-                            textAlign = TextAlign.Center,
+                        // Header row with title
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    expanded = false
-                                    onItemClick(item)
-                                }
-                                .padding(horizontal = 16.dp, vertical = 12.dp)
-                        )
-                        if (index < items.lastIndex) {
-                            HorizontalDivider(color = TextSecondary.copy(alpha = 0.2f))
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "菜单",
+                                color = TextHint,
+                                style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        items.forEachIndexed { index, item ->
+                            Text(
+                                text = item.label,
+                                color = TextPrimary,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        expanded = false
+                                        onItemClick(item)
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                            )
+                            if (index < items.lastIndex) {
+                                HorizontalDivider(color = TextSecondary.copy(alpha = 0.2f))
+                            }
                         }
                     }
                 }

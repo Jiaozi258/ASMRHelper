@@ -24,10 +24,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -37,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import android.Manifest
@@ -47,6 +50,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -98,6 +102,10 @@ fun LibraryScreen(
 
     var selectedTabIndex by remember { mutableIntStateOf(initialTabIndex) }
     val tabTitles = listOf("全部音频", "我的收藏", "文件管理")
+
+    // Delete confirmation dialog state
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var audioToDelete by remember { mutableStateOf<Audio?>(null) }
 
     // Collect scan result messages
     LaunchedEffect(Unit) {
@@ -216,20 +224,72 @@ fun LibraryScreen(
                     currentPlayingAudioId = currentPlayingAudioId,
                     onPlayAudio = onPlayAudio,
                     onSetBackground = onSetBackground,
-                    onToggleFavorite = { id, fav -> viewModel.toggleFavorite(id, fav) }
+                    onToggleFavorite = { id, fav -> viewModel.toggleFavorite(id, fav) },
+                    onDeleteAudio = { audio ->
+                        audioToDelete = audio
+                        showDeleteDialog = true
+                    }
                 )
                 1 -> FavoritesTab(
                     favorites = favorites,
                     currentPlayingAudioId = currentPlayingAudioId,
                     onPlayAudio = onPlayAudio,
                     onSetBackground = onSetBackground,
-                    onToggleFavorite = { id, fav -> viewModel.toggleFavorite(id, fav) }
+                    onToggleFavorite = { id, fav -> viewModel.toggleFavorite(id, fav) },
+                    onDeleteAudio = { audio ->
+                        audioToDelete = audio
+                        showDeleteDialog = true
+                    }
                 )
                 2 -> FileBrowserScreen(
                     onPlayAudio = onPlayAudio,
                     onSetBackground = onSetBackground
                 )
             }
+        }
+
+        // Delete confirmation dialog
+        if (showDeleteDialog && audioToDelete != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    showDeleteDialog = false
+                    audioToDelete = null
+                },
+                title = {
+                    Text(
+                        text = "删除音频",
+                        color = TextPrimary,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                text = {
+                    Text(
+                        text = "确定要移除\"${audioToDelete!!.title}\"吗？仅在该应用中移除，不会删除本地文件。",
+                        color = TextSecondary,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        audioToDelete?.let { viewModel.deleteAudio(it) }
+                        Toast.makeText(context, "已移除", Toast.LENGTH_SHORT).show()
+                        showDeleteDialog = false
+                        audioToDelete = null
+                    }) {
+                        Text("移除", color = ErrorRed)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showDeleteDialog = false
+                        audioToDelete = null
+                    }) {
+                        Text("取消", color = TextSecondary)
+                    }
+                },
+                containerColor = DarkSurface,
+                shape = RoundedCornerShape(16.dp)
+            )
         }
     }
 }
@@ -244,7 +304,8 @@ private fun AllAudioTab(
     currentPlayingAudioId: Long?,
     onPlayAudio: (Audio) -> Unit,
     onSetBackground: (Audio) -> Unit,
-    onToggleFavorite: (Long, Boolean) -> Unit
+    onToggleFavorite: (Long, Boolean) -> Unit,
+    onDeleteAudio: (Audio) -> Unit = {}
 ) {
     if (audios.isEmpty()) {
         EmptyState(message = "暂无音频，请点击右上角扫描按钮")
@@ -260,7 +321,8 @@ private fun AllAudioTab(
                     isCurrentlyPlaying = audio.id == currentPlayingAudioId,
                     onPlay = { onPlayAudio(audio) },
                     onSetBackground = { onSetBackground(audio) },
-                    onToggleFavorite = { onToggleFavorite(audio.id, !audio.isFavorite) }
+                    onToggleFavorite = { onToggleFavorite(audio.id, !audio.isFavorite) },
+                    onDelete = { onDeleteAudio(audio) }
                 )
             }
         }
@@ -277,7 +339,8 @@ private fun FavoritesTab(
     currentPlayingAudioId: Long?,
     onPlayAudio: (Audio) -> Unit,
     onSetBackground: (Audio) -> Unit,
-    onToggleFavorite: (Long, Boolean) -> Unit
+    onToggleFavorite: (Long, Boolean) -> Unit,
+    onDeleteAudio: (Audio) -> Unit = {}
 ) {
     if (favorites.isEmpty()) {
         EmptyState(message = "暂无收藏")
@@ -293,7 +356,8 @@ private fun FavoritesTab(
                     isCurrentlyPlaying = audio.id == currentPlayingAudioId,
                     onPlay = { onPlayAudio(audio) },
                     onSetBackground = { onSetBackground(audio) },
-                    onToggleFavorite = { onToggleFavorite(audio.id, !audio.isFavorite) }
+                    onToggleFavorite = { onToggleFavorite(audio.id, !audio.isFavorite) },
+                    onDelete = { onDeleteAudio(audio) }
                 )
             }
         }
@@ -325,7 +389,8 @@ private fun AudioItemCard(
     isCurrentlyPlaying: Boolean,
     onPlay: () -> Unit,
     onSetBackground: () -> Unit = {},
-    onToggleFavorite: () -> Unit
+    onToggleFavorite: () -> Unit,
+    onDelete: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -393,6 +458,19 @@ private fun AudioItemCard(
                     contentDescription = if (audio.isFavorite) "取消收藏" else "添加收藏",
                     tint = if (audio.isFavorite) ErrorRed else TextHint,
                     modifier = Modifier.size(22.dp)
+                )
+            }
+
+            // 删除按钮
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = "移除音频",
+                    tint = TextHint,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
