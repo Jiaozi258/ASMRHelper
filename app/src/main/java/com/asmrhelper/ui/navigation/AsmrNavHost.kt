@@ -30,8 +30,10 @@ import com.asmrhelper.ui.settings.SettingsScreen
 import com.asmrhelper.ui.sleep.SleepJournalScreen
 import com.asmrhelper.ui.triggerpad.TriggerPadScreen
 import android.widget.Toast
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import com.asmrhelper.ui.theme.DarkBackground
+import com.asmrhelper.util.ShareReceiver
 
 @Composable
 fun AsmrNavHost(modifier: Modifier = Modifier) {
@@ -39,6 +41,16 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
     var playSubScreen by remember { mutableStateOf<SubScreen?>(null) }
     var libraryInitialTab by remember { mutableStateOf(0) }
     val context = LocalContext.current
+
+    // Observe share intents and auto-navigate to video audio tab
+    val shareUrl by ShareReceiver.pendingUrl.collectAsStateWithLifecycle()
+    LaunchedEffect(shareUrl) {
+        if (shareUrl.isNotEmpty()) {
+            libraryInitialTab = 3
+            currentScreen = Screen.Play
+            playSubScreen = SubScreen.Library
+        }
+    }
 
     val playViewModel: PlayViewModel = hiltViewModel()
     val playUiState by playViewModel.uiState.collectAsStateWithLifecycle()

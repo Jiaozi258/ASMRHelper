@@ -30,17 +30,19 @@ class DownloadManager @Inject constructor(
     private val _state = MutableStateFlow(DownloadState())
     val state: StateFlow<DownloadState> = _state.asStateFlow()
 
-    fun startDownload(url: String, onComplete: (VideoAudio?) -> Unit = {}) {
+    fun startDownload(url: String, platform: String? = null, onComplete: (VideoAudio?) -> Unit = {}) {
         if (_state.value.isDownloading) return
         downloadJob = scope.launch {
-            _state.value = DownloadState(true, 0f, "正在初始化...")
-            extractor.init()
+            extractor.selectedPlatform = platform
+            _state.value = DownloadState(true, 0f, "正在请求提取服务...")
 
-            _state.value = _state.value.copy(statusText = "正在获取视频信息...")
             val result = extractor.extractAudio(url) { progress ->
                 _state.value = _state.value.copy(
                     progress = progress,
-                    statusText = "正在提取音频 ${(progress * 100).toInt()}%"
+                    statusText = if (progress > 0f)
+                        "正在下载音频 ${(progress * 100).toInt()}%"
+                    else
+                        "正在获取视频信息..."
                 )
             }
 
@@ -55,10 +57,13 @@ class DownloadManager @Inject constructor(
                     fileSizeBytes = result.fileSizeBytes
                 )
                 repository.insert(videoAudio)
-                _state.value = DownloadState(false, 0f, "")
+                _state.value = DownloadState(false, 0f, "提取完成")
                 onComplete(videoAudio)
             } else {
-                _state.value = DownloadState(false, 0f, "")
+                val detail = extractor.getLastError().lines().firstOrNull()
+                    ?.take(150) ?: "请检查链接是否有效"
+                _state.value = DownloadState(false, 0f, "提取失败: $detail")
+                extractor.resetInit()
                 onComplete(null)
             }
         }

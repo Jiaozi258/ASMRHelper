@@ -78,6 +78,7 @@ import com.asmrhelper.ui.theme.ErrorRed
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
+import com.asmrhelper.util.ShareReceiver
 
 /**
  * 音频库主页面 — 三标签页：
@@ -105,6 +106,10 @@ fun LibraryScreen(
     val scope = rememberCoroutineScope()
 
     var selectedTabIndex by remember { mutableIntStateOf(initialTabIndex) }
+    // React to external tab changes (e.g. share intent navigating to video tab)
+    LaunchedEffect(initialTabIndex) {
+        selectedTabIndex = initialTabIndex
+    }
     val tabTitles = listOf("全部音频", "我的收藏", "文件管理", "视频音频")
 
     // Video audio state
@@ -112,15 +117,16 @@ fun LibraryScreen(
     val videoAudios by videoAudioViewModel.videoAudios.collectAsStateWithLifecycle()
     val downloadState by videoAudioViewModel.downloadState.collectAsStateWithLifecycle()
     var showDownloadDialog by remember { mutableStateOf(false) }
-    var downloadUrl by remember {
-        // Check for pending share URL from external apps
-        val pendingUrl = context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
-            .getString("pending_video_url", null) ?: ""
-        if (pendingUrl.isNotEmpty()) {
-            context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
-                .edit().remove("pending_video_url").apply()
+    var downloadUrl by remember { mutableStateOf("") }
+
+    // Observe share intents from external apps (reactive StateFlow)
+    val shareUrl by ShareReceiver.pendingUrl.collectAsStateWithLifecycle()
+    LaunchedEffect(shareUrl) {
+        if (shareUrl.isNotEmpty()) {
+            downloadUrl = shareUrl
+            showDownloadDialog = true
+            ShareReceiver.consume()
         }
-        mutableStateOf(pendingUrl)
     }
 
     // Delete confirmation dialog state
@@ -142,6 +148,15 @@ fun LibraryScreen(
             viewModel.scanAndImport()
         } else {
             Toast.makeText(context, "需要音频权限才能扫描本地音频文件", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // SAF file picker — can browse private space, USB OTG, etc.
+    val safImportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            viewModel.importFromSaf(uris)
         }
     }
 
@@ -200,6 +215,23 @@ fun LibraryScreen(
                             .padding(end = 8.dp),
                         color = AccentPurple,
                         strokeWidth = 2.dp
+                    )
+                }
+
+                // SAF 浏览导入 — 可访问隐私空间
+                IconButton(
+                    onClick = {
+                        safImportLauncher.launch(arrayOf(
+                            "audio/*",
+                            "application/octet-stream"
+                        ))
+                    },
+                    enabled = !isScanning
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "浏览导入音频",
+                        tint = if (isScanning) TextHint else AccentPurple
                     )
                 }
 
@@ -316,15 +348,19 @@ fun LibraryScreen(
             DownloadDialog(
                 initialUrl = downloadUrl,
                 downloadState = downloadState,
-                onStartDownload = { url ->
-                    videoAudioViewModel.startDownload(url) { success ->
-                        if (!success) {
-                            Toast.makeText(context, "该链接无法提取或已被移除", Toast.LENGTH_SHORT).show()
+                onStartDownload = { url, platform ->
+                    videoAudioViewModel.startDownload(url, platform) { success ->
+                        if (success) {
+                            // Close dialog on success after user sees "提取完成"
+                            showDownloadDialog = false
                         }
+                        // On failure: dialog stays open to show error, user dismisses manually
                     }
+                },
+                onCancel = {
+                    videoAudioViewModel.cancelDownload()
                     showDownloadDialog = false
                 },
-                onCancel = { videoAudioViewModel.cancelDownload() },
                 onDismiss = { showDownloadDialog = false }
             )
         }

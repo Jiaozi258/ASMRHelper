@@ -31,16 +31,16 @@ class VideoAudioViewModel @Inject constructor(
     val downloadState: StateFlow<DownloadState> = downloadManager.state
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DownloadState())
 
-    fun startDownload(url: String, onComplete: (Boolean) -> Unit = {}) {
+    fun startDownload(url: String, platform: String? = null, onComplete: (Boolean) -> Unit = {}) {
         // Check if URL was previously deleted by user
         val prefs = context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
         val deletedUrls = prefs.getStringSet(deletedUrlsKey, emptySet()) ?: emptySet()
         if (url in deletedUrls) {
-            onComplete(false)
+            viewModelScope.launch { onComplete(false) }
             return
         }
-        downloadManager.startDownload(url) { result ->
-            onComplete(result != null)
+        downloadManager.startDownload(url, platform) { result ->
+            viewModelScope.launch { onComplete(result != null) }
         }
     }
 

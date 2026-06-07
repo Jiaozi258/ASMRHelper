@@ -1,8 +1,12 @@
 package com.asmrhelper.ui.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -187,6 +191,17 @@ fun SettingsScreen(
             val showNotification by viewModel.showNotification.collectAsStateWithLifecycle()
             val showOnLockScreen by viewModel.showOnLockScreen.collectAsStateWithLifecycle()
 
+            // Android 13+ requires runtime permission for notifications
+            val notifyPermLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { granted ->
+                if (granted) {
+                    viewModel.setShowNotification(true)
+                } else {
+                    Toast.makeText(context, "需要通知权限才能显示播放控件", Toast.LENGTH_SHORT).show()
+                }
+            }
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -212,7 +227,22 @@ fun SettingsScreen(
                     }
                     Switch(
                         checked = showNotification,
-                        onCheckedChange = { viewModel.setShowNotification(it) },
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                // Android 13+ needs runtime notification permission
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    if (ContextCompat.checkSelfPermission(
+                                            context, Manifest.permission.POST_NOTIFICATIONS)
+                                        != PackageManager.PERMISSION_GRANTED) {
+                                        notifyPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        return@Switch
+                                    }
+                                }
+                                viewModel.setShowNotification(true)
+                            } else {
+                                viewModel.setShowNotification(false)
+                            }
+                        },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = AccentPurple,
                             checkedTrackColor = AccentPurple.copy(alpha = 0.4f),
