@@ -63,6 +63,14 @@ class AsmrMediaService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Check if notification is disabled — if so, stop immediately
+        val showNotification = getSharedPreferences("asmr_settings", MODE_PRIVATE)
+            .getBoolean("show_notification", true)
+        if (!showNotification) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         MediaButtonReceiver.handleIntent(mediaSession, intent)
         val state = playerManager.state.value
         val notification = buildNotification(state)
@@ -76,14 +84,18 @@ class AsmrMediaService : Service() {
         mediaSession.isActive = false
         mediaSession.release()
         playerManager.setStateListener(null)
-        // Do NOT release singleton ExoPlayer instances here —
+        // Do NOT stop playback here — the service is just the notification frontend.
+        // Playback should continue even if the user turns off the notification.
+        // Do NOT release singleton ExoPlayer instances here either —
         // PlayerManager owns Hilt-provided @Singleton players that
         // must survive service restarts within the same process.
-        playerManager.stop()
         super.onDestroy()
     }
 
     private fun buildNotification(state: PlayerState): android.app.Notification {
+        val showOnLockScreen = getSharedPreferences("asmr_settings", MODE_PRIVATE)
+            .getBoolean("show_on_lockscreen", false)
+
         val loopLabel = when (state.loopMode) {
             com.asmrhelper.domain.model.LoopMode.NONE -> ""
             com.asmrhelper.domain.model.LoopMode.SINGLE -> " | 单曲循环"
@@ -121,10 +133,21 @@ class AsmrMediaService : Service() {
                 .setShowActionsInCompactView(0, 1)
             )
             .setOngoing(state.isPlaying)
+            .setVisibility(
+                if (showOnLockScreen) NotificationCompat.VISIBILITY_PUBLIC
+                else NotificationCompat.VISIBILITY_PRIVATE
+            )
             .build()
     }
 
     private fun updateNotification(state: PlayerState) {
+        val showNotification = getSharedPreferences("asmr_settings", MODE_PRIVATE)
+            .getBoolean("show_notification", true)
+        if (!showNotification) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
         val notification = buildNotification(state)
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(Constants.NOTIFICATION_ID, notification)
@@ -158,13 +181,20 @@ class AsmrMediaService : Service() {
     }
 
     private fun createNotificationChannel() {
+        val showOnLockScreen = getSharedPreferences("asmr_settings", MODE_PRIVATE)
+            .getBoolean("show_on_lockscreen", false)
+
+        val nm = getSystemService(NotificationManager::class.java)
+        // Delete existing channel so we can change its importance level dynamically
+        nm.deleteNotificationChannel(Constants.NOTIFICATION_CHANNEL_ID)
+
         val channel = NotificationChannel(
             Constants.NOTIFICATION_CHANNEL_ID,
             Constants.NOTIFICATION_CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_LOW
+            if (showOnLockScreen) NotificationManager.IMPORTANCE_DEFAULT
+            else NotificationManager.IMPORTANCE_LOW
         ).apply { setShowBadge(false) }
 
-        getSystemService(NotificationManager::class.java)
-            .createNotificationChannel(channel)
+        nm.createNotificationChannel(channel)
     }
 }

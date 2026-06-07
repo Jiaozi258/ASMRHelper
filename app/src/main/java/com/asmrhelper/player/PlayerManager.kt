@@ -1,11 +1,15 @@
 package com.asmrhelper.player
 
+import android.content.Context
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.domain.model.PlayerState
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,7 +29,8 @@ import javax.inject.Singleton
 @Singleton
 class PlayerManager @Inject constructor(
     @MainPlayer private val mainPlayer: ExoPlayer,
-    @BackgroundPlayer private val backgroundPlayer: ExoPlayer
+    @BackgroundPlayer private val backgroundPlayer: ExoPlayer,
+    @ApplicationContext private val context: Context
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val _state = MutableStateFlow(PlayerState())
@@ -133,6 +138,16 @@ class PlayerManager @Inject constructor(
             mainPlayer.play()
         }
         _state.update { it.copy(currentAudio = audio) }
+        startMediaServiceIfNeeded()
+    }
+
+    private fun startMediaServiceIfNeeded() {
+        val prefs = context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
+        val showNotification = prefs.getBoolean("show_notification", true)
+        if (!showNotification) return
+
+        val intent = Intent(context, AsmrMediaService::class.java)
+        ContextCompat.startForegroundService(context, intent)
     }
 
     private fun skipToNext() {

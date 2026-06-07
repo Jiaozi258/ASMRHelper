@@ -41,4 +41,16 @@ interface SettingsRepository {
     suspend fun setHypnosisModeEnabled(enabled: Boolean)
     fun getHypnosisBackgroundType(): Flow<Int>
     suspend fun setHypnosisBackgroundType(type: Int)
+
+    // ── 通知与锁屏 ───────────────────────────────────
+    fun getShowNotification(): Flow<Boolean>
+    suspend fun setShowNotification(enabled: Boolean)
+    fun getShowOnLockScreen(): Flow<Boolean>
+    suspend fun setShowOnLockScreen(enabled: Boolean)
+
+    // ── 触发特效参数 ─────────────────────────────────
+    fun getTriggerParticleCount(): Flow<Int>
+    suspend fun setTriggerParticleCount(count: Int)
+    fun getTriggerCooldownMs(): Flow<Int>
+    suspend fun setTriggerCooldownMs(cooldownMs: Int)
 }

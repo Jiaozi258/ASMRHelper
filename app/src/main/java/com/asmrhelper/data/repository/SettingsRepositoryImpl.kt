@@ -179,6 +179,38 @@ class SettingsRepositoryImpl @Inject constructor(
         _hypnosisBgType.value = type
     }
 
+    // ── 通知与锁屏 ───────────────────────────────────
+
+    private val _showNotification = MutableStateFlow(prefs.getBoolean("show_notification", true))
+    override fun getShowNotification(): Flow<Boolean> = _showNotification
+    override suspend fun setShowNotification(enabled: Boolean) {
+        prefs.edit().putBoolean("show_notification", enabled).apply()
+        _showNotification.value = enabled
+    }
+
+    private val _showOnLockScreen = MutableStateFlow(prefs.getBoolean("show_on_lockscreen", false))
+    override fun getShowOnLockScreen(): Flow<Boolean> = _showOnLockScreen
+    override suspend fun setShowOnLockScreen(enabled: Boolean) {
+        prefs.edit().putBoolean("show_on_lockscreen", enabled).apply()
+        _showOnLockScreen.value = enabled
+    }
+
+    // ── 触发特效参数 ─────────────────────────────────
+
+    private val _triggerParticleCount = MutableStateFlow(prefs.getInt("trigger_particle_count", 16))
+    override fun getTriggerParticleCount(): Flow<Int> = _triggerParticleCount
+    override suspend fun setTriggerParticleCount(count: Int) {
+        prefs.edit().putInt("trigger_particle_count", count).apply()
+        _triggerParticleCount.value = count
+    }
+
+    private val _triggerCooldownMs = MutableStateFlow(prefs.getInt("trigger_cooldown_ms", 1000))
+    override fun getTriggerCooldownMs(): Flow<Int> = _triggerCooldownMs
+    override suspend fun setTriggerCooldownMs(cooldownMs: Int) {
+        prefs.edit().putInt("trigger_cooldown_ms", cooldownMs).apply()
+        _triggerCooldownMs.value = cooldownMs
+    }
+
     // ── Ambient list serialization ─────────────────────
 
     private fun loadAmbientList(): List<String> {

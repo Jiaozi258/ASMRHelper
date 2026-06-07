@@ -40,7 +40,17 @@
       "PowerShell(.\\\\gradlew.bat assembleDebug 2>&1 | Select-Object -Last 30)",
       "PowerShell(.\\\\gradlew.bat assembleDebug 2>&1 | Select-Object -Last 20)",
       "PowerShell(.\\\\gradlew.bat assembleDebug 2>&1 | Select-Object -Last 10)",
-      "PowerShell(.\\\\gradlew.bat clean assembleDebug 2>&1 | Select-Object -Last 10)"
+      "PowerShell(.\\\\gradlew.bat clean assembleDebug 2>&1 | Select-Object -Last 10)",
+      "PowerShell(& \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\\\\gradlew.bat\" -p \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\" assembleDebug 2>&1)",
+      "Bash(git add *)",
+      "Bash(git restore *)",
+      "Bash(git commit -m '@ *)",
+      "Bash(git push *)",
+      "Bash(.\\\\gradlew assembleDebug --stacktrace)",
+      "Bash(Select-Object -Last 80)",
+      "PowerShell(.\\\\gradlew.bat assembleDebug 2>&1 | Select-Object -Last 80)",
+      "PowerShell(.\\\\gradlew.bat assembleDebug 2>&1)",
+      "PowerShell(git *)"
     ]
   }
 }

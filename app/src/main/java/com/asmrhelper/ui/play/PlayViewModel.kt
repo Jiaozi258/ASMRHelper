@@ -127,8 +127,12 @@ class PlayViewModel @Inject constructor(
     private val _triggerColor = MutableStateFlow(0xFFFFFFFFL)
     private val _triggerEmoji = MutableStateFlow("")
     private val _triggerAnimType = MutableStateFlow(0)
+    private val _triggerParticleCount = MutableStateFlow(16)
+    private val _triggerCooldownMs = MutableStateFlow(1000)
     private val _fftMagnitudes = MutableStateFlow<FloatArray?>(null)
     val fftMagnitudes: StateFlow<FloatArray?> = _fftMagnitudes
+    val triggerParticleCount: StateFlow<Int> = _triggerParticleCount
+    val triggerCooldownMs: StateFlow<Int> = _triggerCooldownMs
 
     init {
         // 合并播放器状态、音频列表和隐私模式
@@ -202,8 +206,14 @@ class PlayViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.getVolumeTriggerAnimType().collect { _triggerAnimType.value = it }
         }
+        viewModelScope.launch {
+            settingsRepository.getTriggerParticleCount().collect { _triggerParticleCount.value = it }
+        }
+        viewModelScope.launch {
+            settingsRepository.getTriggerCooldownMs().collect { _triggerCooldownMs.value = it }
+        }
 
-        // 音量触发检测（基于真实音频波形数据，每秒最多触发一次）
+        // 音量触发检测（基于真实音频波形数据）
         viewModelScope.launch {
             playerManager.state.collect { state ->
                 if (!_volumeTriggerEnabled.value || !state.isPlaying) return@collect
@@ -221,7 +231,8 @@ class PlayViewModel @Inject constructor(
                 }
 
                 val now = System.currentTimeMillis()
-                if (volume >= threshold && now - lastTriggerMs > 1000) {
+                val cooldown = _triggerCooldownMs.value.toLong()
+                if (volume >= threshold && now - lastTriggerMs > cooldown) {
                     lastTriggerMs = now
                     _triggerEffect.tryEmit(
                         TriggerEffectConfig(

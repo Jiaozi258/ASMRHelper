@@ -180,6 +180,81 @@ fun SettingsScreen(
 
             SectionSpacer()
 
+            // ═══ 通知与锁屏 ═══════════════════════════════════
+
+            SectionHeader(icon = Icons.Filled.Info, title = "通知与锁屏")
+
+            val showNotification by viewModel.showNotification.collectAsStateWithLifecycle()
+            val showOnLockScreen by viewModel.showOnLockScreen.collectAsStateWithLifecycle()
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                // 下拉通知栏播放控件
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("通知栏播放控件", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            "开启后，下拉通知栏可显示当前播放音频并支持暂停、切歌",
+                            color = TextHint,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Switch(
+                        checked = showNotification,
+                        onCheckedChange = { viewModel.setShowNotification(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = AccentPurple,
+                            checkedTrackColor = AccentPurple.copy(alpha = 0.4f),
+                            uncheckedThumbColor = TextSecondary,
+                            uncheckedTrackColor = DarkSurfaceVariant
+                        )
+                    )
+                }
+
+                HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
+
+                // 锁屏界面展示
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("锁屏界面展示", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            "开启后，音频信息将在锁屏界面可见",
+                            color = TextHint,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Switch(
+                        checked = showOnLockScreen,
+                        onCheckedChange = { viewModel.setShowOnLockScreen(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = AccentPurple,
+                            checkedTrackColor = AccentPurple.copy(alpha = 0.4f),
+                            uncheckedThumbColor = TextSecondary,
+                            uncheckedTrackColor = DarkSurfaceVariant
+                        )
+                    )
+                }
+            }
+
+            SectionSpacer()
+
             // ═══ 播放设置 ═══════════════════════════════════
 
             SectionHeader(icon = Icons.Filled.Loop, title = "播放设置")
@@ -674,6 +749,53 @@ fun SettingsScreen(
                                 }
                             }
                         }
+                    }
+
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Particle count
+                    val triggerParticleCount by viewModel.triggerParticleCount.collectAsStateWithLifecycle()
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                        Text("粒子数量: ${triggerParticleCount}", color = TextPrimary, fontSize = 14.sp)
+                        Spacer(Modifier.height(4.dp))
+                        Slider(
+                            value = triggerParticleCount.toFloat(),
+                            onValueChange = { viewModel.setTriggerParticleCount(it.toInt()) },
+                            valueRange = 4f..30f,
+                            steps = 25,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = SliderDefaults.colors(
+                                thumbColor = AccentPurple,
+                                activeTrackColor = AccentPurple,
+                                inactiveTrackColor = DarkSurfaceVariant
+                            )
+                        )
+                    }
+
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Cooldown interval
+                    val triggerCooldownMs by viewModel.triggerCooldownMs.collectAsStateWithLifecycle()
+                    val cooldownSec = triggerCooldownMs / 1000f
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                        Text("触发冷却间隔: %.1f秒".format(cooldownSec), color = TextPrimary, fontSize = 14.sp)
+                        Text(
+                            "两次特效触发之间的最短间隔，值越小特效越频繁",
+                            color = TextHint,
+                            fontSize = 11.sp
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Slider(
+                            value = triggerCooldownMs.toFloat(),
+                            onValueChange = { viewModel.setTriggerCooldownMs(it.toInt()) },
+                            valueRange = 250f..5000f,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = SliderDefaults.colors(
+                                thumbColor = AccentPurple,
+                                activeTrackColor = AccentPurple,
+                                inactiveTrackColor = DarkSurfaceVariant
+                            )
+                        )
                     }
                 }
             }

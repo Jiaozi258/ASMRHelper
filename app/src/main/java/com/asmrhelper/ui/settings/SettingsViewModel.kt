@@ -209,6 +209,38 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setHypnosisBackgroundType(type) }
     }
 
+    // ── 通知与锁屏 ──────────────────────────────────────
+
+    val showNotification: StateFlow<Boolean> = settingsRepository.getShowNotification()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val showOnLockScreen: StateFlow<Boolean> = settingsRepository.getShowOnLockScreen()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setShowNotification(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setShowNotification(enabled) }
+    }
+
+    fun setShowOnLockScreen(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setShowOnLockScreen(enabled) }
+    }
+
+    // ── 触发特效参数 ────────────────────────────────────
+
+    val triggerParticleCount: StateFlow<Int> = settingsRepository.getTriggerParticleCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 16)
+
+    val triggerCooldownMs: StateFlow<Int> = settingsRepository.getTriggerCooldownMs()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1000)
+
+    fun setTriggerParticleCount(count: Int) {
+        viewModelScope.launch { settingsRepository.setTriggerParticleCount(count) }
+    }
+
+    fun setTriggerCooldownMs(cooldownMs: Int) {
+        viewModelScope.launch { settingsRepository.setTriggerCooldownMs(cooldownMs) }
+    }
+
     // ── 遮罩工具 ──────────────────────────────────────────
 
     companion object {

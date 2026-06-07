@@ -45,6 +45,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -226,8 +227,10 @@ fun PlayScreen(
         // 音量触发特效动画
         val triggerEnabled by viewModel.volumeTriggerEnabled.collectAsStateWithLifecycle()
         if (triggerEnabled) {
+            val triggerParticleCount by viewModel.triggerParticleCount.collectAsStateWithLifecycle()
             TriggerEffectOverlay(
                 triggerFlow = viewModel.triggerEffect,
+                particleCount = triggerParticleCount,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -1237,10 +1240,14 @@ private fun VolumeVisualizer(
 @Composable
 private fun TriggerEffectOverlay(
     triggerFlow: SharedFlow<TriggerEffectConfig>,
+    particleCount: Int = 16,
     modifier: Modifier = Modifier
 ) {
     var particles by remember { mutableStateOf(listOf<TriggerParticle>()) }
     var frameTick by remember { mutableStateOf(0L) }
+
+    // Keep particleCount reactive inside long-lived LaunchedEffect
+    val currentParticleCount by rememberUpdatedState(particleCount)
 
     // Frame clock for continuous animation
     LaunchedEffect(Unit) {
@@ -1253,11 +1260,11 @@ private fun TriggerEffectOverlay(
     LaunchedEffect(Unit) {
         triggerFlow.collect { config ->
             val now = System.currentTimeMillis()
-            val particleCount = 16
-            val newParticles = (0 until particleCount).map { i ->
+            val count = currentParticleCount
+            val newParticles = (0 until count).map { i ->
                 val angle = when (config.animationType) {
                     2 -> (-90f + (Random.nextFloat() * 40f - 20f)) // fountain: mostly upward
-                    else -> (i * (360f / particleCount))
+                    else -> (i * (360f / count.toFloat()))
                 }
                 TriggerParticle(
                     id = now.toInt() + i,
