@@ -9,6 +9,7 @@ import com.asmrhelper.data.local.db.dao.PlaylistDao
 import com.asmrhelper.data.local.db.dao.SceneDao
 import com.asmrhelper.data.local.db.dao.SleepJournalDao
 import com.asmrhelper.data.local.db.dao.TriggerPadDao
+import com.asmrhelper.data.local.db.dao.VideoAudioDao
 import com.asmrhelper.data.local.db.entity.AudioBgBinding
 import com.asmrhelper.data.local.db.entity.AudioEntity
 import com.asmrhelper.data.local.db.entity.BackgroundImageEntity
@@ -18,6 +19,7 @@ import com.asmrhelper.data.local.db.entity.PlaylistEntity
 import com.asmrhelper.data.local.db.entity.SceneEntity
 import com.asmrhelper.data.local.db.entity.SleepJournalEntity
 import com.asmrhelper.data.local.db.entity.TriggerPadEntity
+import com.asmrhelper.data.local.db.entity.VideoAudioEntity
 
 @Database(
     entities = [
@@ -29,9 +31,10 @@ import com.asmrhelper.data.local.db.entity.TriggerPadEntity
         TriggerPadEntity::class,
         SleepJournalEntity::class,
         SceneEntity::class,
-        BookmarkEntity::class
+        BookmarkEntity::class,
+        VideoAudioEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AsmrDatabase : RoomDatabase() {
@@ -42,4 +45,5 @@ abstract class AsmrDatabase : RoomDatabase() {
     abstract fun sleepJournalDao(): SleepJournalDao
     abstract fun sceneDao(): SceneDao
     abstract fun bookmarkDao(): BookmarkDao
+    abstract fun videoAudioDao(): VideoAudioDao
 }

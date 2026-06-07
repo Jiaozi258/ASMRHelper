@@ -12,6 +12,7 @@ import com.asmrhelper.data.local.db.dao.PlaylistDao
 import com.asmrhelper.data.local.db.dao.SceneDao
 import com.asmrhelper.data.local.db.dao.SleepJournalDao
 import com.asmrhelper.data.local.db.dao.TriggerPadDao
+import com.asmrhelper.data.local.db.dao.VideoAudioDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -51,6 +52,25 @@ object DatabaseModule {
         }
     }
 
+    private val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS video_audio (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    title TEXT NOT NULL,
+                    platform TEXT NOT NULL DEFAULT 'other',
+                    source_url TEXT NOT NULL,
+                    file_path TEXT NOT NULL,
+                    cover_path TEXT,
+                    duration_ms INTEGER NOT NULL DEFAULT 0,
+                    file_size_bytes INTEGER NOT NULL DEFAULT 0,
+                    is_favorite INTEGER NOT NULL DEFAULT 0,
+                    created_at INTEGER NOT NULL DEFAULT 0
+                )
+            """.trimIndent())
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AsmrDatabase =
@@ -58,7 +78,7 @@ object DatabaseModule {
             context,
             AsmrDatabase::class.java,
             "asmr_helper.db"
-        ).addMigrations(MIGRATION_2_3)
+        ).addMigrations(MIGRATION_2_3, MIGRATION_3_4)
          .build()
 
     @Provides
@@ -81,4 +101,7 @@ object DatabaseModule {
 
     @Provides
     fun provideBookmarkDao(db: AsmrDatabase): BookmarkDao = db.bookmarkDao()
+
+    @Provides
+    fun provideVideoAudioDao(db: AsmrDatabase): VideoAudioDao = db.videoAudioDao()
 }

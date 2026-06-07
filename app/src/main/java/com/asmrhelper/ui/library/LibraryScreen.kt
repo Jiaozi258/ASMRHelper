@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -33,6 +34,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +45,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
@@ -67,6 +70,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.ui.theme.AccentPurple
 import com.asmrhelper.ui.theme.AccentPurpleVariant
+import com.asmrhelper.ui.theme.ControlWhite
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -101,7 +105,23 @@ fun LibraryScreen(
     val scope = rememberCoroutineScope()
 
     var selectedTabIndex by remember { mutableIntStateOf(initialTabIndex) }
-    val tabTitles = listOf("全部音频", "我的收藏", "文件管理")
+    val tabTitles = listOf("全部音频", "我的收藏", "文件管理", "视频音频")
+
+    // Video audio state
+    val videoAudioViewModel: VideoAudioViewModel = hiltViewModel()
+    val videoAudios by videoAudioViewModel.videoAudios.collectAsStateWithLifecycle()
+    val downloadState by videoAudioViewModel.downloadState.collectAsStateWithLifecycle()
+    var showDownloadDialog by remember { mutableStateOf(false) }
+    var downloadUrl by remember {
+        // Check for pending share URL from external apps
+        val pendingUrl = context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
+            .getString("pending_video_url", null) ?: ""
+        if (pendingUrl.isNotEmpty()) {
+            context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
+                .edit().remove("pending_video_url").apply()
+        }
+        mutableStateOf(pendingUrl)
+    }
 
     // Delete confirmation dialog state
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -245,7 +265,68 @@ fun LibraryScreen(
                     onPlayAudio = onPlayAudio,
                     onSetBackground = onSetBackground
                 )
+                3 -> VideoAudioTab(
+                    videoAudios = videoAudios,
+                    onPlayAudio = { va ->
+                        // Play VideoAudio via existing ExoPlayer
+                        val audio = Audio(
+                            id = va.filePath.hashCode().toLong(),
+                            title = va.title,
+                            artist = va.platform,
+                            filePath = va.filePath,
+                            durationMs = va.durationMs,
+                            isFavorite = va.isFavorite
+                        )
+                        onPlayAudio(audio)
+                    },
+                    onDeleteAudio = { va, deleteFile ->
+                        videoAudioViewModel.deleteVideoAudio(va, deleteFile)
+                        Toast.makeText(context, "已移除", Toast.LENGTH_SHORT).show()
+                    },
+                    onToggleFavorite = { id, fav ->
+                        videoAudioViewModel.toggleFavorite(id, fav)
+                    }
+                )
             }
+        }
+
+        // FAB for video audio tab: open download dialog
+        if (selectedTabIndex == 3) {
+            FloatingActionButton(
+                onClick = {
+                    downloadUrl = ""
+                    showDownloadDialog = true
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(20.dp),
+                containerColor = AccentPurple,
+                contentColor = ControlWhite,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "提取视频音频"
+                )
+            }
+        }
+
+        // Download dialog for video audio extraction
+        if (showDownloadDialog) {
+            DownloadDialog(
+                initialUrl = downloadUrl,
+                downloadState = downloadState,
+                onStartDownload = { url ->
+                    videoAudioViewModel.startDownload(url) { success ->
+                        if (!success) {
+                            Toast.makeText(context, "该链接无法提取或已被移除", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    showDownloadDialog = false
+                },
+                onCancel = { videoAudioViewModel.cancelDownload() },
+                onDismiss = { showDownloadDialog = false }
+            )
         }
 
         // Delete confirmation dialog
