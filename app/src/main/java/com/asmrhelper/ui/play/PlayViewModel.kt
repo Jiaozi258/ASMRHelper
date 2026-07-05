@@ -131,6 +131,7 @@ class PlayViewModel @Inject constructor(
     private val _triggerCooldownMs = MutableStateFlow(1000)
     private val _fftMagnitudes = MutableStateFlow<FloatArray?>(null)
     val fftMagnitudes: StateFlow<FloatArray?> = _fftMagnitudes
+    val waveformBytes: StateFlow<ByteArray?> = audioVisualizerController.waveformBytes
     val triggerParticleCount: StateFlow<Int> = _triggerParticleCount
     val triggerCooldownMs: StateFlow<Int> = _triggerCooldownMs
 

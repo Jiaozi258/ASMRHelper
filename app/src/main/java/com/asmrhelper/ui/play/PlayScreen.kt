@@ -52,7 +52,12 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -74,6 +79,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.delay
+import kotlin.math.pow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlin.random.Random
 import com.asmrhelper.domain.model.LoopMode
@@ -210,17 +216,15 @@ fun PlayScreen(
         // 音频可视化（设置中启用后显示在播放界面上方）
         val visualizerOn by viewModel.visualizerEnabled.collectAsStateWithLifecycle()
         if (visualizerOn) {
-            val fftMags by viewModel.fftMagnitudes.collectAsStateWithLifecycle()
-            VolumeVisualizer(
+            val waveformBytes by viewModel.waveformBytes.collectAsStateWithLifecycle()
+            SoundCloudWaveform(
+                waveformBytes = waveformBytes,
                 isPlaying = state.playerState.isPlaying,
-                progress = if (state.playerState.durationMs > 0)
-                    state.playerState.progressMs.toFloat() / state.playerState.durationMs else 0f,
-                fftMagnitudes = fftMags,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 56.dp)
                     .fillMaxWidth()
-                    .height(48.dp)
+                    .height(64.dp)
             )
         }
 
@@ -491,12 +495,13 @@ fun PlayScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            AudioVisualizer(
-                progress = progressFraction,
+            val waveformBytesBottom by viewModel.waveformBytes.collectAsStateWithLifecycle()
+            SoundCloudWaveform(
+                waveformBytes = waveformBytesBottom,
                 isPlaying = isPlaying,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(24.dp)
+                    .height(32.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -1059,55 +1064,119 @@ private fun TimerOption(
 }
 
 @Composable
-private fun AudioVisualizer(
-    progress: Float,
+private fun SoundCloudWaveform(
+    waveformBytes: ByteArray?,
     isPlaying: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val barCount = 24
-    val animProgress = remember { Animatable(0f) }
+    // Smooth interpolation state — lerp toward latest waveform data
+    val currentData = remember { mutableStateOf(FloatArray(0)) }
+    val targetData = remember { mutableStateOf(FloatArray(0)) }
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            animProgress.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(800)
-            )
-            animProgress.snapTo(0f)
+    // Convert raw ByteArray to normalized floats when new data arrives
+    LaunchedEffect(waveformBytes) {
+        if (waveformBytes != null && waveformBytes!!.isNotEmpty()) {
+            val floats = FloatArray(waveformBytes!!.size)
+            for (i in floats.indices) {
+                // Byte 0-255 → float -1.0 to 1.0
+                floats[i] = ((waveformBytes!![i].toInt() and 0xFF) - 128) / 128f
+            }
+            targetData.value = floats
         }
     }
 
-    val currentAnim = animProgress.value
+    // Smooth animation: lerp current → target each frame
+    LaunchedEffect(Unit) {
+        while (true) {
+            val cur = currentData.value
+            val tgt = targetData.value
+            if (cur.size != tgt.size && tgt.isNotEmpty()) {
+                currentData.value = tgt.copyOf()
+            } else if (cur.isNotEmpty() && tgt.isNotEmpty()) {
+                val smoothed = FloatArray(cur.size)
+                for (i in smoothed.indices) {
+                    if (i < tgt.size) {
+                        smoothed[i] = cur[i] + (tgt[i] - cur[i]) * 0.35f
+                    }
+                }
+                currentData.value = smoothed
+            }
+            delay(16L) // ~60fps
+        }
+    }
+
+    val data = currentData.value
 
     Canvas(modifier = modifier) {
-        val barWidth = size.width / (barCount * 2f)
-        val maxBarHeight = size.height
+        if (data.isEmpty()) return@Canvas
 
-        for (i in 0 until barCount) {
-            val posFraction = i.toFloat() / barCount
-            val pastProgress = posFraction <= progress
+        val centerY = size.height / 2f
+        val maxAmp = size.height / 2f - 2.dp.toPx()
 
-            val wave = kotlin.math.sin((currentAnim * 3.14f * 2) + (i * 0.5f)).toFloat()
-            val heightMultiplier = if (pastProgress) {
-                0.6f + 0.4f * ((wave + 1f) / 2f)
-            } else {
-                if (isPlaying) 0.2f + 0.3f * ((wave + 1f) / 2f)
-                else 0.1f + 0.1f * ((wave + 1f) / 2f)
-            }
+        // Draw center line (faint guide)
+        drawLine(
+            color = Color(0xFFBB86FC).copy(alpha = 0.15f),
+            start = Offset(0f, centerY),
+            end = Offset(size.width, centerY),
+            strokeWidth = 1.dp.toPx()
+        )
 
-            val barHeight = maxBarHeight * heightMultiplier
-            val x = i * barWidth * 2f
-            val y = (maxBarHeight - barHeight) / 2f
+        if (!isPlaying && data.all { kotlin.math.abs(it) < 0.02f }) return@Canvas
 
-            val alpha = if (pastProgress) 0.9f else if (isPlaying) 0.5f else 0.2f
+        // Build path: wave oscillates around centerY
+        val path = Path()
+        val step = size.width / data.size.coerceAtLeast(1)
 
-            drawRoundRect(
-                color = Color(0xFFBB86FC).copy(alpha = alpha),
-                topLeft = androidx.compose.ui.geometry.Offset(x, y),
-                size = androidx.compose.ui.geometry.Size(barWidth, barHeight),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth / 2f)
-            )
+        path.moveTo(0f, centerY)
+        for (i in data.indices) {
+            val x = i * step
+            // Apply exponential scaling so quiet parts sit near center
+            val normalized = data[i].coerceIn(-1f, 1f)
+            val scaled = kotlin.math.sign(normalized) *
+                kotlin.math.abs(normalized).pow(0.7f)
+            val y = centerY + scaled * maxAmp
+            path.lineTo(x, y)
         }
+        // Complete the symmetric shape (mirror below center line)
+        for (i in data.indices.reversed()) {
+            val x = i * step
+            val normalized = data[i].coerceIn(-1f, 1f)
+            val scaled = kotlin.math.sign(normalized) *
+                kotlin.math.abs(normalized).pow(0.7f)
+            val y = centerY - scaled * maxAmp  // mirror
+            path.lineTo(x, y)
+        }
+        path.close()
+
+        // Fill the waveform with gradient
+        drawPath(
+            path = path,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFFBB86FC).copy(alpha = 0.6f),
+                    Color(0xFFBB86FC).copy(alpha = 0.15f)
+                ),
+                startY = 0f,
+                endY = size.height
+            )
+        )
+
+        // Draw the top edge line (bright)
+        val edgePath = Path()
+        edgePath.moveTo(0f, centerY)
+        for (i in data.indices) {
+            val x = i * step
+            val normalized = data[i].coerceIn(-1f, 1f)
+            val scaled = kotlin.math.sign(normalized) *
+                kotlin.math.abs(normalized).pow(0.7f)
+            val y = centerY + scaled * maxAmp
+            edgePath.lineTo(x, y)
+        }
+        drawPath(
+            path = edgePath,
+            color = Color(0xFFBB86FC).copy(alpha = 0.9f),
+            style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
     }
 }
 
@@ -1171,69 +1240,6 @@ private fun BreathingOverlay() {
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.align(Alignment.Center)
         )
-    }
-}
-
-@Composable
-private fun VolumeVisualizer(
-    isPlaying: Boolean,
-    progress: Float,
-    fftMagnitudes: FloatArray?,
-    modifier: Modifier = Modifier
-) {
-    val bars = 32
-    val animPhase = remember { Animatable(0f) }
-
-    LaunchedEffect(isPlaying) {
-        while (isPlaying) {
-            animPhase.animateTo(1f, tween(600))
-            animPhase.snapTo(0f)
-        }
-    }
-
-    val phase = animPhase.value
-
-    Canvas(modifier = modifier) {
-        val barW = size.width / (bars * 1.8f)
-        val gap = barW * 0.8f
-        val maxH = size.height
-
-        val useFft = fftMagnitudes != null && fftMagnitudes!!.size > 0
-        val fftStep = if (useFft) (fftMagnitudes!!.size / bars).coerceAtLeast(1) else 1
-
-        for (i in 0 until bars) {
-            val posFrac = i.toFloat() / bars
-            val past = posFrac <= progress
-            val fftVal = if (useFft) {
-                val idx = (i * fftStep).coerceAtMost(fftMagnitudes!!.size - 1)
-                fftMagnitudes!![idx].coerceIn(0f, 1f)
-            } else -1f
-
-            val hMul = if (fftVal >= 0f) {
-                // Use real FFT data with some smoothing
-                0.1f + fftVal * 0.9f
-            } else {
-                // Fallback to fake wave animation
-                val wave = kotlin.math.sin((phase * 3.14f * 3) + (i * 0.8f)).toFloat()
-                if (past) 0.4f + 0.6f * ((wave + 1f) / 2f)
-                else if (isPlaying) 0.15f + 0.25f * ((wave + 1f) / 2f)
-                else 0.08f
-            }
-
-            val barH = maxH * hMul.coerceIn(0.05f, 1f)
-            val x = i * (barW + gap)
-            val y = (maxH - barH) / 2f
-            val alpha = if (fftVal >= 0f) 0.85f
-                else if (past) 0.85f
-                else if (isPlaying) 0.45f else 0.15f
-
-            drawRoundRect(
-                color = Color(0xFFBB86FC).copy(alpha = alpha),
-                topLeft = Offset(x, y),
-                size = Size(barW, barH),
-                cornerRadius = CornerRadius(barW / 3f)
-            )
-        }
     }
 }
 
