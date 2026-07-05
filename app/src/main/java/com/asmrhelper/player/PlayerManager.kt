@@ -30,9 +30,9 @@ import javax.inject.Singleton
 class PlayerManager @Inject constructor(
     @MainPlayer private val mainPlayer: ExoPlayer,
     @BackgroundPlayer private val backgroundPlayer: ExoPlayer,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val playHistoryRepository: com.asmrhelper.data.repository.PlayHistoryRepositoryImpl
 ) {
-    @Inject lateinit var playHistoryRepository: com.asmrhelper.data.repository.PlayHistoryRepositoryImpl
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val _state = MutableStateFlow(PlayerState())

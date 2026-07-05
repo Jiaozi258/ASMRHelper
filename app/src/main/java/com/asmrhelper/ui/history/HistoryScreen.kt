@@ -71,7 +71,7 @@ fun HistoryScreen(
                         modifier = Modifier.fillMaxWidth()
                             .clickable {
                                 onPlayAudio(Audio(
-                                    id = entry.id,
+                                    id = -entry.id - 1,
                                     title = entry.audioTitle,
                                     artist = entry.audioArtist,
                                     filePath = entry.filePath,
