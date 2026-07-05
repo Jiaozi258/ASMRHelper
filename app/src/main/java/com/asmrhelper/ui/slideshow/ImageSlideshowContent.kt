@@ -26,7 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.asmrhelper.ui.theme.*
-import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Composable
 fun ImageSlideshowContent(
@@ -39,6 +39,16 @@ fun ImageSlideshowContent(
 
     LaunchedEffect(progressMs) {
         viewModel.checkTimedAdvance(progressMs)
+    }
+
+    // Auto-advance timer
+    LaunchedEffect(state.mode, state.autoIntervalSec) {
+        if (state.mode == SlideshowMode.Auto && state.images.isNotEmpty()) {
+            while (true) {
+                kotlinx.coroutines.delay(state.autoIntervalSec * 1000L)
+                viewModel.nextImage()
+            }
+        }
     }
 
     // SAF import launcher
@@ -120,7 +130,7 @@ fun ImageSlideshowContent(
                             items(state.timePoints.size) { idx ->
                                 val ms = state.timePoints[idx]
                                 val sec = ms / 1000
-                                val label = "${sec / 60}:${String.format("%02d", sec % 60)}"
+                                val label = "${sec / 60}:${String.format(Locale.ROOT, "%02d", sec % 60)}"
                                 Box(
                                     modifier = Modifier.clip(RoundedCornerShape(4.dp))
                                         .background(DarkSurfaceVariant).padding(horizontal = 8.dp, vertical = 4.dp)
@@ -138,7 +148,7 @@ fun ImageSlideshowContent(
                     }
                     TextButton(onClick = { viewModel.addTimePoint(progressMs) }) {
                         val sec = progressMs / 1000
-                        Text("+ 当前时间 (${sec / 60}:${String.format("%02d", sec % 60)})",
+                        Text("+ 当前时间 (${sec / 60}:${String.format(Locale.ROOT, "%02d", sec % 60)})",
                             color = AccentPurple, fontSize = 13.sp)
                     }
                 }

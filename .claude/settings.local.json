@@ -50,7 +50,12 @@
       "Bash(Select-Object -Last 80)",
       "PowerShell(.\\\\gradlew.bat assembleDebug 2>&1 | Select-Object -Last 80)",
       "PowerShell(.\\\\gradlew.bat assembleDebug 2>&1)",
-      "PowerShell(git *)"
+      "PowerShell(git *)",
+      "PowerShell(.\\\\gradlew assembleDebug --no-daemon 2>&1)",
+      "Bash(.\\\\gradlew assembleDebug)",
+      "Bash(.\\\\gradlew.bat assembleDebug)",
+      "PowerShell(New-Item *)",
+      "Bash(git commit *)"
     ]
   }
 }
