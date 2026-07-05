@@ -541,62 +541,125 @@ fun PlayScreen(
 
     // 定时器选择对话框
     if (showTimerDialog) {
+        var showCustomPicker by remember { mutableStateOf(false) }
+        var showPomodoroCustom by remember { mutableStateOf(false) }
+
         AlertDialog(
             onDismissRequest = { showTimerDialog = false },
             title = {
-                Text(
-                    text = "定时器",
-                    color = TextPrimary,
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Text("定时器", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
             },
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        "睡眠定时",
-                        color = TextHint,
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    // ── Sleep Timer ──
+                    Text("睡眠定时", color = TextHint, style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(4.dp))
-                    TimerOption("15分钟") {
-                        viewModel.setTimer(15)
-                        showTimerDialog = false
-                    }
-                    TimerOption("30分钟") {
-                        viewModel.setTimer(30)
-                        showTimerDialog = false
-                    }
-                    TimerOption("60分钟") {
-                        viewModel.setTimer(60)
-                        showTimerDialog = false
-                    }
-                    TimerOption(
-                        text = if (state.stopAfterCurrent) "✓ 播完当前停止" else "播完当前停止",
-                        color = if (state.stopAfterCurrent) AccentPurple else TextSecondary
-                    ) {
-                        viewModel.toggleStopAfterCurrent()
-                        showTimerDialog = false
+
+                    if (showCustomPicker) {
+                        // Custom time: hours + minutes sliders
+                        var customHours by remember { mutableIntStateOf(0) }
+                        var customMinutes by remember { mutableIntStateOf(15) }
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("小时", color = TextSecondary, fontSize = 13.sp)
+                                Slider(value = customHours.toFloat(), onValueChange = { customHours = it.toInt() },
+                                    valueRange = 0f..3f, steps = 2,
+                                    modifier = Modifier.weight(1f),
+                                    colors = SliderDefaults.colors(thumbColor = AccentPurple, activeTrackColor = AccentPurple))
+                                Text("${customHours}h", color = TextPrimary, fontSize = 14.sp, modifier = Modifier.width(36.dp))
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("分钟", color = TextSecondary, fontSize = 13.sp)
+                                Slider(value = customMinutes.toFloat(), onValueChange = { customMinutes = it.toInt() },
+                                    valueRange = 0f..59f, steps = 58,
+                                    modifier = Modifier.weight(1f),
+                                    colors = SliderDefaults.colors(thumbColor = AccentPurple, activeTrackColor = AccentPurple))
+                                Text("${customMinutes}m", color = TextPrimary, fontSize = 14.sp, modifier = Modifier.width(40.dp))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextButton(onClick = { showCustomPicker = false }) {
+                                    Text("取消", color = TextSecondary)
+                                }
+                                Button(onClick = {
+                                    val total = customHours * 3600 + customMinutes * 60
+                                    if (total > 0 && total <= 10800) {
+                                        viewModel.setTimerSeconds(total)
+                                        showTimerDialog = false
+                                    }
+                                }, enabled = (customHours * 60 + customMinutes) > 0,
+                                    colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)) {
+                                    Text("开始")
+                                }
+                            }
+                        }
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            QuickTimerChip("15分") { viewModel.setTimerSeconds(15 * 60); showTimerDialog = false }
+                            QuickTimerChip("30分") { viewModel.setTimerSeconds(30 * 60); showTimerDialog = false }
+                            QuickTimerChip("45分") { viewModel.setTimerSeconds(45 * 60); showTimerDialog = false }
+                            QuickTimerChip("60分") { viewModel.setTimerSeconds(60 * 60); showTimerDialog = false }
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        TextButton(onClick = { showCustomPicker = true }) {
+                            Text("⏱ 自定义...", color = AccentPurple, fontSize = 14.sp)
+                        }
+                        Spacer(Modifier.height(2.dp))
+                        TimerOption(
+                            text = if (state.stopAfterCurrent) "✓ 播完当前停止" else "播完当前停止",
+                            color = if (state.stopAfterCurrent) AccentPurple else TextSecondary
+                        ) {
+                            viewModel.toggleStopAfterCurrent(); showTimerDialog = false
+                        }
                     }
 
                     Spacer(Modifier.height(12.dp))
-                    Text(
-                        "番茄钟",
-                        color = TextHint,
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+
+                    // ── Pomodoro ──
+                    Text("番茄钟", color = TextHint, style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(4.dp))
-                    TimerOption("🍅 25分钟专注 + 5分钟休息") {
-                        viewModel.startPomodoro(25, 5)
-                        showTimerDialog = false
-                    }
-                    TimerOption("🍅 45分钟专注 + 10分钟休息") {
-                        viewModel.startPomodoro(45, 10)
-                        showTimerDialog = false
+
+                    if (showPomodoroCustom) {
+                        var focusMin by remember { mutableIntStateOf(state.pomodoroCustomFocusMin) }
+                        var breakMin by remember { mutableIntStateOf(state.pomodoroCustomBreakMin) }
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                            Text("专注时长: ${focusMin}分钟", color = TextSecondary, fontSize = 13.sp)
+                            Slider(value = focusMin.toFloat(), onValueChange = { focusMin = it.toInt() },
+                                valueRange = 1f..120f, steps = 118,
+                                colors = SliderDefaults.colors(thumbColor = AccentPurple, activeTrackColor = AccentPurple))
+                            Spacer(Modifier.height(8.dp))
+                            Text("休息时长: ${breakMin}分钟", color = TextSecondary, fontSize = 13.sp)
+                            Slider(value = breakMin.toFloat(), onValueChange = { breakMin = it.toInt() },
+                                valueRange = 1f..30f, steps = 28,
+                                colors = SliderDefaults.colors(thumbColor = AccentPurple, activeTrackColor = AccentPurple))
+                            Spacer(Modifier.height(4.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextButton(onClick = { showPomodoroCustom = false }) {
+                                    Text("取消", color = TextSecondary)
+                                }
+                                Button(onClick = {
+                                    viewModel.updatePomodoroCustomFocus(focusMin)
+                                    viewModel.updatePomodoroCustomBreak(breakMin)
+                                    viewModel.startPomodoro(focusMin, breakMin)
+                                    showTimerDialog = false
+                                }, colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)) {
+                                    Text("🍅 开始")
+                                }
+                            }
+                        }
+                    } else {
+                        TimerOption("🍅 ${state.pomodoroCustomFocusMin}分钟专注 + ${state.pomodoroCustomBreakMin}分钟休息") {
+                            viewModel.startPomodoro(state.pomodoroCustomFocusMin, state.pomodoroCustomBreakMin)
+                            showTimerDialog = false
+                        }
+                        TextButton(onClick = { showPomodoroCustom = true }) {
+                            Text("⚙ 自定义番茄钟...", color = AccentPurple, fontSize = 14.sp)
+                        }
                     }
                 }
             },
@@ -1040,6 +1103,19 @@ fun PlayScreen(
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
         )
+    }
+}
+
+@Composable
+private fun QuickTimerChip(label: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(DarkSurfaceVariant)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+    ) {
+        Text(label, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }
 

@@ -64,6 +64,8 @@ data class PlayUiState(
     val pomodoroRemainingMs: Long = 0L,
     val pomodoroFocusMinutes: Int = 25,
     val pomodoroBreakMinutes: Int = 5,
+    val pomodoroCustomFocusMin: Int = 25,
+    val pomodoroCustomBreakMin: Int = 5,
     // 双耳节拍
     val binauralActive: Boolean = false,
     val binauralPreset: BinauralPreset? = null,
@@ -401,9 +403,10 @@ class PlayViewModel @Inject constructor(
         // menuExpanded is managed by the dropdown component directly
     }
 
-    fun setTimer(minutes: Int) {
+    fun setTimerSeconds(totalSeconds: Int) {
         cancelTimer()
-        val totalMs = minutes * 60 * 1000L
+        val minutes = totalSeconds / 60
+        val totalMs = totalSeconds * 1000L
         _uiState.update { it.copy(timerMinutes = minutes, timerRemainingMs = totalMs, timerActive = true) }
         timerJob = viewModelScope.launch {
             while (_uiState.value.timerRemainingMs > 0) {
@@ -413,11 +416,13 @@ class PlayViewModel @Inject constructor(
                     current.copy(timerRemainingMs = remaining)
                 }
             }
-            // 定时器到时间，暂停播放
             _uiState.update { it.copy(timerActive = false, timerMinutes = 0, timerRemainingMs = 0L) }
             playerManager.handleEvent(PlayerEvent.Pause)
         }
     }
+
+    @Deprecated("Use setTimerSeconds", ReplaceWith("setTimerSeconds(minutes * 60)"))
+    fun setTimer(minutes: Int) = setTimerSeconds(minutes * 60)
 
     fun cancelTimer() {
         timerJob?.cancel()
@@ -459,6 +464,14 @@ class PlayViewModel @Inject constructor(
                 pomodoroRemainingMs = 0L
             )
         }
+    }
+
+    fun updatePomodoroCustomFocus(minutes: Int) {
+        _uiState.update { it.copy(pomodoroCustomFocusMin = minutes.coerceIn(1, 120)) }
+    }
+
+    fun updatePomodoroCustomBreak(minutes: Int) {
+        _uiState.update { it.copy(pomodoroCustomBreakMin = minutes.coerceIn(1, 30)) }
     }
 
     private fun runPomodoroPhase() {
@@ -638,7 +651,7 @@ class PlayViewModel @Inject constructor(
         }
         // Apply timer
         if (scene.timerMinutes > 0) {
-            setTimer(scene.timerMinutes)
+            setTimerSeconds(scene.timerMinutes * 60)
         }
         // Apply noise (only if scene has a non-default noise type)
         if (scene.noiseType.isNotEmpty() && scene.noiseType != "WHITE") {
