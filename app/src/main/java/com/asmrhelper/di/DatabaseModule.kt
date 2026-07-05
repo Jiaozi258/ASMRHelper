@@ -12,6 +12,7 @@ import com.asmrhelper.data.local.db.dao.PlaylistDao
 import com.asmrhelper.data.local.db.dao.SceneDao
 import com.asmrhelper.data.local.db.dao.SleepJournalDao
 import com.asmrhelper.data.local.db.dao.TriggerPadDao
+import com.asmrhelper.data.local.db.dao.ImageLibraryDao
 import com.asmrhelper.data.local.db.dao.PlayHistoryDao
 import com.asmrhelper.data.local.db.dao.VideoAudioDao
 import dagger.Module
@@ -72,6 +73,18 @@ object DatabaseModule {
         }
     }
 
+    private val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS image_library (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    filePath TEXT NOT NULL,
+                    addedAt INTEGER NOT NULL DEFAULT 0
+                )
+            """.trimIndent())
+        }
+    }
+
     private val MIGRATION_4_5 = object : Migration(4, 5) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("""
@@ -94,7 +107,7 @@ object DatabaseModule {
             context,
             AsmrDatabase::class.java,
             "asmr_helper.db"
-        ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+        ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
          .build()
 
     @Provides
@@ -123,4 +136,7 @@ object DatabaseModule {
 
     @Provides
     fun providePlayHistoryDao(db: AsmrDatabase): PlayHistoryDao = db.playHistoryDao()
+
+    @Provides
+    fun provideImageLibraryDao(db: AsmrDatabase): ImageLibraryDao = db.imageLibraryDao()
 }

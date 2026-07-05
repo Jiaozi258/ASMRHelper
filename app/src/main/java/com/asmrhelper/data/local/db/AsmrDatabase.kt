@@ -9,12 +9,14 @@ import com.asmrhelper.data.local.db.dao.PlaylistDao
 import com.asmrhelper.data.local.db.dao.SceneDao
 import com.asmrhelper.data.local.db.dao.SleepJournalDao
 import com.asmrhelper.data.local.db.dao.TriggerPadDao
+import com.asmrhelper.data.local.db.dao.ImageLibraryDao
 import com.asmrhelper.data.local.db.dao.PlayHistoryDao
 import com.asmrhelper.data.local.db.dao.VideoAudioDao
 import com.asmrhelper.data.local.db.entity.AudioBgBinding
 import com.asmrhelper.data.local.db.entity.AudioEntity
 import com.asmrhelper.data.local.db.entity.BackgroundImageEntity
 import com.asmrhelper.data.local.db.entity.BookmarkEntity
+import com.asmrhelper.data.local.db.entity.ImageLibraryEntity
 import com.asmrhelper.data.local.db.entity.PlayHistoryEntity
 import com.asmrhelper.data.local.db.entity.PlaylistAudioCrossRef
 import com.asmrhelper.data.local.db.entity.PlaylistEntity
@@ -35,9 +37,10 @@ import com.asmrhelper.data.local.db.entity.VideoAudioEntity
         SceneEntity::class,
         BookmarkEntity::class,
         VideoAudioEntity::class,
-        PlayHistoryEntity::class
+        PlayHistoryEntity::class,
+        ImageLibraryEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AsmrDatabase : RoomDatabase() {
@@ -50,4 +53,5 @@ abstract class AsmrDatabase : RoomDatabase() {
     abstract fun bookmarkDao(): BookmarkDao
     abstract fun videoAudioDao(): VideoAudioDao
     abstract fun playHistoryDao(): PlayHistoryDao
+    abstract fun imageLibraryDao(): ImageLibraryDao
 }

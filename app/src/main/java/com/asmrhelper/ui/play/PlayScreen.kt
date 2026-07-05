@@ -90,6 +90,7 @@ import com.asmrhelper.ui.components.HypnosisBgType
 import com.asmrhelper.ui.components.MenuItem
 import com.asmrhelper.ui.components.PlayPauseButton
 import com.asmrhelper.ui.settings.SettingsViewModel
+import com.asmrhelper.ui.slideshow.ImageSlideshowContent
 import com.asmrhelper.ui.theme.AccentPurple
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.ErrorRed
@@ -118,6 +119,7 @@ fun PlayScreen(
     var showBookmarkDialog by remember { mutableStateOf(false) }
     var showNoiseDialog by remember { mutableStateOf(false) }
     var showAmbientDialog by remember { mutableStateOf(false) }
+    var bottomTab by remember { mutableIntStateOf(0) } // 0=进度条, 1=图片
 
     Box(
         modifier = modifier
@@ -460,12 +462,23 @@ fun PlayScreen(
             BreathingOverlay()
         }
 
-        // 底部进度条区域
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 16.dp)
+        // Bottom tab selector
+        Row(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            TabChip("进度", bottomTab == 0) { bottomTab = 0 }
+            TabChip("图片", bottomTab == 1) { bottomTab = 1 }
+        }
+
+        // Content based on tab
+        if (bottomTab == 0) {
+            // 底部进度条区域
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 16.dp)
         ) {
             // 可拖动进度条（local drag state for smooth seeking）
             val progressFraction = if (state.playerState.durationMs > 0)
@@ -523,6 +536,18 @@ fun PlayScreen(
                 )
                 }
             }
+        } else {
+            // Slideshow tab
+            ImageSlideshowContent(
+                progressMs = state.playerState.progressMs,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(220.dp)
+                    .padding(horizontal = 8.dp)
+                    .padding(bottom = 8.dp)
+            )
+        }
         }
         }
 
@@ -1428,6 +1453,21 @@ private fun TriggerEffectOverlay(
                 drawCircle(p.color.copy(alpha = alpha), particleSize, Offset(px, py))
             }
         }
+    }
+}
+
+@Composable
+private fun TabChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 4.dp)
+            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+            .background(if (selected) DarkSurface else DarkSurfaceVariant.copy(alpha = 0.3f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Text(label, color = if (selected) AccentPurple else TextHint, fontSize = 13.sp,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal)
     }
 }
 
