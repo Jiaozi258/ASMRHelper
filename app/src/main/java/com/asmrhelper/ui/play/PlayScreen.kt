@@ -465,7 +465,7 @@ fun PlayScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 90.dp)
+                .padding(bottom = 20.dp)
         ) {
             // 可拖动进度条（local drag state for smooth seeking）
             val progressFraction = if (state.playerState.durationMs > 0)
@@ -473,6 +473,19 @@ fun PlayScreen(
             val isPlaying = state.playerState.isPlaying
             var isDragging by remember { mutableStateOf(false) }
             var dragFraction by remember { mutableFloatStateOf(progressFraction) }
+
+            // 拖拽时显示目标时间点
+            if (isDragging) {
+                val dragMs = (dragFraction * state.playerState.durationMs).toLong()
+                Text(
+                    text = "拖拽至 ${formatDuration(dragMs)}",
+                    color = AccentPurple,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
 
             Slider(
                 value = if (isDragging) dragFraction else progressFraction,
@@ -493,18 +506,7 @@ fun PlayScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            val waveformBytesBottom by viewModel.waveformBytes.collectAsStateWithLifecycle()
-            SoundCloudWaveform(
-                waveformBytes = waveformBytesBottom,
-                isPlaying = isPlaying,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(32.dp)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
             // 时间显示行
             Row(
@@ -522,6 +524,18 @@ fun PlayScreen(
                     color = TextSecondary
                 )
             }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // 底部迷你波形
+            val waveformBytesBottom by viewModel.waveformBytes.collectAsStateWithLifecycle()
+            SoundCloudWaveform(
+                waveformBytes = waveformBytesBottom,
+                isPlaying = isPlaying,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+            )
         }
         }
         }
