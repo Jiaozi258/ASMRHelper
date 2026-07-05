@@ -25,6 +25,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -135,6 +137,8 @@ fun TriggerPadScreen(
                     pad = pad,
                     isActive = isActive,
                     mode = state.mode,
+                    volume = state.slotVolumes[index] ?: 1f,
+                    onVolumeChange = { vol -> viewModel.setSlotVolume(index, vol) },
                     onTap = {
                         if (pad != null) {
                             viewModel.playSlot(pad.filePath, index)
@@ -198,7 +202,10 @@ private fun PadButton(
     isActive: Boolean,
     mode: TriggerPadMode,
     onTap: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    volume: Float = 1f,
+    onVolumeChange: (Float) -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     Card(
         modifier = Modifier
@@ -236,6 +243,23 @@ private fun PadButton(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
+                    // Volume slider — only in parallel mode when active
+                    if (mode == TriggerPadMode.Parallel && isActive) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Slider(
+                            value = volume,
+                            onValueChange = onVolumeChange,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp)
+                                .height(16.dp),
+                            colors = SliderDefaults.colors(
+                                thumbColor = AccentPurple,
+                                activeTrackColor = AccentPurple,
+                                inactiveTrackColor = DarkSurfaceVariant
+                            )
+                        )
+                    }
                 }
                 // Remove button overlay
                 IconButton(

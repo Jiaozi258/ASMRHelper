@@ -26,7 +26,8 @@ data class TriggerPadUiState(
     val pads: List<TriggerPadEntity> = emptyList(),
     val playingIndex: Int = -1,
     val mode: TriggerPadMode = TriggerPadMode.Independent,
-    val activeParallelSlots: Set<Int> = emptySet()
+    val activeParallelSlots: Set<Int> = emptySet(),
+    val slotVolumes: Map<Int, Float> = emptyMap()
 )
 
 @HiltViewModel
@@ -80,6 +81,12 @@ class TriggerPadViewModel @Inject constructor(
         _uiState.update { it.copy(mode = next) }
     }
 
+    fun setSlotVolume(slotIndex: Int, volume: Float) {
+        val clamped = volume.coerceIn(0f, 1f)
+        _uiState.update { it.copy(slotVolumes = it.slotVolumes + (slotIndex to clamped)) }
+        parallelPlayers[slotIndex]?.volume = clamped
+    }
+
     fun playSlot(filePath: String, slotIndex: Int) {
         if (_uiState.value.mode == TriggerPadMode.Parallel) {
             toggleParallelSlot(filePath, slotIndex)
@@ -116,6 +123,7 @@ class TriggerPadViewModel @Inject constructor(
         val player = ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(filePath))
             repeatMode = Player.REPEAT_MODE_ONE
+            volume = _uiState.value.slotVolumes[slotIndex] ?: 1f
             prepare()
             play()
         }
