@@ -1,9 +1,11 @@
 package com.asmrhelper.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
@@ -16,11 +18,12 @@ sealed class Screen(
     val unselectedIcon: ImageVector
 ) {
     data object Play : Screen("play", "播放", Icons.Filled.PlayArrow, Icons.Outlined.PlayArrow)
+    data object Slideshow : Screen("slideshow", "图片", Icons.Filled.Image, Icons.Outlined.Image)
     data object Profile : Screen("profile", "主页", Icons.Filled.Person, Icons.Outlined.Person)
     data object Settings : Screen("settings", "设置", Icons.Filled.Settings, Icons.Outlined.Settings)
 
     companion object {
-        val bottomNavItems by lazy { listOf(Play, Profile, Settings) }
+        val bottomNavItems by lazy { listOf(Play, Slideshow, Profile, Settings) }
     }
 }
 

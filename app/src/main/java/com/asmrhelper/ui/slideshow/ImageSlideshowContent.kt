@@ -30,16 +30,12 @@ import java.util.Locale
 
 @Composable
 fun ImageSlideshowContent(
-    progressMs: Long,
     viewModel: ImageSlideshowViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val currentProgressMs by viewModel.progressMs.collectAsStateWithLifecycle()
     val context = LocalContext.current
-
-    LaunchedEffect(progressMs) {
-        viewModel.checkTimedAdvance(progressMs)
-    }
 
     // Auto-advance timer
     LaunchedEffect(state.mode, state.autoIntervalSec) {
@@ -65,7 +61,7 @@ fun ImageSlideshowContent(
         }
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxSize().background(DarkBackground)) {
         // Current image display
         val currentImage = state.images.getOrNull(state.currentIndex)
         Box(
@@ -96,7 +92,7 @@ fun ImageSlideshowContent(
         Spacer(Modifier.height(8.dp))
 
         // Controls bar
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 8.dp)) {
             // Mode chips
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ModeChip("手动", state.mode == SlideshowMode.Manual) { viewModel.setMode(SlideshowMode.Manual) }
@@ -146,8 +142,9 @@ fun ImageSlideshowContent(
                             }
                         }
                     }
-                    TextButton(onClick = { viewModel.addTimePoint(progressMs) }) {
-                        val sec = progressMs / 1000
+                    val ms = currentProgressMs
+                    TextButton(onClick = { viewModel.addTimePoint(ms) }) {
+                        val sec = ms / 1000
                         Text("+ 当前时间 (${sec / 60}:${String.format(Locale.ROOT, "%02d", sec % 60)})",
                             color = AccentPurple, fontSize = 13.sp)
                     }

@@ -27,6 +27,7 @@ import com.asmrhelper.ui.play.PlayViewModel
 import com.asmrhelper.ui.playlist.PlaylistScreen
 import com.asmrhelper.ui.profile.ProfileScreen
 import com.asmrhelper.ui.settings.SettingsScreen
+import com.asmrhelper.ui.slideshow.ImageSlideshowContent
 import com.asmrhelper.ui.history.HistoryScreen
 import com.asmrhelper.ui.sleep.SleepJournalScreen
 import com.asmrhelper.ui.triggerpad.TriggerPadScreen
@@ -236,6 +237,7 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
                 }
 
                 Screen.Profile -> ProfileScreen()
+                Screen.Slideshow -> ImageSlideshowContent()
                 Screen.Settings -> {
                     when (settingsSubScreen) {
                         null -> SettingsScreen(

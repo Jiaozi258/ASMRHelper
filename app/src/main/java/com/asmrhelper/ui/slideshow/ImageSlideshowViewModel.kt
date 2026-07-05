@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.asmrhelper.data.local.db.entity.ImageLibraryEntity
 import com.asmrhelper.data.repository.ImageLibraryRepositoryImpl
+import com.asmrhelper.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -33,11 +34,15 @@ data class SlideshowState(
 @HiltViewModel
 class ImageSlideshowViewModel @Inject constructor(
     private val repository: ImageLibraryRepositoryImpl,
+    private val playerManager: PlayerManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SlideshowState())
     val state: StateFlow<SlideshowState> = _state.asStateFlow()
+
+    private val _progressMs = MutableStateFlow(0L)
+    val progressMs: StateFlow<Long> = _progressMs.asStateFlow()
 
     private val _toastMessage = MutableSharedFlow<String>()
     val toastMessage = _toastMessage.asSharedFlow()
@@ -46,6 +51,13 @@ class ImageSlideshowViewModel @Inject constructor(
         viewModelScope.launch {
             repository.getAll().collect { images ->
                 _state.value = _state.value.copy(images = images)
+            }
+        }
+        // Observe player progress for timed-advance mode
+        viewModelScope.launch {
+            playerManager.state.collect { playerState ->
+                _progressMs.value = playerState.progressMs
+                checkTimedAdvance(playerState.progressMs)
             }
         }
     }
@@ -122,7 +134,7 @@ class ImageSlideshowViewModel @Inject constructor(
         _state.value = _state.value.copy(timePoints = tp)
     }
 
-    fun checkTimedAdvance(progressMs: Long) {
+    private fun checkTimedAdvance(progressMs: Long) {
         if (_state.value.mode != SlideshowMode.Timed) return
         val state = _state.value
         val tp = state.timePoints
