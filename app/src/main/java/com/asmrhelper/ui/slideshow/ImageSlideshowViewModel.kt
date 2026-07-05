@@ -4,7 +4,9 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.asmrhelper.data.local.db.entity.ImageAlbumEntity
 import com.asmrhelper.data.local.db.entity.ImageLibraryEntity
+import com.asmrhelper.data.repository.ImageAlbumRepositoryImpl
 import com.asmrhelper.data.repository.ImageLibraryRepositoryImpl
 import com.asmrhelper.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,6 +17,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -23,17 +27,21 @@ enum class SlideshowMode { Manual, Auto, Timed }
 
 data class SlideshowState(
     val images: List<ImageLibraryEntity> = emptyList(),
+    val albums: List<ImageAlbumEntity> = emptyList(),
+    val selectedAlbumId: Long = 0,  // 0 = show all / uncategorized
     val currentIndex: Int = 0,
     val mode: SlideshowMode = SlideshowMode.Manual,
     val autoIntervalSec: Int = 5,
-    val timePoints: List<Long> = emptyList(),  // in ms from song start
-    val timedAdvanceIndex: Int = 0,  // next time-point to check (decoupled from image cursor)
+    val timePoints: List<Long> = emptyList(),
+    val timedAdvanceIndex: Int = 0,
     val isImporting: Boolean = false
 )
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ImageSlideshowViewModel @Inject constructor(
     private val repository: ImageLibraryRepositoryImpl,
+    private val albumRepository: ImageAlbumRepositoryImpl,
     private val playerManager: PlayerManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -48,9 +56,23 @@ class ImageSlideshowViewModel @Inject constructor(
     val toastMessage = _toastMessage.asSharedFlow()
 
     init {
+        // Observe albums
         viewModelScope.launch {
-            repository.getAll().collect { images ->
-                _state.value = _state.value.copy(images = images)
+            albumRepository.getAll().collect { albums ->
+                _state.value = _state.value.copy(albums = albums)
+            }
+        }
+        // Observe images filtered by selected album
+        viewModelScope.launch {
+            _state.flatMapLatest { s ->
+                if (s.selectedAlbumId == 0L) repository.getAll()
+                else repository.getByAlbumId(s.selectedAlbumId)
+            }.collect { images ->
+                val st = _state.value
+                // Adjust currentIndex if images shrunk (e.g. after delete)
+                val newIdx = if (images.isEmpty()) 0
+                else st.currentIndex.coerceIn(0, images.size - 1)
+                _state.value = st.copy(images = images, currentIndex = newIdx)
             }
         }
         // Observe player progress for timed-advance mode
@@ -62,7 +84,40 @@ class ImageSlideshowViewModel @Inject constructor(
         }
     }
 
+    // ── Albums ───────────────────────────────────────────
+
+    fun selectAlbum(albumId: Long) {
+        _state.value = _state.value.copy(
+            selectedAlbumId = albumId,
+            currentIndex = 0,
+            timedAdvanceIndex = 0
+        )
+    }
+
+    fun createAlbum(name: String) {
+        viewModelScope.launch {
+            val newId = albumRepository.insert(ImageAlbumEntity(name = name.trim()))
+            if (newId > 0) {
+                selectAlbum(newId)
+                _toastMessage.emit("已创建合集「${name.trim()}」")
+            }
+        }
+    }
+
+    fun deleteAlbum(album: ImageAlbumEntity) {
+        viewModelScope.launch {
+            albumRepository.delete(album)
+            if (_state.value.selectedAlbumId == album.id) {
+                selectAlbum(0)
+            }
+            _toastMessage.emit("已删除合集「${album.name}」")
+        }
+    }
+
+    // ── Images ───────────────────────────────────────────
+
     fun importFromUris(uris: List<Uri>) {
+        val targetAlbumId = _state.value.selectedAlbumId
         viewModelScope.launch(Dispatchers.IO) {
             _state.value = _state.value.copy(isImporting = true)
             val dir = File(context.filesDir, "slideshow")
@@ -76,7 +131,9 @@ class ImageSlideshowViewModel @Inject constructor(
                         dest.outputStream().use { input.copyTo(it) }
                     }
                     if (dest.length() > 0) {
-                        repository.insert(ImageLibraryEntity(filePath = dest.absolutePath))
+                        repository.insert(
+                            ImageLibraryEntity(filePath = dest.absolutePath, albumId = targetAlbumId)
+                        )
                         count++
                     }
                 } catch (_: Exception) { }
@@ -86,20 +143,21 @@ class ImageSlideshowViewModel @Inject constructor(
         }
     }
 
-    fun deleteImage(id: Long) {
+    fun deleteCurrentImage() {
+        val img = _state.value.images.getOrNull(_state.value.currentIndex) ?: return
         viewModelScope.launch {
-            val img = _state.value.images.find { it.id == id }
-            if (img != null) {
-                File(img.filePath).delete()
-                repository.deleteById(id)
-            }
+            File(img.filePath).delete()
+            repository.deleteById(img.id)
+            _toastMessage.emit("已删除")
         }
     }
+
+    // ── Slideshow ────────────────────────────────────────
 
     fun setMode(mode: SlideshowMode) {
         _state.value = _state.value.copy(
             mode = mode,
-            timedAdvanceIndex = 0  // reset time-point cursor when switching modes
+            timedAdvanceIndex = 0
         )
     }
 
@@ -136,19 +194,18 @@ class ImageSlideshowViewModel @Inject constructor(
 
     private fun checkTimedAdvance(progressMs: Long) {
         if (_state.value.mode != SlideshowMode.Timed) return
-        val state = _state.value
-        val tp = state.timePoints
+        val st = _state.value
+        val tp = st.timePoints
         if (tp.isEmpty()) return
-        val idx = state.timedAdvanceIndex
+        val idx = st.timedAdvanceIndex
         if (idx < tp.size && progressMs >= tp[idx]) {
-            val images = state.images
+            val images = st.images
             if (images.isEmpty()) return
-            val nextImgIdx = (state.currentIndex + 1) % images.size
+            val nextImgIdx = (st.currentIndex + 1) % images.size
             val nextTpIdx = idx + 1
-            _state.value = state.copy(
+            _state.value = st.copy(
                 currentIndex = nextImgIdx,
                 timedAdvanceIndex = nextTpIdx,
-                // After last time point → switch to manual mode
                 mode = if (nextTpIdx >= tp.size) SlideshowMode.Manual else SlideshowMode.Timed
             )
         }

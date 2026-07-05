@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -19,6 +20,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -61,8 +64,80 @@ fun ImageSlideshowContent(
         }
     }
 
+    // Dialogs
+    var showCreateAlbumDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var albumMenuExpanded by remember { mutableStateOf(false) }
+
     Column(modifier = modifier.fillMaxSize().background(DarkBackground)) {
-        // Current image display
+
+        // ── Album selector bar ───────────────────────────
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Album dropdown
+            Box {
+                val currentAlbum = state.albums.find { it.id == state.selectedAlbumId }
+                val label = currentAlbum?.name ?: "全部图片"
+                Row(
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                        .background(DarkSurfaceVariant)
+                        .clickable { albumMenuExpanded = true }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Folder, null, tint = AccentPurple, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(label, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Spacer(Modifier.width(4.dp))
+                    Icon(Icons.Filled.ArrowDropDown, null, tint = TextHint, modifier = Modifier.size(18.dp))
+                }
+                DropdownMenu(expanded = albumMenuExpanded, onDismissRequest = { albumMenuExpanded = false }) {
+                    DropdownMenuItem(
+                        text = { Text("全部图片", color = TextPrimary) },
+                        onClick = { viewModel.selectAlbum(0); albumMenuExpanded = false },
+                        leadingIcon = { if (state.selectedAlbumId == 0L) Icon(Icons.Filled.Check, null, tint = AccentPurple, modifier = Modifier.size(18.dp)) }
+                    )
+                    HorizontalDivider(color = DarkSurfaceVariant)
+                    state.albums.forEach { album ->
+                        DropdownMenuItem(
+                            text = { Text(album.name, color = TextPrimary) },
+                            onClick = { viewModel.selectAlbum(album.id); albumMenuExpanded = false },
+                            leadingIcon = { if (state.selectedAlbumId == album.id) Icon(Icons.Filled.Check, null, tint = AccentPurple, modifier = Modifier.size(18.dp)) },
+                            trailingIcon = {
+                                IconButton(onClick = { viewModel.deleteAlbum(album); albumMenuExpanded = false }, modifier = Modifier.size(24.dp)) {
+                                    Icon(Icons.Filled.Delete, "删除合集", tint = ErrorRed.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            // Create album button
+            IconButton(onClick = { showCreateAlbumDialog = true }, modifier = Modifier.size(36.dp)) {
+                Icon(Icons.Filled.CreateNewFolder, "新建合集", tint = AccentPurple, modifier = Modifier.size(22.dp))
+            }
+
+            // Import button
+            if (state.images.isNotEmpty()) {
+                IconButton(onClick = { importLauncher.launch(arrayOf("image/*")) }, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Filled.Add, "导入图片", tint = AccentPurple, modifier = Modifier.size(22.dp))
+                }
+            }
+
+            // Delete current image button
+            if (state.images.isNotEmpty()) {
+                IconButton(onClick = { showDeleteConfirmDialog = true }, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Filled.Delete, "删除当前图片", tint = ErrorRed.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+
+        // ── Current image display ────────────────────────
         val currentImage = state.images.getOrNull(state.currentIndex)
         Box(
             modifier = Modifier.fillMaxWidth().weight(1f),
@@ -82,6 +157,8 @@ fun ImageSlideshowContent(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Filled.Image, null, tint = TextHint, modifier = Modifier.size(48.dp))
                     Spacer(Modifier.height(8.dp))
+                    Text(state.albums.find { it.id == state.selectedAlbumId }?.let { "「${it.name}」为空" } ?: "暂无图片", color = TextHint, fontSize = 14.sp)
+                    Spacer(Modifier.height(4.dp))
                     TextButton(onClick = { importLauncher.launch(arrayOf("image/*")) }) {
                         Text("+ 导入图片", color = AccentPurple)
                     }
@@ -89,21 +166,15 @@ fun ImageSlideshowContent(
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(6.dp))
 
-        // Controls bar
+        // ── Controls bar ─────────────────────────────────
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 8.dp)) {
             // Mode chips
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ModeChip("手动", state.mode == SlideshowMode.Manual) { viewModel.setMode(SlideshowMode.Manual) }
                 ModeChip("自动", state.mode == SlideshowMode.Auto) { viewModel.setMode(SlideshowMode.Auto) }
                 ModeChip("时间点", state.mode == SlideshowMode.Timed) { viewModel.setMode(SlideshowMode.Timed) }
-                Spacer(Modifier.weight(1f))
-                if (state.images.isNotEmpty()) {
-                    IconButton(onClick = { importLauncher.launch(arrayOf("image/*")) }, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Filled.Add, "导入", tint = AccentPurple, modifier = Modifier.size(20.dp))
-                    }
-                }
             }
 
             when (state.mode) {
@@ -120,7 +191,6 @@ fun ImageSlideshowContent(
                 }
                 SlideshowMode.Timed -> {
                     Spacer(Modifier.height(4.dp))
-                    // Show time points
                     if (state.timePoints.isNotEmpty()) {
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             items(state.timePoints.size) { idx ->
@@ -168,6 +238,77 @@ fun ImageSlideshowContent(
                 }
             }
         }
+    }
+
+    // ── Create album dialog ──────────────────────────────
+    if (showCreateAlbumDialog) {
+        var albumName by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showCreateAlbumDialog = false },
+            title = { Text("新建合集", color = TextPrimary) },
+            text = {
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                        .background(DarkSurfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                ) {
+                    if (albumName.isEmpty()) {
+                        Text("输入合集名称", color = TextHint, fontSize = 14.sp)
+                    }
+                    BasicTextField(
+                        value = albumName,
+                        onValueChange = { albumName = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextPrimary),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (albumName.isNotBlank()) {
+                            viewModel.createAlbum(albumName.trim())
+                            showCreateAlbumDialog = false
+                        }
+                    },
+                    enabled = albumName.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
+                ) { Text("创建") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCreateAlbumDialog = false }) {
+                    Text("取消", color = TextSecondary)
+                }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── Delete confirmation dialog ───────────────────────
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("删除图片", color = TextPrimary) },
+            text = { Text("确定要删除当前图片吗？此操作不可撤销。", color = TextSecondary) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteCurrentImage()
+                        showDeleteConfirmDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
+                ) { Text("删除") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("取消", color = TextSecondary)
+                }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 }
 

@@ -18,6 +18,9 @@ interface ImageLibraryDao {
     @Query("DELETE FROM image_library WHERE id = :id")
     suspend fun deleteById(id: Long)
 
+    @Query("SELECT * FROM image_library WHERE albumId = :albumId ORDER BY addedAt ASC")
+    fun getByAlbumId(albumId: Long): Flow<List<ImageLibraryEntity>>
+
     @Query("SELECT * FROM image_library ORDER BY addedAt ASC LIMIT 1")
     suspend fun getFirst(): ImageLibraryEntity?
 }

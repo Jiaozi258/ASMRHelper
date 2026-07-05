@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class ImageLibraryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val filePath: String,
+    val albumId: Long = 0,  // 0 = uncategorized
     val addedAt: Long = System.currentTimeMillis()
 )

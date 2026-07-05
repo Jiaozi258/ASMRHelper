@@ -12,6 +12,7 @@ class ImageLibraryRepositoryImpl @Inject constructor(
     private val dao: ImageLibraryDao
 ) : ImageLibraryRepository {
     override fun getAll(): Flow<List<ImageLibraryEntity>> = dao.getAll()
+    override fun getByAlbumId(albumId: Long): Flow<List<ImageLibraryEntity>> = dao.getByAlbumId(albumId)
     override suspend fun insert(entity: ImageLibraryEntity) = dao.insert(entity)
     override suspend fun deleteById(id: Long) = dao.deleteById(id)
 }
