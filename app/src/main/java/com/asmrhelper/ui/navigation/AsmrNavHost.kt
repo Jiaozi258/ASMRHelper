@@ -27,6 +27,7 @@ import com.asmrhelper.ui.play.PlayViewModel
 import com.asmrhelper.ui.playlist.PlaylistScreen
 import com.asmrhelper.ui.profile.ProfileScreen
 import com.asmrhelper.ui.settings.SettingsScreen
+import com.asmrhelper.ui.history.HistoryScreen
 import com.asmrhelper.ui.sleep.SleepJournalScreen
 import com.asmrhelper.ui.triggerpad.TriggerPadScreen
 import android.widget.Toast
@@ -39,6 +40,7 @@ import com.asmrhelper.util.ShareReceiver
 fun AsmrNavHost(modifier: Modifier = Modifier) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Play) }
     var playSubScreen by remember { mutableStateOf<SubScreen?>(null) }
+    var settingsSubScreen by remember { mutableStateOf<SubScreen?>(null) }
     var libraryInitialTab by remember { mutableStateOf(0) }
     val context = LocalContext.current
 
@@ -56,6 +58,7 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
     val playUiState by playViewModel.uiState.collectAsStateWithLifecycle()
 
     val showBottomBar = !(currentScreen is Screen.Play && playSubScreen != null)
+        && !(currentScreen is Screen.Settings && settingsSubScreen != null)
 
     Scaffold(
         modifier = modifier,
@@ -214,11 +217,39 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
                                 }
                             }
                         }
+
+                        SubScreen.History -> {
+                            // History is handled in Settings tab, not Play
+                            PlayScreen(
+                                onNavigateToPlaylist = { playSubScreen = SubScreen.Playlist },
+                                onNavigateToLibrary = { tabIndex ->
+                                    libraryInitialTab = tabIndex
+                                    playSubScreen = SubScreen.Library
+                                },
+                                onNavigateToBackground = { playSubScreen = SubScreen.BackgroundGallery },
+                                onNavigateToSettings = { currentScreen = Screen.Settings },
+                                onNavigateToTriggerPad = { playSubScreen = SubScreen.TriggerPad },
+                                onNavigateToSleepJournal = { playSubScreen = SubScreen.SleepJournal }
+                            )
+                        }
                     }
                 }
 
                 Screen.Profile -> ProfileScreen()
-                Screen.Settings -> SettingsScreen()
+                Screen.Settings -> {
+                    when (settingsSubScreen) {
+                        null -> SettingsScreen(
+                            onNavigateToHistory = { settingsSubScreen = SubScreen.History }
+                        )
+                        SubScreen.History -> HistoryScreen(
+                            onBack = { settingsSubScreen = null },
+                            onPlayAudio = { audio -> playViewModel.play(audio) }
+                        )
+                        else -> SettingsScreen(
+                            onNavigateToHistory = { settingsSubScreen = SubScreen.History }
+                        )
+                    }
+                }
             }
         }
     }

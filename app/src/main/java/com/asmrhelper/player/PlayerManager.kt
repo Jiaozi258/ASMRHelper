@@ -32,6 +32,8 @@ class PlayerManager @Inject constructor(
     @BackgroundPlayer private val backgroundPlayer: ExoPlayer,
     @ApplicationContext private val context: Context
 ) {
+    @Inject lateinit var playHistoryRepository: com.asmrhelper.data.repository.PlayHistoryRepositoryImpl
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val _state = MutableStateFlow(PlayerState())
     val state: StateFlow<PlayerState> = _state.asStateFlow()
@@ -138,6 +140,20 @@ class PlayerManager @Inject constructor(
             mainPlayer.play()
         }
         _state.update { it.copy(currentAudio = audio) }
+        // Record playback history (fire-and-forget)
+        scope.launch(Dispatchers.IO) {
+            try {
+                playHistoryRepository.insert(
+                    com.asmrhelper.data.local.db.entity.PlayHistoryEntity(
+                        audioTitle = audio.title,
+                        audioArtist = audio.artist,
+                        filePath = audio.filePath,
+                        durationMs = audio.durationMs,
+                        playedAt = System.currentTimeMillis()
+                    )
+                )
+            } catch (_: Exception) { /* best-effort */ }
+        }
         startMediaServiceIfNeeded()
     }
 

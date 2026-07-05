@@ -107,6 +107,7 @@ private fun LoopMode.displayName(): String = when (this) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    onNavigateToHistory: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -898,6 +899,30 @@ fun SettingsScreen(
                             }
                         }
                     }
+                }
+            }
+
+            SectionSpacer()
+
+            // ═══ 播放历史 ═══════════════════════════════════
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToHistory() }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("播放历史", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
                 }
             }
 

@@ -12,6 +12,7 @@ import com.asmrhelper.data.local.db.dao.PlaylistDao
 import com.asmrhelper.data.local.db.dao.SceneDao
 import com.asmrhelper.data.local.db.dao.SleepJournalDao
 import com.asmrhelper.data.local.db.dao.TriggerPadDao
+import com.asmrhelper.data.local.db.dao.PlayHistoryDao
 import com.asmrhelper.data.local.db.dao.VideoAudioDao
 import dagger.Module
 import dagger.Provides
@@ -71,6 +72,21 @@ object DatabaseModule {
         }
     }
 
+    private val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS play_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    audioTitle TEXT NOT NULL,
+                    audioArtist TEXT NOT NULL,
+                    filePath TEXT NOT NULL,
+                    playedAt INTEGER NOT NULL DEFAULT 0,
+                    durationMs INTEGER NOT NULL DEFAULT 0
+                )
+            """.trimIndent())
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AsmrDatabase =
@@ -78,7 +94,7 @@ object DatabaseModule {
             context,
             AsmrDatabase::class.java,
             "asmr_helper.db"
-        ).addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+        ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
          .build()
 
     @Provides
@@ -104,4 +120,7 @@ object DatabaseModule {
 
     @Provides
     fun provideVideoAudioDao(db: AsmrDatabase): VideoAudioDao = db.videoAudioDao()
+
+    @Provides
+    fun providePlayHistoryDao(db: AsmrDatabase): PlayHistoryDao = db.playHistoryDao()
 }

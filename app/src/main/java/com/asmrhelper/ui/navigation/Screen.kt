@@ -34,4 +34,5 @@ sealed class SubScreen(val route: String) {
     data object BackgroundGallery : SubScreen("background_gallery")
     data object TriggerPad : SubScreen("trigger_pad")
     data object SleepJournal : SubScreen("sleep_journal")
+    data object History : SubScreen("history")
 }
