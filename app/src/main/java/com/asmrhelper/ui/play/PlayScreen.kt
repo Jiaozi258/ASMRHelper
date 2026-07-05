@@ -298,36 +298,37 @@ fun PlayScreen(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // 番茄钟按钮
+                // 定时器 / 番茄钟按钮（始终可见）
                 val pomodoroActive = state.pomodoroActive
-                if (pomodoroActive || !state.timerActive) {
-                    TextButton(
-                        onClick = {
-                            if (pomodoroActive) {
-                                viewModel.cancelPomodoro()
-                            } else {
-                                showTimerDialog = true
-                            }
-                        }
-                    ) {
-                        val label = if (pomodoroActive) {
-                            val min = state.pomodoroRemainingMs / 60000
-                            val sec = (state.pomodoroRemainingMs % 60000) / 1000
-                            val phase = if (state.pomodoroIsFocus) "🍅" else "☕"
-                            "$phase %02d:%02d".format(min, sec)
-                        } else if (state.timerActive) {
-                            val min = state.timerRemainingMs / 60000
-                            val sec = (state.timerRemainingMs % 60000) / 1000
-                            "⏱ %02d:%02d".format(min, sec)
+                val timerActive = state.timerActive
+                TextButton(
+                    onClick = {
+                        if (pomodoroActive) {
+                            viewModel.cancelPomodoro()
+                        } else if (timerActive) {
+                            viewModel.cancelTimer()
                         } else {
-                            "⏱ 定时"
+                            showTimerDialog = true
                         }
-                        Text(
-                            text = label,
-                            color = if (pomodoroActive || state.timerActive) AccentPurple else TextSecondary,
-                            style = MaterialTheme.typography.labelMedium
-                        )
                     }
+                ) {
+                    val label = if (pomodoroActive) {
+                        val min = state.pomodoroRemainingMs / 60000
+                        val sec = (state.pomodoroRemainingMs % 60000) / 1000
+                        val phase = if (state.pomodoroIsFocus) "🍅" else "☕"
+                        "$phase %02d:%02d".format(min, sec)
+                    } else if (timerActive) {
+                        val min = state.timerRemainingMs / 60000
+                        val sec = (state.timerRemainingMs % 60000) / 1000
+                        "⏱ %02d:%02d".format(min, sec)
+                    } else {
+                        "⏱ 定时"
+                    }
+                    Text(
+                        text = label,
+                        color = if (pomodoroActive || timerActive) AccentPurple else TextSecondary,
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
             }
 

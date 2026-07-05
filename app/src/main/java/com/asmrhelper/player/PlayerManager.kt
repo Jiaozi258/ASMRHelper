@@ -112,7 +112,9 @@ class PlayerManager @Inject constructor(
     private fun play(audio: Audio, playlist: List<Audio>) {
         crossfadeJob?.cancel()
         currentPlaylist = playlist.ifEmpty { listOf(audio) }
-        currentIndex = currentPlaylist.indexOfFirst { it.id == audio.id }.coerceAtLeast(0)
+        currentIndex = currentPlaylist.indexOfFirst { it.id == audio.id }
+            .let { if (it >= 0) it else currentPlaylist.indexOfFirst { a -> a.filePath == audio.filePath } }
+            .coerceAtLeast(0)
 
         val crossfadeMs = _state.value.crossfadeDurationMs
         if (crossfadeMs > 0 && mainPlayer.isPlaying) {

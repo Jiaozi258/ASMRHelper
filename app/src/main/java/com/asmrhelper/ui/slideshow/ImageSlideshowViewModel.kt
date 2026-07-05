@@ -26,6 +26,7 @@ data class SlideshowState(
     val mode: SlideshowMode = SlideshowMode.Manual,
     val autoIntervalSec: Int = 5,
     val timePoints: List<Long> = emptyList(),  // in ms from song start
+    val timedAdvanceIndex: Int = 0,  // next time-point to check (decoupled from image cursor)
     val isImporting: Boolean = false
 )
 
@@ -84,7 +85,10 @@ class ImageSlideshowViewModel @Inject constructor(
     }
 
     fun setMode(mode: SlideshowMode) {
-        _state.value = _state.value.copy(mode = mode)
+        _state.value = _state.value.copy(
+            mode = mode,
+            timedAdvanceIndex = 0  // reset time-point cursor when switching modes
+        )
     }
 
     fun setAutoInterval(seconds: Int) {
@@ -120,11 +124,21 @@ class ImageSlideshowViewModel @Inject constructor(
 
     fun checkTimedAdvance(progressMs: Long) {
         if (_state.value.mode != SlideshowMode.Timed) return
-        val tp = _state.value.timePoints
+        val state = _state.value
+        val tp = state.timePoints
         if (tp.isEmpty()) return
-        val idx = _state.value.currentIndex
+        val idx = state.timedAdvanceIndex
         if (idx < tp.size && progressMs >= tp[idx]) {
-            nextImage()
+            val images = state.images
+            if (images.isEmpty()) return
+            val nextImgIdx = (state.currentIndex + 1) % images.size
+            val nextTpIdx = idx + 1
+            _state.value = state.copy(
+                currentIndex = nextImgIdx,
+                timedAdvanceIndex = nextTpIdx,
+                // After last time point → switch to manual mode
+                mode = if (nextTpIdx >= tp.size) SlideshowMode.Manual else SlideshowMode.Timed
+            )
         }
     }
 }

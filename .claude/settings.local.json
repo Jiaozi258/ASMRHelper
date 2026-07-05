@@ -55,7 +55,9 @@
       "Bash(.\\\\gradlew assembleDebug)",
       "Bash(.\\\\gradlew.bat assembleDebug)",
       "PowerShell(New-Item *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(./gradlew compileDebugKotlin --no-daemon)",
+      "PowerShell(& \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\\\\gradlew.bat\" -p \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\" compileDebugKotlin --no-daemon 2>&1)"
     ]
   }
 }
