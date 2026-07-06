@@ -82,6 +82,7 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
         val tabs = Screen.bottomNavItems
         Box(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(innerPadding)
                 .then(
                     if (showBottomBar) {

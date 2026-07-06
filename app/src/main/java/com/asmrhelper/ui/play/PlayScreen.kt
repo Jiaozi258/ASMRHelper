@@ -531,17 +531,7 @@ fun PlayScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // 底部迷你波形
-            val waveformBytesBottom by viewModel.waveformBytes.collectAsStateWithLifecycle()
-            SoundCloudWaveform(
-                waveformBytes = waveformBytesBottom,
-                isPlaying = isPlaying,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(24.dp)
-            )
+            Spacer(modifier = Modifier.height(2.dp))
         }
         }
         }
@@ -1168,16 +1158,19 @@ private fun SoundCloudWaveform(
     // Smooth interpolation state — lerp toward latest waveform data
     val currentData = remember { mutableStateOf(FloatArray(0)) }
     val targetData = remember { mutableStateOf(FloatArray(0)) }
+    val simulated = remember { mutableStateOf(FloatArray(0)) }
+    var animTime by remember { mutableFloatStateOf(0f) }
+    val hasRealData = remember { mutableStateOf(false) }
 
     // Convert raw ByteArray to normalized floats when new data arrives
     LaunchedEffect(waveformBytes) {
         if (waveformBytes != null && waveformBytes!!.isNotEmpty()) {
             val floats = FloatArray(waveformBytes!!.size)
             for (i in floats.indices) {
-                // Byte 0-255 → float -1.0 to 1.0
                 floats[i] = ((waveformBytes!![i].toInt() and 0xFF) - 128) / 128f
             }
             targetData.value = floats
+            hasRealData.value = true
         }
     }
 
@@ -1201,23 +1194,53 @@ private fun SoundCloudWaveform(
         }
     }
 
+    // Simulated waveform: animated sine-like pattern for devices without Visualizer API
+    LaunchedEffect(Unit) {
+        while (true) {
+            if (isPlaying && !hasRealData.value) {
+                animTime += 0.05f
+                val sim = FloatArray(64)
+                for (i in sim.indices) {
+                    val t = i.toFloat() / sim.size * kotlin.math.PI.toFloat() * 2f
+                    sim[i] = (kotlin.math.sin(t * 3f + animTime) * 0.55f
+                        + kotlin.math.sin(t * 7f + animTime * 1.7f) * 0.25f
+                        + kotlin.math.sin(t * 13f + animTime * 2.3f) * 0.15f
+                        + kotlin.math.sin(t * 19f + animTime * 3.1f) * 0.05f)
+                }
+                simulated.value = sim
+                currentData.value = sim
+            } else if (!isPlaying) {
+                animTime = 0f
+                if (!hasRealData.value) currentData.value = FloatArray(0)
+            }
+            delay(33L) // ~30fps for smooth animation
+        }
+    }
+
     val data = currentData.value
 
     Canvas(modifier = modifier) {
         val centerY = size.height / 2f
         val maxAmp = size.height / 2f - 2.dp.toPx()
 
-        // Always draw center line (visible indicator that visualizer is active)
+        if (data.isEmpty()) {
+            // Draw only center line when no data
+            drawLine(
+                color = Color(0xFFBB86FC).copy(alpha = 0.15f),
+                start = Offset(0f, centerY),
+                end = Offset(size.width, centerY),
+                strokeWidth = 1.dp.toPx()
+            )
+            return@Canvas
+        }
+
+        // Draw center line
         drawLine(
-            color = Color(0xFFBB86FC).copy(alpha = 0.25f),
+            color = Color(0xFFBB86FC).copy(alpha = 0.18f),
             start = Offset(0f, centerY),
             end = Offset(size.width, centerY),
             strokeWidth = 1.dp.toPx()
         )
-
-        if (data.isEmpty()) return@Canvas
-
-        if (!isPlaying && data.all { kotlin.math.abs(it) < 0.02f }) return@Canvas
 
         // Build path: wave oscillates around centerY
         val path = Path()
