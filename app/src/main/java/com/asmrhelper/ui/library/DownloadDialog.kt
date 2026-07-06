@@ -39,7 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.asmrhelper.player.DownloadState
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.ControlWhite
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -113,12 +113,12 @@ fun DownloadDialog(
                                     .weight(1f)
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(
-                                        if (isSelected) AccentPurple.copy(alpha = 0.2f)
+                                        if (isSelected) LocalAccentColor.current.copy(alpha = 0.2f)
                                         else DarkSurfaceVariant
                                     )
                                     .border(
                                         width = if (isSelected) 1.5.dp else 0.dp,
-                                        color = if (isSelected) AccentPurple else Color.Transparent,
+                                        color = if (isSelected) LocalAccentColor.current else Color.Transparent,
                                         shape = RoundedCornerShape(8.dp)
                                     )
                                     .clickable { selectedPlatform = platform.key }
@@ -127,7 +127,7 @@ fun DownloadDialog(
                             ) {
                                 Text(
                                     text = platform.label,
-                                    color = if (isSelected) AccentPurple else TextSecondary,
+                                    color = if (isSelected) LocalAccentColor.current else TextSecondary,
                                     fontSize = 13.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                 )
@@ -175,7 +175,7 @@ fun DownloadDialog(
                         color = when {
                             isSuccess -> SuccessGreen
                             isError -> ErrorRed
-                            else -> AccentPurple
+                            else -> LocalAccentColor.current
                         },
                         fontSize = 14.sp,
                         modifier = Modifier.fillMaxWidth(),
@@ -190,7 +190,7 @@ fun DownloadDialog(
                         LinearProgressIndicator(
                             progress = { downloadState.progress },
                             modifier = Modifier.fillMaxWidth(),
-                            color = AccentPurple,
+                            color = LocalAccentColor.current,
                             trackColor = DarkSurfaceVariant,
                             strokeCap = StrokeCap.Round
                         )
@@ -225,7 +225,7 @@ fun DownloadDialog(
                             },
                             enabled = url.isNotBlank()
                         ) {
-                            Text("重试", color = if (url.isNotBlank()) AccentPurple else TextHint)
+                            Text("重试", color = if (url.isNotBlank()) LocalAccentColor.current else TextHint)
                         }
                     }
                 }
@@ -241,7 +241,7 @@ fun DownloadDialog(
                     ) {
                         Text(
                             "提取音频",
-                            color = if (url.isNotBlank()) AccentPurple else TextHint
+                            color = if (url.isNotBlank()) LocalAccentColor.current else TextHint
                         )
                     }
                 }

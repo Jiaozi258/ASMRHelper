@@ -44,7 +44,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.asmrhelper.data.local.db.entity.TriggerPadEntity
 import com.asmrhelper.ui.library.AudioFilePickerDialog
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -176,11 +176,11 @@ private fun ModeChip(
             .height(36.dp)
             .border(
                 width = 1.dp,
-                color = if (selected) AccentPurple else DarkSurfaceVariant,
+                color = if (selected) LocalAccentColor.current else DarkSurfaceVariant,
                 shape = RoundedCornerShape(8.dp)
             )
             .background(
-                color = if (selected) AccentPurple.copy(alpha = 0.15f) else DarkSurface,
+                color = if (selected) LocalAccentColor.current.copy(alpha = 0.15f) else DarkSurface,
                 shape = RoundedCornerShape(8.dp)
             )
             .clickable { onClick() },
@@ -188,7 +188,7 @@ private fun ModeChip(
     ) {
         Text(
             text = text,
-            color = if (selected) AccentPurple else TextSecondary,
+            color = if (selected) LocalAccentColor.current else TextSecondary,
             fontSize = 14.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
         )
@@ -237,7 +237,7 @@ private fun PadButton(
                     Text(
                         text = pad.name,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isActive) AccentPurple else TextSecondary,
+                        color = if (isActive) LocalAccentColor.current else TextSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
@@ -254,8 +254,8 @@ private fun PadButton(
                                 .padding(horizontal = 4.dp)
                                 .height(16.dp),
                             colors = SliderDefaults.colors(
-                                thumbColor = AccentPurple,
-                                activeTrackColor = AccentPurple,
+                                thumbColor = LocalAccentColor.current,
+                                activeTrackColor = LocalAccentColor.current,
                                 inactiveTrackColor = DarkSurfaceVariant
                             )
                         )

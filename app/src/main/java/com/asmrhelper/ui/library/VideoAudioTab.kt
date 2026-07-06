@@ -48,7 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.asmrhelper.domain.model.VideoAudio
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.ErrorRed
@@ -127,7 +127,7 @@ fun VideoAudioTab(
                         Checkbox(
                             checked = deleteCacheFile,
                             onCheckedChange = { deleteCacheFile = it },
-                            colors = CheckboxDefaults.colors(checkedColor = AccentPurple)
+                            colors = CheckboxDefaults.colors(checkedColor = LocalAccentColor.current)
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(

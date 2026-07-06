@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -123,13 +123,13 @@ fun SleepJournalScreen(
                     Text(
                         text = "💤 正在记录: %02d:%02d:%02d".format(hours, mins, secs),
                         style = MaterialTheme.typography.titleMedium,
-                        color = AccentPurple
+                        color = LocalAccentColor.current
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Row {
                         Button(
                             onClick = { viewModel.stopTracking() },
-                            colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
+                            colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current)
                         ) { Text("停止记录") }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
@@ -141,7 +141,7 @@ fun SleepJournalScreen(
             } else {
                 Button(
                     onClick = { viewModel.startTracking() },
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentPurple),
+                    colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("🌙 开始记录睡眠")
@@ -189,7 +189,7 @@ fun SleepJournalScreen(
 @Composable
 private fun StatItem(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = value, color = AccentPurple, style = MaterialTheme.typography.headlineSmall)
+        Text(text = value, color = LocalAccentColor.current, style = MaterialTheme.typography.headlineSmall)
         Text(text = label, color = TextHint, style = MaterialTheme.typography.labelSmall)
     }
 }
@@ -227,7 +227,7 @@ private fun SleepEntryCard(
                     Text(
                         text = "质量: ${"★".repeat(entry.quality)}${"☆".repeat(5 - entry.quality)}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = AccentPurple
+                        color = LocalAccentColor.current
                     )
                 }
                 if (entry.notes.isNotEmpty()) {
@@ -279,7 +279,7 @@ private fun QualityDialog(
                         TextButton(onClick = { quality = i }) {
                             Text(
                                 text = if (i <= quality) "★" else "☆",
-                                color = if (i <= quality) AccentPurple else TextHint,
+                                color = if (i <= quality) LocalAccentColor.current else TextHint,
                                 style = MaterialTheme.typography.headlineSmall
                             )
                         }
@@ -296,7 +296,7 @@ private fun QualityDialog(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     TextButton(onClick = { onConfirm(quality, "") }) {
-                        Text("保存", color = AccentPurple, fontWeight = FontWeight.Bold)
+                        Text("保存", color = LocalAccentColor.current, fontWeight = FontWeight.Bold)
                     }
                 }
             }

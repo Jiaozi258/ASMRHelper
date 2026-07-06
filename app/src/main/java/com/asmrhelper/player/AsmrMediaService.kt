@@ -134,7 +134,7 @@ class AsmrMediaService : Service() {
         val builder = NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(subtitle)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(android.R.drawable.ic_media_play)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(android.app.Notification.CATEGORY_TRANSPORT)
             .setOnlyAlertOnce(true)           // no sound/vibration on updates

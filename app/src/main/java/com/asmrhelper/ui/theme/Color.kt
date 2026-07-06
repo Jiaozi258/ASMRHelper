@@ -1,5 +1,6 @@
 package com.asmrhelper.ui.theme
 
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 // 主色调 — 深色沉浸式基调
@@ -14,3 +15,6 @@ val TextHint = Color(0xFF6A6A6A)
 val ControlWhite = Color(0xFFFFFFFF)
 val ErrorRed = Color(0xFFCF6679)
 val SuccessGreen = Color(0xFF4CAF50)
+
+/** 动态主题色 — 由 ThemePreset 通过 CompositionLocalProvider 注入 */
+val LocalAccentColor = staticCompositionLocalOf { AccentPurple }

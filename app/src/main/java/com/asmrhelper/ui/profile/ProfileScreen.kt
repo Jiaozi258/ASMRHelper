@@ -58,7 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -116,13 +116,13 @@ fun ProfileScreen(
                         modifier = Modifier
                             .size(80.dp)
                             .clip(CircleShape)
-                            .background(AccentPurple.copy(alpha = 0.2f)),
+                            .background(LocalAccentColor.current.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             Icons.Filled.Person,
                             contentDescription = "头像",
-                            tint = AccentPurple,
+                            tint = LocalAccentColor.current,
                             modifier = Modifier.size(42.dp)
                         )
                     }
@@ -195,16 +195,16 @@ fun ProfileScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.Cloud, null, tint = AccentPurple, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Filled.Cloud, null, tint = LocalAccentColor.current, modifier = Modifier.size(20.dp))
                                     Spacer(Modifier.width(10.dp))
                                     Text("云端同步", color = TextPrimary, fontSize = 14.sp)
                                 }
                                 Box(
                                     modifier = Modifier
-                                        .background(AccentPurple.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                                        .background(LocalAccentColor.current.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
                                         .padding(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
-                                    Text("即将推出", color = AccentPurple, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text("即将推出", color = LocalAccentColor.current, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -252,15 +252,15 @@ fun ProfileScreen(
                         Spacer(Modifier.height(14.dp))
 
                         val fieldColors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AccentPurple,
+                            focusedBorderColor = LocalAccentColor.current,
                             unfocusedBorderColor = DarkSurfaceVariant,
                             focusedContainerColor = DarkSurfaceVariant.copy(alpha = 0.3f),
                             unfocusedContainerColor = DarkSurfaceVariant.copy(alpha = 0.3f),
-                            cursorColor = AccentPurple,
+                            cursorColor = LocalAccentColor.current,
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary,
                             unfocusedLabelColor = TextHint,
-                            focusedLabelColor = AccentPurple
+                            focusedLabelColor = LocalAccentColor.current
                         )
 
                         OutlinedTextField(
@@ -302,7 +302,7 @@ fun ProfileScreen(
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = AccentPurple),
+                            colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current),
                             shape = RoundedCornerShape(10.dp)
                         ) {
                             Text(if (isRegisterMode) "注册" else "登录")
@@ -316,7 +316,7 @@ fun ProfileScreen(
                         ) {
                             Text(
                                 if (isRegisterMode) "已有账号？切换为登录" else "没有账号？切换为注册",
-                                color = AccentPurple,
+                                color = LocalAccentColor.current,
                                 fontSize = 13.sp
                             )
                         }
@@ -330,7 +330,7 @@ fun ProfileScreen(
 
             Text(
                 "数据统计",
-                color = AccentPurple,
+                color = LocalAccentColor.current,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 20.dp, bottom = 8.dp)
@@ -347,14 +347,14 @@ fun ProfileScreen(
                     icon = Icons.Filled.Favorite,
                     label = "收藏音频",
                     count = audioCount,
-                    color = AccentPurple
+                    color = LocalAccentColor.current
                 )
                 StatCard(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Filled.QueueMusic,
                     label = "播放列表",
                     count = playlistCount,
-                    color = AccentPurple
+                    color = LocalAccentColor.current
                 )
             }
 
@@ -371,7 +371,7 @@ fun ProfileScreen(
                     icon = Icons.Filled.Image,
                     label = "背景图",
                     count = bgImageCount,
-                    color = AccentPurple
+                    color = LocalAccentColor.current
                 )
                 Spacer(Modifier.weight(1f))
             }

@@ -87,7 +87,7 @@ fun ImageSlideshowContent(
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Filled.Folder, null, tint = AccentPurple, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Filled.Folder, null, tint = LocalAccentColor.current, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(label, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     Spacer(Modifier.width(4.dp))
@@ -97,14 +97,14 @@ fun ImageSlideshowContent(
                     DropdownMenuItem(
                         text = { Text("全部图片", color = TextPrimary) },
                         onClick = { viewModel.selectAlbum(0); albumMenuExpanded = false },
-                        leadingIcon = { if (state.selectedAlbumId == 0L) Icon(Icons.Filled.Check, null, tint = AccentPurple, modifier = Modifier.size(18.dp)) }
+                        leadingIcon = { if (state.selectedAlbumId == 0L) Icon(Icons.Filled.Check, null, tint = LocalAccentColor.current, modifier = Modifier.size(18.dp)) }
                     )
                     HorizontalDivider(color = DarkSurfaceVariant)
                     state.albums.forEach { album ->
                         DropdownMenuItem(
                             text = { Text(album.name, color = TextPrimary) },
                             onClick = { viewModel.selectAlbum(album.id); albumMenuExpanded = false },
-                            leadingIcon = { if (state.selectedAlbumId == album.id) Icon(Icons.Filled.Check, null, tint = AccentPurple, modifier = Modifier.size(18.dp)) },
+                            leadingIcon = { if (state.selectedAlbumId == album.id) Icon(Icons.Filled.Check, null, tint = LocalAccentColor.current, modifier = Modifier.size(18.dp)) },
                             trailingIcon = {
                                 IconButton(onClick = { viewModel.deleteAlbum(album); albumMenuExpanded = false }, modifier = Modifier.size(24.dp)) {
                                     Icon(Icons.Filled.Delete, "删除合集", tint = ErrorRed.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
@@ -119,13 +119,13 @@ fun ImageSlideshowContent(
 
             // Create album button
             IconButton(onClick = { showCreateAlbumDialog = true }, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Filled.CreateNewFolder, "新建合集", tint = AccentPurple, modifier = Modifier.size(22.dp))
+                Icon(Icons.Filled.CreateNewFolder, "新建合集", tint = LocalAccentColor.current, modifier = Modifier.size(22.dp))
             }
 
             // Import button
             if (state.images.isNotEmpty()) {
                 IconButton(onClick = { importLauncher.launch(arrayOf("image/*")) }, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Filled.Add, "导入图片", tint = AccentPurple, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Filled.Add, "导入图片", tint = LocalAccentColor.current, modifier = Modifier.size(22.dp))
                 }
             }
 
@@ -160,7 +160,7 @@ fun ImageSlideshowContent(
                     Text(state.albums.find { it.id == state.selectedAlbumId }?.let { "「${it.name}」为空" } ?: "暂无图片", color = TextHint, fontSize = 14.sp)
                     Spacer(Modifier.height(4.dp))
                     TextButton(onClick = { importLauncher.launch(arrayOf("image/*")) }) {
-                        Text("+ 导入图片", color = AccentPurple)
+                        Text("+ 导入图片", color = LocalAccentColor.current)
                     }
                 }
             }
@@ -186,7 +186,7 @@ fun ImageSlideshowContent(
                             onValueChange = { viewModel.setAutoInterval(it.toInt()) },
                             valueRange = 1f..60f, steps = 58,
                             modifier = Modifier.weight(1f),
-                            colors = SliderDefaults.colors(thumbColor = AccentPurple, activeTrackColor = AccentPurple))
+                            colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current))
                     }
                 }
                 SlideshowMode.Timed -> {
@@ -216,7 +216,7 @@ fun ImageSlideshowContent(
                     TextButton(onClick = { viewModel.addTimePoint(ms) }) {
                         val sec = ms / 1000
                         Text("+ 当前时间 (${sec / 60}:${String.format(Locale.ROOT, "%02d", sec % 60)})",
-                            color = AccentPurple, fontSize = 13.sp)
+                            color = LocalAccentColor.current, fontSize = 13.sp)
                     }
                 }
                 else -> {}
@@ -273,7 +273,7 @@ fun ImageSlideshowContent(
                         }
                     },
                     enabled = albumName.isNotBlank(),
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
+                    colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current)
                 ) { Text("创建") }
             },
             dismissButton = {
@@ -316,10 +316,10 @@ fun ImageSlideshowContent(
 private fun ModeChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier.clip(RoundedCornerShape(6.dp))
-            .background(if (selected) AccentPurple.copy(alpha = 0.2f) else DarkSurfaceVariant)
+            .background(if (selected) LocalAccentColor.current.copy(alpha = 0.2f) else DarkSurfaceVariant)
             .clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
-        Text(label, color = if (selected) AccentPurple else TextSecondary,
+        Text(label, color = if (selected) LocalAccentColor.current else TextSecondary,
             fontSize = 12.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
     }
 }

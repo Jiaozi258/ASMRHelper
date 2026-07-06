@@ -62,7 +62,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.BackgroundImage
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.ControlWhite
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
@@ -209,7 +209,7 @@ fun BackgroundGalleryScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(20.dp),
-            containerColor = AccentPurple,
+            containerColor = LocalAccentColor.current,
             contentColor = ControlWhite,
             shape = RoundedCornerShape(16.dp)
         ) {
@@ -444,7 +444,7 @@ private fun BindAudioDialog(
                                 Icon(
                                     imageVector = Icons.Filled.Done,
                                     contentDescription = "已绑定",
-                                    tint = AccentPurple,
+                                    tint = LocalAccentColor.current,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -452,7 +452,7 @@ private fun BindAudioDialog(
                             Text(
                                 text = if (isBound) "已绑定" else "绑定",
                                 style = MaterialTheme.typography.labelMedium,
-                                color = if (isBound) AccentPurple else TextSecondary
+                                color = if (isBound) LocalAccentColor.current else TextSecondary
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))

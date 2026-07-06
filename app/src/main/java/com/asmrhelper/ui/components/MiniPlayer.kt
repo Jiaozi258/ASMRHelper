@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.TextPrimary
@@ -41,7 +41,7 @@ fun MiniPlayer(
     modifier: Modifier = Modifier
 ) {
     val bgColor by animateColorAsState(
-        targetValue = if (isPlaying) AccentPurple.copy(alpha = 0.08f) else DarkSurface,
+        targetValue = if (isPlaying) LocalAccentColor.current.copy(alpha = 0.08f) else DarkSurface,
         animationSpec = tween(300)
     )
 
@@ -85,7 +85,7 @@ fun MiniPlayer(
                 .height(2.dp)
                 .clip(RoundedCornerShape(1.dp))
                 .align(Alignment.TopCenter),
-            color = AccentPurple,
+            color = LocalAccentColor.current,
             trackColor = DarkSurfaceVariant
         )
     }

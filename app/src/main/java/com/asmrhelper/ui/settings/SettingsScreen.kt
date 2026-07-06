@@ -82,7 +82,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.ui.components.HypnosisBgType
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.ControlWhite
 import java.io.File
 import com.asmrhelper.ui.theme.DarkBackground
@@ -174,8 +174,8 @@ fun SettingsScreen(
                         checked = isPrivacyMode,
                         onCheckedChange = { viewModel.setPrivacyMode(it) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = AccentPurple,
-                            checkedTrackColor = AccentPurple.copy(alpha = 0.4f),
+                            checkedThumbColor = LocalAccentColor.current,
+                            checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f),
                             uncheckedThumbColor = TextSecondary,
                             uncheckedTrackColor = DarkSurfaceVariant
                         )
@@ -245,12 +245,42 @@ fun SettingsScreen(
                             }
                         },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = AccentPurple,
-                            checkedTrackColor = AccentPurple.copy(alpha = 0.4f),
+                            checkedThumbColor = LocalAccentColor.current,
+                            checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f),
                             uncheckedThumbColor = TextSecondary,
                             uncheckedTrackColor = DarkSurfaceVariant
                         )
                     )
+                }
+
+                HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
+
+                // 后台播放保活（电池优化白名单）
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            try {
+                                val intent = android.content.Intent(
+                                    android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                    android.net.Uri.parse("package:${context.packageName}")
+                                )
+                                context.startActivity(intent)
+                            } catch (_: Exception) { }
+                        }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("后台播放保活", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            "关闭电池优化可防止切后台或息屏后被系统强行停止播放",
+                            color = TextHint,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(20.dp))
                 }
 
                 HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
@@ -275,8 +305,8 @@ fun SettingsScreen(
                         checked = showOnLockScreen,
                         onCheckedChange = { viewModel.setShowOnLockScreen(it) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = AccentPurple,
-                            checkedTrackColor = AccentPurple.copy(alpha = 0.4f),
+                            checkedThumbColor = LocalAccentColor.current,
+                            checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f),
                             uncheckedThumbColor = TextSecondary,
                             uncheckedTrackColor = DarkSurfaceVariant
                         )
@@ -310,7 +340,7 @@ fun SettingsScreen(
                         Text("默认循环模式", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                         Text(
                             loopMode.displayName(),
-                            color = AccentPurple,
+                            color = LocalAccentColor.current,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -332,7 +362,7 @@ fun SettingsScreen(
                                             Text(mode.displayName(), color = TextPrimary)
                                             if (mode == loopMode) {
                                                 Spacer(Modifier.width(8.dp))
-                                                Icon(Icons.Filled.Check, null, tint = AccentPurple, modifier = Modifier.size(18.dp))
+                                                Icon(Icons.Filled.Check, null, tint = LocalAccentColor.current, modifier = Modifier.size(18.dp))
                                             }
                                         }
                                     },
@@ -381,7 +411,7 @@ fun SettingsScreen(
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text("纯色背景", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                            Text(label, color = AccentPurple, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            Text(label, color = LocalAccentColor.current, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                     Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
@@ -503,9 +533,9 @@ fun SettingsScreen(
                 ) {
                     Text("数据库统计", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Row {
-                        Text("音频 ${audioCount}", color = AccentPurple, fontSize = 13.sp)
+                        Text("音频 ${audioCount}", color = LocalAccentColor.current, fontSize = 13.sp)
                         Spacer(Modifier.width(16.dp))
-                        Text("播放列表 ${playlistCount}", color = AccentPurple, fontSize = 13.sp)
+                        Text("播放列表 ${playlistCount}", color = LocalAccentColor.current, fontSize = 13.sp)
                     }
                 }
             }
@@ -546,7 +576,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Add, null, tint = AccentPurple)
+                        Icon(Icons.Filled.Add, null, tint = LocalAccentColor.current)
                         Spacer(Modifier.width(10.dp))
                         Text("导入环境音", color = TextPrimary, fontSize = 15.sp)
                     }
@@ -571,7 +601,7 @@ fun SettingsScreen(
                         ) {
                             Text(
                                 text = name,
-                                color = if (isSelected) AccentPurple else TextPrimary,
+                                color = if (isSelected) LocalAccentColor.current else TextPrimary,
                                 fontSize = 14.sp,
                                 modifier = Modifier.weight(1f),
                                 maxLines = 1,
@@ -579,7 +609,7 @@ fun SettingsScreen(
                             )
                             Row {
                                 if (isSelected) {
-                                    Icon(Icons.Filled.Check, null, tint = AccentPurple, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Filled.Check, null, tint = LocalAccentColor.current, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
                                 }
                                 Icon(
@@ -617,11 +647,11 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.GraphicEq, null, tint = if (visualizerEnabled) AccentPurple else TextHint)
+                        Icon(Icons.Filled.GraphicEq, null, tint = if (visualizerEnabled) LocalAccentColor.current else TextHint)
                         Spacer(Modifier.width(10.dp))
-                        Text("启用音频可视化", color = if (visualizerEnabled) AccentPurple else TextPrimary, fontSize = 15.sp)
+                        Text("启用音频可视化", color = if (visualizerEnabled) LocalAccentColor.current else TextPrimary, fontSize = 15.sp)
                     }
-                    if (visualizerEnabled) Icon(Icons.Filled.Check, null, tint = AccentPurple, modifier = Modifier.size(20.dp))
+                    if (visualizerEnabled) Icon(Icons.Filled.Check, null, tint = LocalAccentColor.current, modifier = Modifier.size(20.dp))
                 }
             }
 
@@ -652,11 +682,11 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.AutoAwesome, null, tint = if (triggerEnabled) AccentPurple else TextHint)
+                        Icon(Icons.Filled.AutoAwesome, null, tint = if (triggerEnabled) LocalAccentColor.current else TextHint)
                         Spacer(Modifier.width(10.dp))
-                        Text("启用音量触发特效", color = if (triggerEnabled) AccentPurple else TextPrimary, fontSize = 15.sp)
+                        Text("启用音量触发特效", color = if (triggerEnabled) LocalAccentColor.current else TextPrimary, fontSize = 15.sp)
                     }
-                    if (triggerEnabled) Icon(Icons.Filled.Check, null, tint = AccentPurple, modifier = Modifier.size(20.dp))
+                    if (triggerEnabled) Icon(Icons.Filled.Check, null, tint = LocalAccentColor.current, modifier = Modifier.size(20.dp))
                 }
 
                 if (triggerEnabled) {
@@ -672,8 +702,8 @@ fun SettingsScreen(
                             valueRange = 10f..100f,
                             modifier = Modifier.fillMaxWidth(),
                             colors = SliderDefaults.colors(
-                                thumbColor = AccentPurple,
-                                activeTrackColor = AccentPurple,
+                                thumbColor = LocalAccentColor.current,
+                                activeTrackColor = LocalAccentColor.current,
                                 inactiveTrackColor = DarkSurfaceVariant
                             )
                         )
@@ -699,7 +729,7 @@ fun SettingsScreen(
                             ) {
                                 Text(
                                     text = if (triggerAnimType == index) "● $name" else "○ $name",
-                                    color = if (triggerAnimType == index) AccentPurple else TextSecondary,
+                                    color = if (triggerAnimType == index) LocalAccentColor.current else TextSecondary,
                                     fontSize = 14.sp
                                 )
                             }
@@ -796,8 +826,8 @@ fun SettingsScreen(
                             steps = 25,
                             modifier = Modifier.fillMaxWidth(),
                             colors = SliderDefaults.colors(
-                                thumbColor = AccentPurple,
-                                activeTrackColor = AccentPurple,
+                                thumbColor = LocalAccentColor.current,
+                                activeTrackColor = LocalAccentColor.current,
                                 inactiveTrackColor = DarkSurfaceVariant
                             )
                         )
@@ -822,8 +852,8 @@ fun SettingsScreen(
                             valueRange = 250f..5000f,
                             modifier = Modifier.fillMaxWidth(),
                             colors = SliderDefaults.colors(
-                                thumbColor = AccentPurple,
-                                activeTrackColor = AccentPurple,
+                                thumbColor = LocalAccentColor.current,
+                                activeTrackColor = LocalAccentColor.current,
                                 inactiveTrackColor = DarkSurfaceVariant
                             )
                         )
@@ -864,8 +894,8 @@ fun SettingsScreen(
                         checked = hypnosisEnabled,
                         onCheckedChange = { viewModel.setHypnosisModeEnabled(it) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = AccentPurple,
-                            checkedTrackColor = AccentPurple.copy(alpha = 0.4f),
+                            checkedThumbColor = LocalAccentColor.current,
+                            checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f),
                             uncheckedThumbColor = TextSecondary,
                             uncheckedTrackColor = DarkSurfaceVariant
                         )
@@ -893,7 +923,7 @@ fun SettingsScreen(
                             ) {
                                 Text(
                                     text = if (isSelected) "● ${bgType.label}" else "○ ${bgType.label}",
-                                    color = if (isSelected) AccentPurple else TextSecondary,
+                                    color = if (isSelected) LocalAccentColor.current else TextSecondary,
                                     fontSize = 14.sp
                                 )
                             }
@@ -964,7 +994,7 @@ fun SettingsScreen(
                             }
                             showClearImageDialog = false
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
+                        colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current)
                     ) {
                         Text("确定")
                     }
@@ -992,9 +1022,9 @@ private fun SectionHeader(icon: ImageVector, title: String) {
             .padding(start = 20.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, null, tint = AccentPurple, modifier = Modifier.size(18.dp))
+        Icon(icon, null, tint = LocalAccentColor.current, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
-        Text(title, color = AccentPurple, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        Text(title, color = LocalAccentColor.current, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
 }
 

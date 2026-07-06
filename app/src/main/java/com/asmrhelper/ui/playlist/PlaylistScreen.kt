@@ -67,7 +67,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.Playlist
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.ControlWhite
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
@@ -157,7 +157,7 @@ fun PlaylistScreen(
                     Icon(
                         imageVector = Icons.Filled.FileOpen,
                         contentDescription = "导入播放列表",
-                        tint = AccentPurple
+                        tint = LocalAccentColor.current
                     )
                 }
             }
@@ -231,7 +231,7 @@ fun PlaylistScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(20.dp),
-            containerColor = AccentPurple,
+            containerColor = LocalAccentColor.current,
             contentColor = ControlWhite,
             shape = RoundedCornerShape(16.dp)
         ) {
@@ -375,7 +375,7 @@ fun PlaylistScreen(
                                 Icon(
                                     imageVector = Icons.Filled.MusicNote,
                                     contentDescription = null,
-                                    tint = AccentPurple,
+                                    tint = LocalAccentColor.current,
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
@@ -493,7 +493,7 @@ private fun PlaylistCard(
                     Icon(
                         imageVector = Icons.Filled.Share,
                         contentDescription = "导出",
-                        tint = AccentPurple,
+                        tint = LocalAccentColor.current,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -552,14 +552,14 @@ private fun PlaylistCard(
                         Icon(
                             imageVector = Icons.Filled.Add,
                             contentDescription = "添加音频",
-                            tint = AccentPurple,
+                            tint = LocalAccentColor.current,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "添加音频",
                             style = MaterialTheme.typography.labelLarge,
-                            color = AccentPurple
+                            color = LocalAccentColor.current
                         )
                     }
 
@@ -658,10 +658,10 @@ private fun RenameOrCreateDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary,
-                        cursorColor = AccentPurple,
-                        focusedBorderColor = AccentPurple,
+                        cursorColor = LocalAccentColor.current,
+                        focusedBorderColor = LocalAccentColor.current,
                         unfocusedBorderColor = DarkSurfaceVariant,
-                        focusedLabelColor = AccentPurple,
+                        focusedLabelColor = LocalAccentColor.current,
                         unfocusedLabelColor = TextHint
                     ),
                     shape = RoundedCornerShape(10.dp)
@@ -670,7 +670,7 @@ private fun RenameOrCreateDialog(
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(confirmLabel, color = AccentPurple)
+                Text(confirmLabel, color = LocalAccentColor.current)
             }
         },
         dismissButton = {

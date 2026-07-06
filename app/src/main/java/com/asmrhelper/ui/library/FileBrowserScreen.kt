@@ -44,7 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.asmrhelper.domain.model.Audio
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -226,7 +226,7 @@ private fun PathBreadcrumb(
             Text(
                 text = name,
                 style = MaterialTheme.typography.labelMedium,
-                color = if (isLast) AccentPurple else TextSecondary,
+                color = if (isLast) LocalAccentColor.current else TextSecondary,
                 fontWeight = if (isLast) FontWeight.Bold else FontWeight.Normal,
                 modifier = Modifier.clickable(enabled = !isLast) { onNavigateTo(file) }
             )
@@ -280,14 +280,14 @@ private fun ParentDirectoryRow(
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = null,
-            tint = AccentPurple,
+            tint = LocalAccentColor.current,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = ".. (上级目录)",
             style = MaterialTheme.typography.bodyMedium,
-            color = AccentPurple,
+            color = LocalAccentColor.current,
             fontWeight = FontWeight.Medium
         )
     }
@@ -315,7 +315,7 @@ private fun DirectoryItem(
             Icon(
                 imageVector = Icons.Filled.Folder,
                 contentDescription = null,
-                tint = AccentPurple,
+                tint = LocalAccentColor.current,
                 modifier = Modifier.size(26.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
@@ -383,7 +383,7 @@ private fun AudioFileItem(
                     Text(
                         text = file.extension.uppercase(),
                         style = MaterialTheme.typography.labelSmall,
-                        color = AccentPurple
+                        color = LocalAccentColor.current
                     )
                     Text(
                         text = "  |  ${formatFileSize(file.length())}  |  ${formatDate(file.lastModified())}",

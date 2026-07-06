@@ -13,7 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
@@ -31,7 +31,7 @@ fun BottomNavBar(
             val isSelected = currentRoute == screen.route
 
             val iconColor by animateColorAsState(
-                targetValue = if (isSelected) AccentPurple else TextHint,
+                targetValue = if (isSelected) LocalAccentColor.current else TextHint,
                 animationSpec = tween(300)
             )
             val textColor by animateColorAsState(
@@ -58,7 +58,7 @@ fun BottomNavBar(
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = AccentPurple.copy(alpha = 0.12f)
+                    indicatorColor = LocalAccentColor.current.copy(alpha = 0.12f)
                 )
             )
         }

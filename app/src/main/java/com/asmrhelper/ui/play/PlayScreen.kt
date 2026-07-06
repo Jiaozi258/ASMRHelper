@@ -90,7 +90,7 @@ import com.asmrhelper.ui.components.HypnosisBgType
 import com.asmrhelper.ui.components.MenuItem
 import com.asmrhelper.ui.components.PlayPauseButton
 import com.asmrhelper.ui.settings.SettingsViewModel
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.ErrorRed
 import com.asmrhelper.ui.theme.DarkSurface
@@ -212,19 +212,25 @@ fun PlayScreen(
             modifier = Modifier.align(Alignment.TopEnd)
         )
 
-        // 音频可视化（设置中启用后显示在播放界面上方）
+        // 音频可视化（始终显示在播放界面的最上方）
         val visualizerOn by viewModel.visualizerEnabled.collectAsStateWithLifecycle()
         if (visualizerOn) {
             val waveformBytes by viewModel.waveformBytes.collectAsStateWithLifecycle()
-            SoundCloudWaveform(
-                waveformBytes = waveformBytes,
-                isPlaying = state.playerState.isPlaying,
+            Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 56.dp)
                     .fillMaxWidth()
-                    .height(64.dp)
-            )
+                    .height(48.dp)
+                    .background(Color.Black.copy(alpha = 0.4f))
+            ) {
+                SoundCloudWaveform(
+                    waveformBytes = waveformBytes,
+                    isPlaying = state.playerState.isPlaying,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 4.dp)
+                )
+            }
         }
 
         // 音量触发特效动画
@@ -323,7 +329,7 @@ fun PlayScreen(
                     }
                     Text(
                         text = label,
-                        color = if (pomodoroActive || timerActive) AccentPurple else TextSecondary,
+                        color = if (pomodoroActive || timerActive) LocalAccentColor.current else TextSecondary,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -375,7 +381,7 @@ fun PlayScreen(
                 TextButton(onClick = { showAmbientDialog = true }) {
                     Text(
                         text = "🌧 环境音",
-                        color = if (state.playerState.isBackgroundPlaying) AccentPurple else TextHint,
+                        color = if (state.playerState.isBackgroundPlaying) LocalAccentColor.current else TextHint,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -383,7 +389,7 @@ fun PlayScreen(
                 TextButton(onClick = { breathingGuide = !breathingGuide }) {
                     Text(
                         text = "🫁 呼吸",
-                        color = if (breathingGuide) AccentPurple else TextHint,
+                        color = if (breathingGuide) LocalAccentColor.current else TextHint,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -391,7 +397,7 @@ fun PlayScreen(
                 TextButton(onClick = { showBinauralDialog = true }) {
                     Text(
                         text = "🧠 双耳",
-                        color = if (state.binauralActive) AccentPurple else TextHint,
+                        color = if (state.binauralActive) LocalAccentColor.current else TextHint,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -408,7 +414,7 @@ fun PlayScreen(
                 TextButton(onClick = { showNoiseDialog = true }) {
                     Text(
                         text = noiseLabel,
-                        color = if (state.noiseActive) AccentPurple else TextHint,
+                        color = if (state.noiseActive) LocalAccentColor.current else TextHint,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -419,7 +425,7 @@ fun PlayScreen(
                 TextButton(onClick = { viewModel.cycleSpatialMode() }) {
                     Text(
                         text = spatialLabel,
-                        color = if (state.spatialMode != "OFF") AccentPurple else TextHint,
+                        color = if (state.spatialMode != "OFF") LocalAccentColor.current else TextHint,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -427,7 +433,7 @@ fun PlayScreen(
                 TextButton(onClick = { viewModel.toggleHaptic() }) {
                     Text(
                         text = "📳 触觉",
-                        color = if (state.hapticEnabled) AccentPurple else TextHint,
+                        color = if (state.hapticEnabled) LocalAccentColor.current else TextHint,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -479,7 +485,7 @@ fun PlayScreen(
                 val dragMs = (dragFraction * state.playerState.durationMs).toLong()
                 Text(
                     text = "拖拽至 ${formatDuration(dragMs)}",
-                    color = AccentPurple,
+                    color = LocalAccentColor.current,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
@@ -500,8 +506,8 @@ fun PlayScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
-                    thumbColor = AccentPurple,
-                    activeTrackColor = AccentPurple,
+                    thumbColor = LocalAccentColor.current,
+                    activeTrackColor = LocalAccentColor.current,
                     inactiveTrackColor = DarkSurfaceVariant
                 )
             )
@@ -583,7 +589,7 @@ fun PlayScreen(
                                 Slider(value = customHours.toFloat(), onValueChange = { customHours = it.toInt() },
                                     valueRange = 0f..3f, steps = 2,
                                     modifier = Modifier.weight(1f),
-                                    colors = SliderDefaults.colors(thumbColor = AccentPurple, activeTrackColor = AccentPurple))
+                                    colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current))
                                 Text("${customHours}h", color = TextPrimary, fontSize = 14.sp, modifier = Modifier.width(36.dp))
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -591,7 +597,7 @@ fun PlayScreen(
                                 Slider(value = customMinutes.toFloat(), onValueChange = { customMinutes = it.toInt() },
                                     valueRange = 0f..59f, steps = 58,
                                     modifier = Modifier.weight(1f),
-                                    colors = SliderDefaults.colors(thumbColor = AccentPurple, activeTrackColor = AccentPurple))
+                                    colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current))
                                 Text("${customMinutes}m", color = TextPrimary, fontSize = 14.sp, modifier = Modifier.width(40.dp))
                             }
                             Spacer(Modifier.height(4.dp))
@@ -606,7 +612,7 @@ fun PlayScreen(
                                         showTimerDialog = false
                                     }
                                 }, enabled = (customHours * 60 + customMinutes) > 0,
-                                    colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)) {
+                                    colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current)) {
                                     Text("开始")
                                 }
                             }
@@ -620,12 +626,12 @@ fun PlayScreen(
                         }
                         Spacer(Modifier.height(6.dp))
                         TextButton(onClick = { showCustomPicker = true }) {
-                            Text("⏱ 自定义...", color = AccentPurple, fontSize = 14.sp)
+                            Text("⏱ 自定义...", color = LocalAccentColor.current, fontSize = 14.sp)
                         }
                         Spacer(Modifier.height(2.dp))
                         TimerOption(
                             text = if (state.stopAfterCurrent) "✓ 播完当前停止" else "播完当前停止",
-                            color = if (state.stopAfterCurrent) AccentPurple else TextSecondary
+                            color = if (state.stopAfterCurrent) LocalAccentColor.current else TextSecondary
                         ) {
                             viewModel.toggleStopAfterCurrent(); showTimerDialog = false
                         }
@@ -645,12 +651,12 @@ fun PlayScreen(
                             Text("专注时长: ${focusMin}分钟", color = TextSecondary, fontSize = 13.sp)
                             Slider(value = focusMin.toFloat(), onValueChange = { focusMin = it.toInt() },
                                 valueRange = 1f..120f, steps = 118,
-                                colors = SliderDefaults.colors(thumbColor = AccentPurple, activeTrackColor = AccentPurple))
+                                colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current))
                             Spacer(Modifier.height(8.dp))
                             Text("休息时长: ${breakMin}分钟", color = TextSecondary, fontSize = 13.sp)
                             Slider(value = breakMin.toFloat(), onValueChange = { breakMin = it.toInt() },
                                 valueRange = 1f..30f, steps = 28,
-                                colors = SliderDefaults.colors(thumbColor = AccentPurple, activeTrackColor = AccentPurple))
+                                colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current))
                             Spacer(Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 TextButton(onClick = { showPomodoroCustom = false }) {
@@ -661,7 +667,7 @@ fun PlayScreen(
                                     viewModel.updatePomodoroCustomBreak(breakMin)
                                     viewModel.startPomodoro(focusMin, breakMin)
                                     showTimerDialog = false
-                                }, colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)) {
+                                }, colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current)) {
                                     Text("🍅 开始")
                                 }
                             }
@@ -672,7 +678,7 @@ fun PlayScreen(
                             showTimerDialog = false
                         }
                         TextButton(onClick = { showPomodoroCustom = true }) {
-                            Text("⚙ 自定义番茄钟...", color = AccentPurple, fontSize = 14.sp)
+                            Text("⚙ 自定义番茄钟...", color = LocalAccentColor.current, fontSize = 14.sp)
                         }
                     }
                 }
@@ -723,7 +729,7 @@ fun PlayScreen(
                             ) {
                                 Text(
                                     text = if (isActive) "▶ ${preset.name}" else "${preset.name}  (${preset.description})",
-                                    color = if (isActive) AccentPurple else TextSecondary,
+                                    color = if (isActive) LocalAccentColor.current else TextSecondary,
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.fillMaxWidth()
                                 )
@@ -743,8 +749,8 @@ fun PlayScreen(
                                 onValueChange = { viewModel.setBinauralVolume(it) },
                                 modifier = Modifier.weight(1f),
                                 colors = SliderDefaults.colors(
-                                    thumbColor = AccentPurple,
-                                    activeTrackColor = AccentPurple,
+                                    thumbColor = LocalAccentColor.current,
+                                    activeTrackColor = LocalAccentColor.current,
                                     inactiveTrackColor = DarkSurfaceVariant
                                 )
                             )
@@ -798,7 +804,7 @@ fun PlayScreen(
                         ) {
                             Text(
                                 text = if (isActive) "▶ $desc" else desc,
-                                color = if (isActive) AccentPurple else TextSecondary,
+                                color = if (isActive) LocalAccentColor.current else TextSecondary,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -815,8 +821,8 @@ fun PlayScreen(
                                 onValueChange = { viewModel.setNoiseVolume(it) },
                                 modifier = Modifier.weight(1f),
                                 colors = SliderDefaults.colors(
-                                    thumbColor = AccentPurple,
-                                    activeTrackColor = AccentPurple,
+                                    thumbColor = LocalAccentColor.current,
+                                    activeTrackColor = LocalAccentColor.current,
                                     inactiveTrackColor = DarkSurfaceVariant
                                 )
                             )
@@ -883,7 +889,7 @@ fun PlayScreen(
                             ) {
                                 Text(
                                     text = name,
-                                    color = if (isSelected) AccentPurple else TextSecondary,
+                                    color = if (isSelected) LocalAccentColor.current else TextSecondary,
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                                 Text(
@@ -892,7 +898,7 @@ fun PlayScreen(
                                         isSelected -> "已选"
                                         else -> ""
                                     },
-                                    color = if (isPlaying) AccentPurple else TextHint,
+                                    color = if (isPlaying) LocalAccentColor.current else TextHint,
                                     fontSize = 11.sp
                                 )
                             }
@@ -945,7 +951,7 @@ fun PlayScreen(
                         ) {
                             Text(
                                 "保存场景",
-                                color = if (sceneTab == 0) AccentPurple else TextSecondary,
+                                color = if (sceneTab == 0) LocalAccentColor.current else TextSecondary,
                                 fontWeight = if (sceneTab == 0) FontWeight.Bold else FontWeight.Normal
                             )
                         }
@@ -955,7 +961,7 @@ fun PlayScreen(
                         ) {
                             Text(
                                 "加载场景",
-                                color = if (sceneTab == 1) AccentPurple else TextSecondary,
+                                color = if (sceneTab == 1) LocalAccentColor.current else TextSecondary,
                                 fontWeight = if (sceneTab == 1) FontWeight.Bold else FontWeight.Normal
                             )
                         }
@@ -988,7 +994,7 @@ fun PlayScreen(
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
+                            colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current)
                         ) {
                             Text("保存当前状态")
                         }
@@ -1019,7 +1025,7 @@ fun PlayScreen(
                                 }
                                 Row {
                                     IconButton(onClick = { viewModel.applyScene(scene); showSceneDialog = false }) {
-                                        Text("▶", color = AccentPurple)
+                                        Text("▶", color = LocalAccentColor.current)
                                     }
                                     IconButton(onClick = { viewModel.deleteScene(scene) }) {
                                         Text("✕", color = ErrorRed, fontSize = 12.sp)
@@ -1077,7 +1083,7 @@ fun PlayScreen(
                                 newBookmarkName = ""
                             }
                         }) {
-                            Text("添加", color = AccentPurple)
+                            Text("添加", color = LocalAccentColor.current)
                         }
                     }
                     Spacer(Modifier.height(12.dp))
@@ -1101,7 +1107,7 @@ fun PlayScreen(
                                 Text(bm.name, color = TextPrimary, fontSize = 14.sp)
                                 Text(
                                     text = formatDuration(bm.positionMs),
-                                    color = AccentPurple,
+                                    color = LocalAccentColor.current,
                                     fontSize = 12.sp
                                 )
                             }
@@ -1198,18 +1204,18 @@ private fun SoundCloudWaveform(
     val data = currentData.value
 
     Canvas(modifier = modifier) {
-        if (data.isEmpty()) return@Canvas
-
         val centerY = size.height / 2f
         val maxAmp = size.height / 2f - 2.dp.toPx()
 
-        // Draw center line (faint guide)
+        // Always draw center line (visible indicator that visualizer is active)
         drawLine(
-            color = Color(0xFFBB86FC).copy(alpha = 0.15f),
+            color = Color(0xFFBB86FC).copy(alpha = 0.25f),
             start = Offset(0f, centerY),
             end = Offset(size.width, centerY),
             strokeWidth = 1.dp.toPx()
         )
+
+        if (data.isEmpty()) return@Canvas
 
         if (!isPlaying && data.all { kotlin.math.abs(it) < 0.02f }) return@Canvas
 

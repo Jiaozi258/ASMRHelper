@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.ControlWhite
 
 @Composable
@@ -40,7 +40,7 @@ fun PlayPauseButton(
         modifier = modifier
             .size(96.dp)
             .scale(scale)
-            .background(AccentPurple, CircleShape)
+            .background(LocalAccentColor.current, CircleShape)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {

@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.asmrhelper.ui.background.BackgroundGalleryScreen
@@ -76,11 +78,40 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
         },
         containerColor = DarkBackground
     ) { innerPadding ->
+        // 滑动切换模块（仅主标签页有效，子页面不响应）
+        val tabs = Screen.bottomNavItems
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .then(
+                    if (showBottomBar) {
+                        Modifier.pointerInput(currentScreen.route) {
+                            var dragX = 0f
+                            detectHorizontalDragGestures(
+                                onDragEnd = {
+                                    val idx = tabs.indexOfFirst { it.route == currentScreen.route }
+                                    if (idx < 0) return@detectHorizontalDragGestures
+                                    if (dragX < -80f && idx < tabs.size - 1) {
+                                        currentScreen = tabs[idx + 1]
+                                        playSubScreen = null
+                                    } else if (dragX > 80f && idx > 0) {
+                                        currentScreen = tabs[idx - 1]
+                                        playSubScreen = null
+                                    }
+                                    dragX = 0f
+                                },
+                                onDragCancel = { dragX = 0f },
+                                onHorizontalDrag = { _, amount -> dragX += amount }
+                            )
+                        }
+                    } else Modifier
+                )
+        ) {
         AnimatedContent(
             targetState = currentScreen,
             modifier = Modifier.padding(innerPadding),
             transitionSpec = {
-                val screenOrder = listOf("play", "profile", "settings")
+                val screenOrder = listOf("play", "slideshow", "profile", "settings")
                 val fromIdx = screenOrder.indexOf(initialState.route)
                 val toIdx = screenOrder.indexOf(targetState.route)
                 val direction = if (toIdx >= fromIdx) 1 else -1
@@ -254,5 +285,6 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
                 }
             }
         }
+        } // close swipe Box
     }
 }

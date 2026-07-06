@@ -68,7 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.asmrhelper.domain.model.Audio
-import com.asmrhelper.ui.theme.AccentPurple
+import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.AccentPurpleVariant
 import com.asmrhelper.ui.theme.ControlWhite
 import com.asmrhelper.ui.theme.DarkBackground
@@ -213,7 +213,7 @@ fun LibraryScreen(
                         modifier = Modifier
                             .size(24.dp)
                             .padding(end = 8.dp),
-                        color = AccentPurple,
+                        color = LocalAccentColor.current,
                         strokeWidth = 2.dp
                     )
                 }
@@ -231,7 +231,7 @@ fun LibraryScreen(
                     Icon(
                         imageVector = Icons.Filled.Add,
                         contentDescription = "浏览导入音频",
-                        tint = if (isScanning) TextHint else AccentPurple
+                        tint = if (isScanning) TextHint else LocalAccentColor.current
                     )
                 }
 
@@ -242,7 +242,7 @@ fun LibraryScreen(
                     Icon(
                         imageVector = Icons.Filled.Refresh,
                         contentDescription = "扫描本地音频",
-                        tint = if (isScanning) TextHint else AccentPurple
+                        tint = if (isScanning) TextHint else LocalAccentColor.current
                     )
                 }
             }
@@ -251,7 +251,7 @@ fun LibraryScreen(
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 containerColor = DarkSurface,
-                contentColor = AccentPurple,
+                contentColor = LocalAccentColor.current,
                 divider = {}
             ) {
                 tabTitles.forEachIndexed { index, title ->
@@ -261,7 +261,7 @@ fun LibraryScreen(
                         text = {
                             Text(
                                 text = title,
-                                color = if (selectedTabIndex == index) AccentPurple else TextSecondary,
+                                color = if (selectedTabIndex == index) LocalAccentColor.current else TextSecondary,
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }
@@ -332,7 +332,7 @@ fun LibraryScreen(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(20.dp),
-                containerColor = AccentPurple,
+                containerColor = LocalAccentColor.current,
                 contentColor = ControlWhite,
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -531,7 +531,7 @@ private fun AudioItemCard(
             Icon(
                 imageVector = Icons.Filled.MusicNote,
                 contentDescription = null,
-                tint = if (isCurrentlyPlaying) AccentPurple else AccentPurpleVariant,
+                tint = if (isCurrentlyPlaying) LocalAccentColor.current else AccentPurpleVariant,
                 modifier = Modifier.size(28.dp)
             )
 
@@ -543,7 +543,7 @@ private fun AudioItemCard(
                     text = audio.title,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = if (isCurrentlyPlaying) FontWeight.Bold else FontWeight.SemiBold,
-                    color = if (isCurrentlyPlaying) AccentPurple else TextPrimary,
+                    color = if (isCurrentlyPlaying) LocalAccentColor.current else TextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
