@@ -5,11 +5,15 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.asmrhelper.di.MainPlayer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,6 +24,7 @@ class EqualizerController @Inject constructor(
     @MainPlayer private val mainPlayer: ExoPlayer
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var initJob: Job? = null
     private var equalizer: Equalizer? = null
 
     private val _bandLevels = MutableStateFlow(listOf(0f, 0f, 0f))
@@ -35,9 +40,9 @@ class EqualizerController @Inject constructor(
     private val actualBandIndices = mutableListOf<Short>()
 
     init {
-        scope.launch {
+        initJob = scope.launch {
             var attempts = 0
-            while (attempts < 20) {
+            while (isActive && attempts < 20) {
                 val sessionId = mainPlayer.audioSessionId
                 if (sessionId > 0) {
                     try {
@@ -81,10 +86,10 @@ class EqualizerController @Inject constructor(
 
     fun setBandLevel(band: Int, levelDb: Float) {
         val clamped = levelDb.coerceIn(-10f, 10f)
-        val newLevels = _bandLevels.value.toMutableList()
-        if (band in newLevels.indices) {
-            newLevels[band] = clamped
-            _bandLevels.value = newLevels
+        _bandLevels.update { levels ->
+            levels.toMutableList().also {
+                if (band in it.indices) it[band] = clamped
+            }
         }
         try {
             val eq = equalizer ?: return
@@ -103,6 +108,9 @@ class EqualizerController @Inject constructor(
     }
 
     fun release() {
+        initJob?.cancel()
+        initJob = null
+        scope.cancel()
         try {
             equalizer?.enabled = false
             equalizer?.release()

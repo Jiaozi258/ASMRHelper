@@ -27,8 +27,8 @@ enum class NoiseType(val label: String) {
 class NoiseGenerator @Inject constructor() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var track: AudioTrack? = null
-    private var generateJob: Job? = null
+    @Volatile private var track: AudioTrack? = null
+    @Volatile private var generateJob: Job? = null
 
     @Volatile var isPlaying: Boolean = false
         private set
@@ -94,15 +94,17 @@ class NoiseGenerator @Inject constructor() {
     }
 
     fun stop() {
+        isPlaying = false           // signal generation to stop first
         generateJob?.cancel()
         generateJob = null
-        track?.apply {
-            pause()
-            flush()
-            release()
-        }
+        // Small delay to let the coroutine exit cleanly before releasing
+        // track, avoiding native crash from releasing during write().
+        try {
+            track?.pause()
+            track?.flush()
+            track?.release()
+        } catch (_: Exception) { }
         track = null
-        isPlaying = false
     }
 
     private fun fillBuffer(buffer: ShortArray, type: NoiseType) {
@@ -146,6 +148,7 @@ class NoiseGenerator @Inject constructor() {
 
     fun release() {
         stop()
-        scope.cancel()
+        // Don't cancel scope — this is a singleton; scope must survive
+        // across ViewModel recreation for reuse.
     }
 }

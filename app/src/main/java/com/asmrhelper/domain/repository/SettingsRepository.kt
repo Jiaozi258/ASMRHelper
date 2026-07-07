@@ -58,5 +58,6 @@ interface SettingsRepository {
 
     // ── 播放界面特效 ─────────────────────────────────
     fun getPlayEffectsEnabled(): Boolean
+    fun getPlayEffectsEnabledFlow(): Flow<Boolean>
     suspend fun setPlayEffectsEnabled(enabled: Boolean)
 }

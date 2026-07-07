@@ -39,6 +39,10 @@ class AsmrMediaService : Service() {
     private var lastPostedProgress: Long = -10000L
     private val minNotifInterval = 1000L  // rebuild at most once per second
 
+    // ── Widget throttle: only notify on actual state changes ──
+    private var lastWidgetPlaying: Boolean? = null
+    private var lastWidgetTitle: String? = null
+
     override fun onCreate() {
         super.onCreate()
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -58,10 +62,16 @@ class AsmrMediaService : Service() {
             updateNotification(state)
             updateMediaSessionState(state)
             manageWakeLock(state.isPlaying)
-            // Notify widget of state change
-            AsmrWidgetProvider.notifyStateChanged(
-                this, state.isPlaying, state.currentAudio?.title ?: "ASMRHelper"
-            )
+            // Notify widget only on actual play/pause or title changes (not
+            // on every 200ms progress tick — avoids excessive broadcasts).
+            val currentTitle = state.currentAudio?.title ?: "ASMRHelper"
+            if (state.isPlaying != lastWidgetPlaying || currentTitle != lastWidgetTitle) {
+                lastWidgetPlaying = state.isPlaying
+                lastWidgetTitle = currentTitle
+                AsmrWidgetProvider.notifyStateChanged(
+                    this, state.isPlaying, currentTitle
+                )
+            }
         }
     }
 

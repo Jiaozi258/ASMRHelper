@@ -69,13 +69,20 @@ fun AmbianceOverlay(
 
     var time by remember { mutableStateOf(0f) }
 
-    LaunchedEffect(Unit) {
+    // Frame-rate-independent animation using actual frame delta time.
+    // Only animates when playing to save battery.
+    LaunchedEffect(isPlaying) {
+        if (!isPlaying) return@LaunchedEffect
+        var lastFrameMs = 0L
         while (true) {
-            withFrameMillis { } // wait for next frame
-            time += 0.016f
+            val frameMs = withFrameMillis { it }
+            val delta = if (lastFrameMs == 0L) 0.016f
+                        else ((frameMs - lastFrameMs) / 1000f).coerceIn(0f, 0.1f)
+            lastFrameMs = frameMs
+            time += delta
             for (p in particles) {
-                p.y -= p.speed * 0.003f
-                p.x += sin(time * 2f + p.phase) * 0.0015f
+                p.y -= p.speed * delta * 0.1875f
+                p.x += sin(time * 2f + p.phase) * delta * 0.09375f
                 if (p.y < -0.05f) {
                     p.y = 1.05f
                     p.x = Random.nextFloat()

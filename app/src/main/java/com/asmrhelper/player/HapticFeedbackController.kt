@@ -38,7 +38,7 @@ class HapticFeedbackController @Inject constructor(
 
     val hasVibrator: Boolean get() = vibrator?.hasVibrator() == true
 
-    private var syncJob: Job? = null
+    @Volatile private var syncJob: Job? = null
 
     @Volatile var enabled: Boolean = false
     @Volatile var intensity: Float = 0.5f // 0.0 to 1.0
@@ -106,6 +106,8 @@ class HapticFeedbackController @Inject constructor(
 
     fun release() {
         stopSync()
-        scope.cancel()
+        // Don't cancel scope — this is a singleton; scope must survive
+        // across ViewModel recreation for reuse.
+        try { vibrator?.cancel() } catch (_: Exception) { }
     }
 }

@@ -294,15 +294,20 @@ class PlayViewModel @Inject constructor(
             _uiState.update { it.copy(selectedAmbientPath = settingsRepository.getSelectedAmbientAudio()) }
         }
 
-        // Attach spatial audio once (session ID persists across tracks)
+        // Attach spatial audio — re-attach on mode change mid-playback
         viewModelScope.launch {
-            playerManager.state
-                .map { it.isPlaying }
-                .collect { playing ->
-                    if (playing && !spatialAudioController.isActive && _uiState.value.spatialMode != "OFF") {
-                        spatialAudioController.attach(playerManager.getAudioSessionId())
-                    }
+            combine(
+                playerManager.state.map { it.isPlaying },
+                _uiState.map { it.spatialMode }
+            ) { playing, mode ->
+                playing && mode != "OFF"
+            }.collect { shouldAttach ->
+                if (shouldAttach && !spatialAudioController.isActive) {
+                    spatialAudioController.attach(playerManager.getAudioSessionId())
+                } else if (!shouldAttach && spatialAudioController.isActive) {
+                    spatialAudioController.release()
                 }
+            }
         }
 
         // Attach audio visualizer when enabled (visualizer or trigger) and playing
@@ -356,9 +361,11 @@ class PlayViewModel @Inject constructor(
             }
         }
 
-        // Load ambiance effects preference
+        // Load ambiance effects preference reactively
         viewModelScope.launch {
-            _ambianceEffectsEnabled.value = settingsRepository.getPlayEffectsEnabled()
+            settingsRepository.getPlayEffectsEnabledFlow().collect { enabled ->
+                _ambianceEffectsEnabled.value = enabled
+            }
         }
     }
 
@@ -412,8 +419,9 @@ class PlayViewModel @Inject constructor(
 
     fun toggleBackground() {
         // If background is not playing and we have a selected ambient, start it
-        if (!_uiState.value.playerState.isBackgroundPlaying && _uiState.value.selectedAmbientPath != null) {
-            setBackgroundAudio(_uiState.value.selectedAmbientPath!!)
+        val selectedPath = _uiState.value.selectedAmbientPath
+        if (!_uiState.value.playerState.isBackgroundPlaying && selectedPath != null) {
+            setBackgroundAudio(selectedPath)
         } else {
             playerManager.handleEvent(PlayerEvent.ToggleBackground)
         }
@@ -428,6 +436,9 @@ class PlayViewModel @Inject constructor(
             _uiState.update { it.copy(selectedAmbientPath = path) }
             if (path != null) {
                 setBackgroundAudio(path)
+            } else {
+                // Deselecting ambient — stop background playback
+                playerManager.handleEvent(PlayerEvent.ToggleBackground)
             }
         }
     }
@@ -443,11 +454,23 @@ class PlayViewModel @Inject constructor(
                 if (resId == 0) return@launch
 
                 val cacheFile = java.io.File(context.cacheDir, source.sourcePath.substringAfter("builtin:"))
-                if (!cacheFile.exists()) {
-                    context.resources.openRawResource(resId).use { input ->
-                        java.io.FileOutputStream(cacheFile).use { output ->
-                            input.copyTo(output)
+                // Atomic write: write to a temp file then rename to avoid corrupt
+                // cache persisting forever if the app is killed mid-write.
+                if (!cacheFile.exists() || cacheFile.length() == 0L) {
+                    val tmpFile = java.io.File(context.cacheDir, "${cacheFile.name}.tmp")
+                    try {
+                        context.resources.openRawResource(resId).use { input ->
+                            java.io.FileOutputStream(tmpFile).use { output ->
+                                input.copyTo(output)
+                                output.flush()
+                                output.fd.sync()
+                            }
                         }
+                        tmpFile.renameTo(cacheFile)
+                    } catch (e: Exception) {
+                        tmpFile.delete()
+                        cacheFile.delete()
+                        return@launch
                     }
                 }
 
@@ -459,10 +482,6 @@ class PlayViewModel @Inject constructor(
                 }
             } catch (_: Exception) { }
         }
-    }
-
-    fun toggleMenu() {
-        // menuExpanded is managed by the dropdown component directly
     }
 
     fun setTimerSeconds(totalSeconds: Int) {

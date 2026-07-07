@@ -93,6 +93,7 @@ class SpatialAudioController @Inject constructor() {
     fun release() {
         animJob?.cancel()
         animJob = null
+        scope.cancel()
         virtualizer?.apply { enabled = false; release() }
         virtualizer = null
         isActive = false

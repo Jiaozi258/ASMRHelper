@@ -41,8 +41,10 @@ class MainActivity : ComponentActivity() {
         intent?.let { handleShareIntent(it) }
         handleShortcutIntent(intent)
 
-        // Request notification permission on Android 13+ if not yet granted
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        // Request notification permission on Android 13+ if not yet granted.
+        // Only on first creation, not on recreation (rotation etc.) to avoid
+        // repeatedly showing the dialog.
+        if (savedInstanceState == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -65,6 +67,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)  // so onCreate sees the latest intent on recreation
         handleShareIntent(intent)
         handleShortcutIntent(intent)
     }
@@ -78,7 +81,8 @@ class MainActivity : ComponentActivity() {
         // Accept ACTION_SEND with text content. Some apps (e.g. Bilibili) may set
         // type to "text/plain", "text/html", or leave it null — be lenient.
         if (Intent.ACTION_SEND == intent.action) {
-            if (intent.type != null && !intent.type!!.startsWith("text/")) return
+            val type = intent.type
+            if (type != null && !type.startsWith("text/")) return
             val sharedUrl = intent.getStringExtra(Intent.EXTRA_TEXT) ?: ""
             if (sharedUrl.startsWith("http")) {
                 // Use reactive StateFlow so Compose auto-navigates to video tab

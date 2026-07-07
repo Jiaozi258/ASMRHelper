@@ -569,10 +569,14 @@ class VideoAudioExtractor @Inject constructor(
     }
 
     private fun getAudioDuration(file: File): Long {
+        val retriever = MediaMetadataRetriever()
         return try {
-            val r = MediaMetadataRetriever(); r.setDataSource(file.absolutePath)
-            val d = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-            r.release(); d?.toLongOrNull() ?: 0L
-        } catch (_: Exception) { 0L }
+            retriever.setDataSource(file.absolutePath)
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+        } catch (_: Exception) {
+            0L
+        } finally {
+            try { retriever.release() } catch (_: Exception) { }
+        }
     }
 }

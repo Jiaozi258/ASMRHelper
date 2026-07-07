@@ -79,14 +79,16 @@ class AsmrWidgetProvider : AppWidgetProvider() {
         val action = if (isPlaying) PlaybackStateCompat.ACTION_PAUSE
                      else PlaybackStateCompat.ACTION_PLAY
         val mediaIntent = MediaButtonReceiver.buildMediaButtonPendingIntent(context, action)
-        views.setOnClickPendingIntent(R.id.widget_play_pause, mediaIntent)
+        if (mediaIntent != null) {
+            views.setOnClickPendingIntent(R.id.widget_play_pause, mediaIntent)
+        }
 
         // Click on widget root → open app
         val openIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val openPendingIntent = PendingIntent.getActivity(
-            context, 0, openIntent,
+            context, widgetId, openIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         views.setOnClickPendingIntent(R.id.widget_root, openPendingIntent)

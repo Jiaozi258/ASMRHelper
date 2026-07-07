@@ -6,6 +6,8 @@ import android.media.AudioTrack
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.sin
@@ -37,7 +39,7 @@ class BinauralBeatEngine {
 
     private var audioTrack: AudioTrack? = null
     private var generationJob: Job? = null
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     @Volatile private var _isPlaying = false
     val isPlaying: Boolean get() = _isPlaying
     @Volatile var volume: Float = 0.4f
@@ -64,6 +66,11 @@ class BinauralBeatEngine {
             it.release()
         }
         audioTrack = null
+    }
+
+    fun release() {
+        stop()
+        scope.cancel()
     }
 
     private fun generateTone(baseFreq: Float, beatFreq: Float) {

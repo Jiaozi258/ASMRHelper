@@ -1254,8 +1254,8 @@ private fun QuickTimerChip(label: String, onClick: () -> Unit) {
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .background(DarkSurfaceVariant)
-            .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp)
+            .clickable(onClick = onClick)
     ) {
         Text(label, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
@@ -1295,11 +1295,15 @@ private fun SoundCloudWaveform(
     val hasRealData = remember { mutableStateOf(false) }
 
     // Convert raw ByteArray to normalized floats when new data arrives
-    LaunchedEffect(waveformBytes) {
-        if (waveformBytes != null && waveformBytes!!.isNotEmpty()) {
-            val floats = FloatArray(waveformBytes!!.size)
+    // Use content hash code as key since ByteArray.equals() is reference equality,
+    // which would cause LaunchedEffect to restart on every identical-content update.
+    val waveformKey = waveformBytes?.contentHashCode()
+    LaunchedEffect(waveformKey) {
+        val wb = waveformBytes
+        if (wb != null && wb.isNotEmpty()) {
+            val floats = FloatArray(wb.size)
             for (i in floats.indices) {
-                floats[i] = ((waveformBytes!![i].toInt() and 0xFF) - 128) / 128f
+                floats[i] = ((wb[i].toInt() and 0xFF) - 128) / 128f
             }
             targetData.value = floats
             hasRealData.value = true
@@ -1443,15 +1447,15 @@ private fun BreathingOverlay() {
     val radiusFraction = remember { Animatable(0.3f) }
     val alpha = remember { Animatable(0.15f) }
 
+    // Single combined LaunchedEffect prevents radius/alpha from drifting
+    // out of sync over time (two independent coroutines would diverge).
     LaunchedEffect(Unit) {
         while (true) {
+            // Inhale
             radiusFraction.animateTo(1.0f, tween(4000))
-            radiusFraction.animateTo(0.3f, tween(4000))
-        }
-    }
-    LaunchedEffect(Unit) {
-        while (true) {
             alpha.animateTo(0.35f, tween(4000))
+            // Exhale
+            radiusFraction.animateTo(0.3f, tween(4000))
             alpha.animateTo(0.15f, tween(4000))
         }
     }

@@ -29,30 +29,38 @@ class AsmrApplication : Application() {
     private fun ensureNotificationChannel() {
         val nm = getSystemService(NOTIFICATION_SERVICE) as? NotificationManager ?: return
         val existing = nm.getNotificationChannel(Constants.NOTIFICATION_CHANNEL_ID)
-        val target = NotificationManager.IMPORTANCE_HIGH
+        val targetImportance = NotificationManager.IMPORTANCE_HIGH
 
-        if (existing != null && existing.importance == target) {
-            return // Already correctly configured
-        }
-
-        val channel = NotificationChannel(
+        // Build the desired channel config
+        val desired = NotificationChannel(
             Constants.NOTIFICATION_CHANNEL_ID,
             Constants.NOTIFICATION_CHANNEL_NAME,
-            target
+            targetImportance
         ).apply {
             description = "播放控制和当前播放信息"
             setShowBadge(false)
-            // Silent sound — keeps the channel "active" without being annoying
             setSound(null, null)
             enableVibration(false)
-            // Don't show heads-up popup — just show in the drawer
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
 
-        if (existing != null) {
+        val needsRecreate = existing == null
+            || existing.importance < targetImportance   // upgrade → must recreate
+            || existing.shouldVibrate() != desired.shouldVibrate()
+            || existing.lockscreenVisibility != desired.lockscreenVisibility
+
+        if (needsRecreate) {
+            if (existing != null) nm.deleteNotificationChannel(Constants.NOTIFICATION_CHANNEL_ID)
+            nm.createNotificationChannel(desired)
+            android.util.Log.i("AsmrApp", "Notification channel (re)created: importance=$targetImportance")
+        } else if (existing.importance > targetImportance) {
+            // Downgrade: createNotificationChannel preserves higher importance,
+            // so we must recreate.
             nm.deleteNotificationChannel(Constants.NOTIFICATION_CHANNEL_ID)
+            nm.createNotificationChannel(desired)
+        } else {
+            // Channel exists with correct importance — just update properties
+            nm.createNotificationChannel(desired)
         }
-        nm.createNotificationChannel(channel)
-        android.util.Log.i("AsmrApp", "Notification channel ready: importance=$target")
     }
 }

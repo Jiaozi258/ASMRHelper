@@ -64,7 +64,8 @@
       "Bash(git checkout *)",
       "PowerShell(./gradlew clean assembleDebug 2>$null)",
       "PowerShell(./gradlew assembleDebug 2>$null)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(./gradlew compileDebugKotlin)"
     ]
   }
 }

@@ -39,7 +39,7 @@ object PlayerModule {
     @BackgroundPlayer
     fun provideBackgroundPlayer(@ApplicationContext context: Context): ExoPlayer =
         ExoPlayer.Builder(context)
-            .setAudioAttributes(musicAudioAttributes, /* handleAudioFocus = */ true)
+            .setAudioAttributes(musicAudioAttributes, /* handleAudioFocus = */ false)
             .build()
 
     @Provides

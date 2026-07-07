@@ -84,11 +84,14 @@ class PlayerManager @Inject constructor(
      *  Does NOT re-start the service (caller is already the service). */
     fun resumeLastPlayback() {
         val audio = loadLastPlayback() ?: return
+        // Restore a minimal playlist so Next/Previous buttons work
+        currentPlaylist = listOf(audio)
+        currentIndex = 0
         val mediaItem = MediaItem.fromUri(audio.filePath)
         mainPlayer.setMediaItem(mediaItem)
         mainPlayer.prepare()
         mainPlayer.play()
-        _state.update { it.copy(currentAudio = audio) }
+        _state.update { it.copy(currentAudio = audio, isPlaying = true) }
     }
 
     init {
@@ -107,6 +110,13 @@ class PlayerManager @Inject constructor(
                 if (playbackState == Player.STATE_ENDED) {
                     handlePlaybackEnded()
                 }
+            }
+        })
+
+        // Keep isBackgroundPlaying in sync with actual background player state
+        backgroundPlayer.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                _state.update { it.copy(isBackgroundPlaying = isPlaying) }
             }
         })
 
@@ -160,6 +170,10 @@ class PlayerManager @Inject constructor(
 
     private fun play(audio: Audio, playlist: List<Audio>) {
         crossfadeJob?.cancel()
+        crossfadeJob = null
+        // Reset volume in case a previous crossfade was cancelled mid-fade,
+        // leaving the volume at a partial value.
+        mainPlayer.volume = 1f
         currentPlaylist = playlist.ifEmpty { listOf(audio) }
         currentIndex = currentPlaylist.indexOfFirst { it.id == audio.id }
             .let { if (it >= 0) it else currentPlaylist.indexOfFirst { a -> a.filePath == audio.filePath } }

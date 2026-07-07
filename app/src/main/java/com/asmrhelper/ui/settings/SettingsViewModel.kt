@@ -211,8 +211,8 @@ class SettingsViewModel @Inject constructor(
 
     // ── 播放界面特效 ───────────────────────────────────
 
-    val playEffectsEnabled: Boolean
-        get() = settingsRepository.getPlayEffectsEnabled()
+    val playEffectsEnabled: StateFlow<Boolean> = settingsRepository.getPlayEffectsEnabledFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     fun setPlayEffectsEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setPlayEffectsEnabled(enabled) }

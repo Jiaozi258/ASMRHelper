@@ -233,17 +233,25 @@ class SettingsRepositoryImpl @Inject constructor(
 
     // ── 播放界面特效 ─────────────────────────────────
 
-    override fun getPlayEffectsEnabled(): Boolean =
-        prefs.getBoolean("play_effects", true)
+    private val _playEffectsEnabled = MutableStateFlow(prefs.getBoolean("play_effects", true))
+
+    override fun getPlayEffectsEnabled(): Boolean = _playEffectsEnabled.value
+
+    override fun getPlayEffectsEnabledFlow(): Flow<Boolean> = _playEffectsEnabled
 
     override suspend fun setPlayEffectsEnabled(enabled: Boolean) {
         prefs.edit().putBoolean("play_effects", enabled).apply()
+        _playEffectsEnabled.value = enabled
     }
 
     private fun loadAmbientList(): List<String> {
-        val json = prefs.getString("ambient_audios", null) ?: return emptyList()
-        val arr = try { JSONArray(json) } catch (_: Exception) { return emptyList() }
-        return (0 until arr.length()).map { arr.getString(it) }
+        return try {
+            val json = prefs.getString("ambient_audios", null) ?: return emptyList()
+            val arr = JSONArray(json)
+            (0 until arr.length()).map { i -> arr.optString(i, "") }.filter { it.isNotEmpty() }
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     private fun saveAmbientList(list: List<String>) {

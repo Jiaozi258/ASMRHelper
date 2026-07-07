@@ -119,7 +119,7 @@ fun SettingsScreen(
     val playlistCount by viewModel.playlistCount.collectAsStateWithLifecycle()
     val hypnosisEnabled by viewModel.hypnosisModeEnabled.collectAsStateWithLifecycle()
     val hypnosisBgType by viewModel.hypnosisBgType.collectAsStateWithLifecycle()
-    var playEffectsEnabled by remember { mutableStateOf(viewModel.playEffectsEnabled) }
+    val playEffectsEnabled by viewModel.playEffectsEnabled.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     var showClearImageDialog by remember { mutableStateOf(false) }
@@ -547,6 +547,7 @@ fun SettingsScreen(
 
             SectionHeader(icon = Icons.Filled.MusicNote, title = "环境音管理")
             val ambientAudios by viewModel.ambientAudios.collectAsStateWithLifecycle()
+            val selectedAmbient by viewModel.selectedAmbient.collectAsStateWithLifecycle()
             val ambientLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.GetContent()
             ) { uri ->
@@ -589,7 +590,7 @@ fun SettingsScreen(
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
                     ambientAudios.forEach { path ->
                         val name = File(path).name
-                        val isSelected = viewModel.selectedAmbient.collectAsStateWithLifecycle().value == path
+                        val isSelected = selectedAmbient == path
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -952,7 +953,6 @@ fun SettingsScreen(
                 Switch(
                     checked = playEffectsEnabled,
                     onCheckedChange = {
-                        playEffectsEnabled = it
                         viewModel.setPlayEffectsEnabled(it)
                     },
                     colors = SwitchDefaults.colors(

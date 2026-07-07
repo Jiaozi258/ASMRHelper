@@ -62,7 +62,8 @@ class AudioVisualizerController @Inject constructor() {
                 this@apply.enabled = true
             }
             isActive = true
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.e("AudioVisualizer", "Failed to attach: ${e.message}", e)
             visualizer?.release()
             visualizer = null
             isActive = false
