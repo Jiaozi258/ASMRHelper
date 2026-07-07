@@ -17,6 +17,7 @@ import com.asmrhelper.ui.navigation.AsmrNavHost
 import com.asmrhelper.ui.theme.ASMRHelperTheme
 import com.asmrhelper.ui.theme.ThemePreset
 import com.asmrhelper.util.ShareReceiver
+import com.asmrhelper.util.ShortcutReceiver
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
 
         CrashHandler.showLastCrash(this)
         intent?.let { handleShareIntent(it) }
+        handleShortcutIntent(intent)
 
         // Request notification permission on Android 13+ if not yet granted
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -64,6 +66,12 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleShareIntent(intent)
+        handleShortcutIntent(intent)
+    }
+
+    private fun handleShortcutIntent(intent: Intent?) {
+        val action = intent?.getStringExtra("shortcut_action") ?: return
+        ShortcutReceiver.receive(action)
     }
 
     private fun handleShareIntent(intent: Intent) {

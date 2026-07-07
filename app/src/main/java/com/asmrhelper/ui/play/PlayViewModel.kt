@@ -356,6 +356,9 @@ class PlayViewModel @Inject constructor(
         }
     }
 
+    /** Load the last-played audio info for shortcut resume / widget. */
+    fun loadLastPlayback(): Audio? = playerManager.loadLastPlayback()
+
     fun togglePlayPause() {
         val event = if (uiState.value.playerState.isPlaying) PlayerEvent.Pause
         else PlayerEvent.Resume

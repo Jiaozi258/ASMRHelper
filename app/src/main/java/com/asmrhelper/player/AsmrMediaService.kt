@@ -17,6 +17,7 @@ import com.asmrhelper.R
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.domain.model.PlayerState
 import com.asmrhelper.util.Constants
+import com.asmrhelper.widget.AsmrWidgetProvider
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -57,6 +58,10 @@ class AsmrMediaService : Service() {
             updateNotification(state)
             updateMediaSessionState(state)
             manageWakeLock(state.isPlaying)
+            // Notify widget of state change
+            AsmrWidgetProvider.notifyStateChanged(
+                this, state.isPlaying, state.currentAudio?.title ?: "ASMRHelper"
+            )
         }
     }
 
@@ -84,7 +89,28 @@ class AsmrMediaService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+
+        // ── Process-death recovery: resume playback if the service was
+        //     recreated by START_STICKY after being killed by the OS. ──
+        if (intent == null && !state.isPlaying && state.currentAudio == null) {
+            android.util.Log.i("AsmrMedia", "Restarting from process death — resuming playback")
+            playerManager.resumeLastPlayback()
+        }
+
         return START_STICKY
+    }
+
+    /**
+     * Called when the user swipes the app away from the recent-tasks list.
+     *
+     * The DEFAULT implementation stops the service on many Chinese ROMs
+     * (MIUI, ColorOS, OriginOS) even with stopWithTask="false" — they
+     * override the AOSP behaviour. Overriding this as a no-op tells the
+     * system "keep the service running — the user wants background playback."
+     */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // Intentionally do NOT call stopSelf() or super.onTaskRemoved()
+        android.util.Log.i("AsmrMedia", "Task removed — service staying alive for playback")
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -234,10 +260,22 @@ class AsmrMediaService : Service() {
                     ).build()
             )
             setCallback(object : MediaSessionCompat.Callback() {
-                override fun onPlay() = playerManager.handleEvent(PlayerEvent.Resume)
-                override fun onPause() = playerManager.handleEvent(PlayerEvent.Pause)
-                override fun onSkipToNext() = playerManager.handleEvent(PlayerEvent.Next)
-                override fun onSkipToPrevious() = playerManager.handleEvent(PlayerEvent.Previous)
+                override fun onPlay() {
+                    android.util.Log.d("AsmrMedia", "Headset: PLAY received")
+                    playerManager.handleEvent(PlayerEvent.Resume)
+                }
+                override fun onPause() {
+                    android.util.Log.d("AsmrMedia", "Headset: PAUSE received")
+                    playerManager.handleEvent(PlayerEvent.Pause)
+                }
+                override fun onSkipToNext() {
+                    android.util.Log.d("AsmrMedia", "Headset: SKIP_NEXT received")
+                    playerManager.handleEvent(PlayerEvent.Next)
+                }
+                override fun onSkipToPrevious() {
+                    android.util.Log.d("AsmrMedia", "Headset: SKIP_PREV received")
+                    playerManager.handleEvent(PlayerEvent.Previous)
+                }
                 override fun onStop() = stopSelf()
             })
         }

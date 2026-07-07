@@ -48,7 +48,56 @@ class PlayerManager @Inject constructor(
         onStateChanged = listener
     }
 
+    // ── Playback state persistence ──────────────────────────
+    // Survives process death so the service can resume after
+    // being killed by aggressive OEM power management.
+
+    private val prefs = context.getSharedPreferences("asmr_player_state", Context.MODE_PRIVATE)
+
+    /** Save last-played audio so the service can resume after restart. */
+    private fun saveLastPlayback(audio: Audio) {
+        prefs.edit()
+            .putString("last_file_path", audio.filePath)
+            .putString("last_title", audio.title)
+            .putString("last_artist", audio.artist)
+            .putLong("last_duration_ms", audio.durationMs)
+            .apply()
+    }
+
+    /** Load saved playback info. Returns null if nothing was saved. */
+    fun loadLastPlayback(): Audio? {
+        val path = prefs.getString("last_file_path", null) ?: return null
+        val title = prefs.getString("last_title", "") ?: "未知"
+        val artist = prefs.getString("last_artist", "") ?: ""
+        val duration = prefs.getLong("last_duration_ms", 0L)
+        return Audio(
+            id = 0L,
+            title = title,
+            artist = artist,
+            filePath = path,
+            durationMs = duration,
+            isFavorite = false
+        )
+    }
+
+    /** Resume the last-played audio. Called by the service after process-death restart.
+     *  Does NOT re-start the service (caller is already the service). */
+    fun resumeLastPlayback() {
+        val audio = loadLastPlayback() ?: return
+        val mediaItem = MediaItem.fromUri(audio.filePath)
+        mainPlayer.setMediaItem(mediaItem)
+        mainPlayer.prepare()
+        mainPlayer.play()
+        _state.update { it.copy(currentAudio = audio) }
+    }
+
     init {
+        // Populate initial state with last-played audio so UI shows it on cold start
+        val saved = loadLastPlayback()
+        if (saved != null) {
+            _state.update { it.copy(currentAudio = saved, durationMs = saved.durationMs) }
+        }
+
         mainPlayer.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _state.update { it.copy(isPlaying = isPlaying) }
@@ -142,6 +191,7 @@ class PlayerManager @Inject constructor(
             mainPlayer.play()
         }
         _state.update { it.copy(currentAudio = audio) }
+        saveLastPlayback(audio) // survive process death
         // Record playback history (fire-and-forget)
         scope.launch(Dispatchers.IO) {
             try {

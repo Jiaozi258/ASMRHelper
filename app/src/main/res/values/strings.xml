@@ -1,4 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ASMRHelper</string>
+
+    <!-- App shortcuts -->
+    <string name="shortcut_resume">继续播放</string>
+    <string name="shortcut_resume_long">继续播放上次的音频</string>
+    <string name="shortcut_timer30">30分钟定时</string>
+    <string name="shortcut_timer30_long">设置30分钟定时后开始播放</string>
+    <string name="shortcut_favorites">收藏列表</string>
+    <string name="shortcut_favorites_long">查看收藏的音频</string>
+    <string name="shortcut_history">最近播放</string>
+    <string name="shortcut_history_long">查看播放历史记录</string>
+
+    <!-- Widget -->
+    <string name="widget_description">ASMRHelper 桌面快捷播放控制</string>
 </resources>

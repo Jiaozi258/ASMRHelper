@@ -36,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.util.ShareReceiver
+import com.asmrhelper.util.ShortcutReceiver
 
 @Composable
 fun AsmrNavHost(modifier: Modifier = Modifier) {
@@ -56,6 +57,42 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
     }
 
     val playViewModel: PlayViewModel = hiltViewModel()
+
+    // Observe app shortcut actions and auto-navigate
+    val shortcutAction by ShortcutReceiver.pendingAction.collectAsStateWithLifecycle()
+    LaunchedEffect(shortcutAction) {
+        when (shortcutAction) {
+            "resume" -> {
+                currentScreen = Screen.Play
+                playSubScreen = null
+                val audio = playViewModel.loadLastPlayback()
+                if (audio != null) {
+                    playViewModel.play(audio)
+                }
+            }
+            "timer30" -> {
+                currentScreen = Screen.Play
+                playSubScreen = null
+                playViewModel.setTimerSeconds(30 * 60)
+                val audio = playViewModel.loadLastPlayback()
+                if (audio != null) {
+                    playViewModel.play(audio)
+                }
+            }
+            "favorites" -> {
+                currentScreen = Screen.Play
+                libraryInitialTab = 1 // "我的收藏" tab
+                playSubScreen = SubScreen.Library
+            }
+            "history" -> {
+                currentScreen = Screen.Settings
+                settingsSubScreen = SubScreen.History
+            }
+        }
+        if (shortcutAction.isNotEmpty()) {
+            ShortcutReceiver.consume()
+        }
+    }
     val playUiState by playViewModel.uiState.collectAsStateWithLifecycle()
 
     val showBottomBar = !(currentScreen is Screen.Play && playSubScreen != null)

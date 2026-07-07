@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="resume"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_media_play"
+        android:shortcutShortLabel="@string/shortcut_resume"
+        android:shortcutLongLabel="@string/shortcut_resume_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="${applicationId}"
+            android:targetClass="com.asmrhelper.MainActivity">
+            <extra android:name="shortcut_action" android:value="resume" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="timer30"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_lock_idle_alarm"
+        android:shortcutShortLabel="@string/shortcut_timer30"
+        android:shortcutLongLabel="@string/shortcut_timer30_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="${applicationId}"
+            android:targetClass="com.asmrhelper.MainActivity">
+            <extra android:name="shortcut_action" android:value="timer30" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="favorites"
+        android:enabled="true"
+        android:icon="@android:drawable/btn_star_big_on"
+        android:shortcutShortLabel="@string/shortcut_favorites"
+        android:shortcutLongLabel="@string/shortcut_favorites_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="${applicationId}"
+            android:targetClass="com.asmrhelper.MainActivity">
+            <extra android:name="shortcut_action" android:value="favorites" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="history"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_recent_history"
+        android:shortcutShortLabel="@string/shortcut_history"
+        android:shortcutLongLabel="@string/shortcut_history_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="${applicationId}"
+            android:targetClass="com.asmrhelper.MainActivity">
+            <extra android:name="shortcut_action" android:value="history" />
+        </intent>
+    </shortcut>
+</shortcuts>
