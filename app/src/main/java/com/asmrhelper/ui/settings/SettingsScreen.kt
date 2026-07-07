@@ -119,6 +119,7 @@ fun SettingsScreen(
     val playlistCount by viewModel.playlistCount.collectAsStateWithLifecycle()
     val hypnosisEnabled by viewModel.hypnosisModeEnabled.collectAsStateWithLifecycle()
     val hypnosisBgType by viewModel.hypnosisBgType.collectAsStateWithLifecycle()
+    var playEffectsEnabled by remember { mutableStateOf(viewModel.playEffectsEnabled) }
 
     val context = LocalContext.current
     var showClearImageDialog by remember { mutableStateOf(false) }
@@ -930,6 +931,37 @@ fun SettingsScreen(
                         }
                     }
                 }
+            }
+
+            // 播放界面特效 toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("播放界面特效", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        "浮动粒子和呼吸光晕效果",
+                        color = TextHint,
+                        fontSize = 12.sp
+                    )
+                }
+                Switch(
+                    checked = playEffectsEnabled,
+                    onCheckedChange = {
+                        playEffectsEnabled = it
+                        viewModel.setPlayEffectsEnabled(it)
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = LocalAccentColor.current,
+                        checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f),
+                        uncheckedThumbColor = TextSecondary,
+                        uncheckedTrackColor = DarkSurfaceVariant
+                    )
+                )
             }
 
             SectionSpacer()

@@ -25,6 +25,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.AlertDialog
@@ -127,6 +129,16 @@ fun PlayScreen(
         if (state.hypnosisEnabled) {
             HypnosisBackground(
                 type = HypnosisBgType.fromIndex(state.hypnosisBgType),
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        // Ambiance particle effects (behind all UI)
+        val effectsEnabled by viewModel.ambianceEffectsEnabled.collectAsStateWithLifecycle()
+        if (effectsEnabled) {
+            com.asmrhelper.ui.components.AmbianceOverlay(
+                isPlaying = state.playerState.isPlaying,
+                accentColor = LocalAccentColor.current,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -457,6 +469,72 @@ fun PlayScreen(
                 }
                 TextButton(onClick = { viewModel.fadeOut(5000L) }) {
                     Text("🌙 淡出", color = TextHint, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+
+            // ── Equalizer ──
+            val eqEnabled by viewModel.eqEnabled.collectAsStateWithLifecycle()
+            if (eqEnabled) {
+                val eqLevels by viewModel.eqBandLevels.collectAsStateWithLifecycle()
+                var eqExpanded by remember { mutableStateOf(false) }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 2.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(DarkSurfaceVariant.copy(alpha = 0.3f))
+                        .clickable { eqExpanded = !eqExpanded }
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("🎚️ 均衡器", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Icon(
+                        if (eqExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        null, tint = TextHint, modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                AnimatedVisibility(visible = eqExpanded) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                    ) {
+                        val bandLabels = listOf("🔈 低音", "🎵 中音", "🔔 高音")
+                        eqLevels.forEachIndexed { i, level ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(bandLabels[i], color = TextSecondary, fontSize = 12.sp, modifier = Modifier.width(70.dp))
+                                Slider(
+                                    value = level,
+                                    onValueChange = { viewModel.setEqBand(i, it) },
+                                    valueRange = -10f..10f,
+                                    modifier = Modifier.weight(1f),
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = LocalAccentColor.current,
+                                        activeTrackColor = LocalAccentColor.current
+                                    )
+                                )
+                                Text(
+                                    "${if (level >= 0) "+" else ""}${"%.0f".format(level)}",
+                                    color = if (level != 0f) LocalAccentColor.current else TextHint,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.width(38.dp),
+                                    textAlign = TextAlign.End
+                                )
+                            }
+                        }
+                        TextButton(
+                            onClick = { viewModel.resetEq() },
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Text("重置", color = TextSecondary, fontSize = 12.sp)
+                        }
+                    }
                 }
             }
         }
@@ -849,6 +927,60 @@ fun PlayScreen(
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                 ) {
+                    // ── Built-in nature sounds ──
+                    Text(
+                        "内置音效",
+                        color = TextHint,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    com.asmrhelper.domain.model.AmbientSource.BUILT_IN.forEach { source ->
+                        val isBuiltInSelected = state.selectedAmbientPath == source.sourcePath
+                        val isBuiltInPlaying = state.playerState.isBackgroundPlaying && isBuiltInSelected
+                        TextButton(
+                            onClick = {
+                                viewModel.playBuiltInAmbient(source)
+                                showAmbientDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = source.label,
+                                    color = if (isBuiltInSelected) LocalAccentColor.current else TextSecondary,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = when {
+                                        isBuiltInPlaying -> "▶ 播放中"
+                                        isBuiltInSelected -> "已选"
+                                        else -> ""
+                                    },
+                                    color = if (isBuiltInPlaying) LocalAccentColor.current else TextHint,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        color = DarkSurfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    Text(
+                        "导入的环境音",
+                        color = TextHint,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+
                     if (state.ambientAudios.isEmpty()) {
                         Text(
                             "暂无环境音，请在设置中导入",

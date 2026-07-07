@@ -1,19 +1,25 @@
 package com.asmrhelper.ui.play
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.asmrhelper.domain.model.AmbientSource
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.BackgroundImage
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.domain.model.PlayerState
 import com.asmrhelper.domain.repository.AudioRepository
 import com.asmrhelper.domain.repository.SettingsRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.asmrhelper.data.local.db.entity.BookmarkEntity
 import com.asmrhelper.data.local.db.entity.SceneEntity
 import com.asmrhelper.data.repository.BookmarkRepository
 import com.asmrhelper.data.repository.SceneRepository
 import com.asmrhelper.player.AudioVisualizerController
 import com.asmrhelper.player.BinauralBeatEngine
+import com.asmrhelper.player.EqualizerController
 import com.asmrhelper.player.BinauralPreset
 import com.asmrhelper.player.HapticFeedbackController
 import com.asmrhelper.player.NoiseGenerator
@@ -95,6 +101,7 @@ data class PlayUiState(
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class PlayViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val playerManager: PlayerManager,
     private val audioRepository: AudioRepository,
     private val settingsRepository: SettingsRepository,
@@ -104,7 +111,8 @@ class PlayViewModel @Inject constructor(
     private val spatialAudioController: SpatialAudioController,
     private val hapticFeedbackController: HapticFeedbackController,
     private val sceneRepository: SceneRepository,
-    private val bookmarkRepository: BookmarkRepository
+    private val bookmarkRepository: BookmarkRepository,
+    private val equalizerController: EqualizerController
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayUiState())
@@ -122,6 +130,15 @@ class PlayViewModel @Inject constructor(
     // Settings: visualizer and volume trigger
     private val _visualizerEnabled = MutableStateFlow(false)
     val visualizerEnabled: StateFlow<Boolean> = _visualizerEnabled
+
+    // Equalizer
+    val eqBandLevels: StateFlow<List<Float>> = equalizerController.bandLevels
+    val eqEnabled: StateFlow<Boolean> = equalizerController.isEnabled
+
+    // Ambiance effects (particles + glow)
+    private val _ambianceEffectsEnabled = MutableStateFlow(true)
+    val ambianceEffectsEnabled: StateFlow<Boolean> = _ambianceEffectsEnabled
+
     private val _volumeTriggerEnabled = MutableStateFlow(false)
     val volumeTriggerEnabled: StateFlow<Boolean> = _volumeTriggerEnabled
     private val _volumeThreshold = MutableStateFlow(70)
@@ -338,6 +355,16 @@ class PlayViewModel @Inject constructor(
                 }
             }
         }
+
+        // Load ambiance effects preference
+        viewModelScope.launch {
+            _ambianceEffectsEnabled.value = settingsRepository.getPlayEffectsEnabled()
+        }
+    }
+
+    fun setAmbianceEffectsEnabled(enabled: Boolean) {
+        _ambianceEffectsEnabled.value = enabled
+        viewModelScope.launch { settingsRepository.setPlayEffectsEnabled(enabled) }
     }
 
     fun play(audio: Audio) {
@@ -358,6 +385,9 @@ class PlayViewModel @Inject constructor(
 
     /** Load the last-played audio info for shortcut resume / widget. */
     fun loadLastPlayback(): Audio? = playerManager.loadLastPlayback()
+
+    fun setEqBand(band: Int, levelDb: Float) = equalizerController.setBandLevel(band, levelDb)
+    fun resetEq() = equalizerController.reset()
 
     fun togglePlayPause() {
         val event = if (uiState.value.playerState.isPlaying) PlayerEvent.Pause
@@ -399,6 +429,35 @@ class PlayViewModel @Inject constructor(
             if (path != null) {
                 setBackgroundAudio(path)
             }
+        }
+    }
+
+    /** Built-in ambient sources always available. */
+    fun getBuiltInAmbients(): List<AmbientSource> = AmbientSource.BUILT_IN
+
+    /** Play a built-in ambient from res/raw. Copies to cache on first use. */
+    fun playBuiltInAmbient(source: AmbientSource) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val resId = settingsRepository.getBuiltInResId(source.sourcePath)
+                if (resId == 0) return@launch
+
+                val cacheFile = java.io.File(context.cacheDir, source.sourcePath.substringAfter("builtin:"))
+                if (!cacheFile.exists()) {
+                    context.resources.openRawResource(resId).use { input ->
+                        java.io.FileOutputStream(cacheFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    playerManager.handleEvent(
+                        PlayerEvent.SetBackgroundAudio(cacheFile.absolutePath)
+                    )
+                    _uiState.update { it.copy(selectedAmbientPath = source.sourcePath) }
+                }
+            } catch (_: Exception) { }
         }
     }
 

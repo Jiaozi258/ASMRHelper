@@ -5,6 +5,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.exoplayer.ExoPlayer
 import com.asmrhelper.player.BinauralBeatEngine
+import com.asmrhelper.player.EqualizerController
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,4 +46,10 @@ object PlayerModule {
     @Singleton
     fun provideBinauralBeatEngine(): BinauralBeatEngine =
         BinauralBeatEngine()
+
+    @Provides
+    @Singleton
+    fun provideEqualizerController(
+        @MainPlayer mainPlayer: ExoPlayer
+    ): EqualizerController = EqualizerController(mainPlayer)
 }

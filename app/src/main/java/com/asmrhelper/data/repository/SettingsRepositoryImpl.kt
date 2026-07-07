@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 import org.json.JSONArray
+import com.asmrhelper.R
 
 @Singleton
 class SettingsRepositoryImpl @Inject constructor(
@@ -82,6 +83,23 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     // ── Ambient audios ─────────────────────────────────
+
+    /** Built-in ambient sound OGG files in res/raw/.
+     *  Key = the "builtin:" path used by AmbientSource, value = R.raw resource ID. */
+    private val builtInAmbientResIds = mapOf(
+        "builtin:ambient_rain" to R.raw.ambient_rain,
+        "builtin:ambient_stream" to R.raw.ambient_stream,
+        "builtin:ambient_campfire" to R.raw.ambient_campfire,
+        "builtin:ambient_wind" to R.raw.ambient_wind,
+        "builtin:ambient_thunder" to R.raw.ambient_thunder,
+        "builtin:ambient_ocean" to R.raw.ambient_ocean,
+    )
+
+    /** Returns the res/raw ID for a built-in ambient, or 0 if not found. */
+    override fun getBuiltInResId(path: String): Int = builtInAmbientResIds[path] ?: 0
+
+    /** All built-in ambient paths, always available. */
+    override fun getBuiltInAmbients(): List<String> = builtInAmbientResIds.keys.toList()
 
     override fun getAmbientAudios(): Flow<List<String>> = _ambientAudios
 
@@ -212,6 +230,15 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     // ── Ambient list serialization ─────────────────────
+
+    // ── 播放界面特效 ─────────────────────────────────
+
+    override fun getPlayEffectsEnabled(): Boolean =
+        prefs.getBoolean("play_effects", true)
+
+    override suspend fun setPlayEffectsEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("play_effects", enabled).apply()
+    }
 
     private fun loadAmbientList(): List<String> {
         val json = prefs.getString("ambient_audios", null) ?: return emptyList()

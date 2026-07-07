@@ -57,7 +57,14 @@
       "PowerShell(New-Item *)",
       "Bash(git commit *)",
       "Bash(./gradlew compileDebugKotlin --no-daemon)",
-      "PowerShell(& \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\\\\gradlew.bat\" -p \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\" compileDebugKotlin --no-daemon 2>&1)"
+      "PowerShell(& \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\\\\gradlew.bat\" -p \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\" compileDebugKotlin --no-daemon 2>&1)",
+      "PowerShell(./gradlew assembleDebug 2>&1 | Select-Object -Last 30)",
+      "Bash(git reset *)",
+      "PowerShell(./gradlew assembleDebug 2>&1 | Select-Object -Last 5)",
+      "Bash(git checkout *)",
+      "PowerShell(./gradlew clean assembleDebug 2>$null)",
+      "PowerShell(./gradlew assembleDebug 2>$null)",
+      "WebSearch"
     ]
   }
 }

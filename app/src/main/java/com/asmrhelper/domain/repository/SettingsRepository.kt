@@ -23,6 +23,8 @@ interface SettingsRepository {
     suspend fun removeAmbientAudio(path: String)
     suspend fun getSelectedAmbientAudio(): String?
     suspend fun setSelectedAmbientAudio(path: String?)
+    fun getBuiltInResId(path: String): Int
+    fun getBuiltInAmbients(): List<String>
     fun getAudioVisualizerEnabled(): Flow<Boolean>
     suspend fun setAudioVisualizerEnabled(enabled: Boolean)
     fun getVolumeTriggerEnabled(): Flow<Boolean>
@@ -53,4 +55,8 @@ interface SettingsRepository {
     suspend fun setTriggerParticleCount(count: Int)
     fun getTriggerCooldownMs(): Flow<Int>
     suspend fun setTriggerCooldownMs(cooldownMs: Int)
+
+    // ── 播放界面特效 ─────────────────────────────────
+    fun getPlayEffectsEnabled(): Boolean
+    suspend fun setPlayEffectsEnabled(enabled: Boolean)
 }

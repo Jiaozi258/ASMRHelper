@@ -209,6 +209,15 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setHypnosisBackgroundType(type) }
     }
 
+    // ── 播放界面特效 ───────────────────────────────────
+
+    val playEffectsEnabled: Boolean
+        get() = settingsRepository.getPlayEffectsEnabled()
+
+    fun setPlayEffectsEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setPlayEffectsEnabled(enabled) }
+    }
+
     // ── 通知与锁屏 ──────────────────────────────────────
 
     val showNotification: StateFlow<Boolean> = settingsRepository.getShowNotification()
