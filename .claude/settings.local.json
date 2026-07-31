@@ -65,7 +65,15 @@
       "PowerShell(./gradlew clean assembleDebug 2>$null)",
       "PowerShell(./gradlew assembleDebug 2>$null)",
       "WebSearch",
-      "Bash(./gradlew compileDebugKotlin)"
+      "Bash(./gradlew compileDebugKotlin)",
+      "PowerShell(cd \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\" ; $apk = Get-Item \"app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\" ; \"Size: $\\([math]::Round\\($apk.Length / 1MB, 2\\)\\) MB\")",
+      "PowerShell(gh auth *)",
+      "PowerShell(cd \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\" ; $token = git config --get github.token 2>$null; if \\(-not $token\\) { $env:GH_TOKEN }; \"Token: $\\(if \\($token\\) {'found'} else {'not found'}\\)\")",
+      "PowerShell(winget install *)",
+      "PowerShell(gh *)",
+      "Bash(./gradlew :app:compileDebugKotlin)",
+      "PowerShell(.\\\\gradlew.bat :app:assembleDebug)",
+      "PowerShell(\\(Get-Item \"app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\"\\).Length / 1MB; \\(Get-Item \"app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\"\\).LastWriteTime)"
     ]
   }
 }

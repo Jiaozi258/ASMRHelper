@@ -223,11 +223,13 @@ class PlayerManager @Inject constructor(
         startMediaServiceIfNeeded()
     }
 
+    /** Always start the foreground service during playback.
+     *  Android requires a foreground-service notification — that's non-negotiable
+     *  for background execution. The user's "show_notification" preference only
+     *  controls how visible the notification is (lock screen, priority), not
+     *  whether the service itself runs. Skipping the service when notifications
+     *  are "disabled" would guarantee the app gets killed by OEMs. */
     private fun startMediaServiceIfNeeded() {
-        val prefs = context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
-        val showNotification = prefs.getBoolean("show_notification", true)
-        if (!showNotification) return
-
         val intent = Intent(context, AsmrMediaService::class.java)
         ContextCompat.startForegroundService(context, intent)
     }

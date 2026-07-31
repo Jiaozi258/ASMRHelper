@@ -34,7 +34,9 @@ import com.asmrhelper.ui.triggerpad.TriggerPadScreen
 import android.widget.Toast
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
+import com.asmrhelper.ui.components.BatteryOptimizationDialog
 import com.asmrhelper.ui.theme.DarkBackground
+import com.asmrhelper.util.BatteryOptimizationHelper
 import com.asmrhelper.util.ShareReceiver
 import com.asmrhelper.util.ShortcutReceiver
 
@@ -291,5 +293,14 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
                 }
             }
         }
+    }
+
+    // ── Battery optimization whitelist guidance ────────────
+    // On Chinese ROMs, a properly implemented foreground service with
+    // WakeLock is still killed ~10 min after screen-off unless the user
+    // explicitly whitelists this app. Show this dialog at most a few times.
+    val showBatteryDialog = remember { mutableStateOf(BatteryOptimizationHelper.shouldShowDialog(context)) }
+    if (showBatteryDialog.value) {
+        BatteryOptimizationDialog(onDismiss = { showBatteryDialog.value = false })
     }
 }

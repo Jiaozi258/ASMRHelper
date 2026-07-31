@@ -5,6 +5,9 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -30,6 +33,40 @@ class AsmrMediaService : Service() {
 
     // ── WakeLock: prevent CPU sleep during playback ──────
     private var wakeLock: PowerManager.WakeLock? = null
+
+    // ── AudioFocus: react to calls, alarms, other apps ────
+    private var audioManager: AudioManager? = null
+    private var audioFocusRequest: AudioFocusRequest? = null  // API 26+
+    private var hasAudioFocus: Boolean = false
+
+    private val audioFocusListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        android.util.Log.d("AsmrMedia", "AudioFocus change: $focusChange")
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                // Permanent loss (e.g. phone call) — pause fully
+                hasAudioFocus = false
+                playerManager.handleEvent(PlayerEvent.Pause)
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // Temporary loss (e.g. notification ping) — pause
+                hasAudioFocus = false
+                playerManager.handleEvent(PlayerEvent.Pause)
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                // Short interruption — lower volume instead of pausing
+                // ExoPlayer handles ducking internally when handleAudioFocus=true,
+                // so we don't need to do anything extra here.
+            }
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                // Focus regained — resume if we were playing before
+                hasAudioFocus = true
+                val state = playerManager.state.value
+                if (!state.isPlaying && state.currentAudio != null) {
+                    playerManager.handleEvent(PlayerEvent.Resume)
+                }
+            }
+        }
+    }
 
     // ── Notification throttle: avoid rebuild spam ────────
     private var lastNotifTitle: String? = null
@@ -57,11 +94,15 @@ class AsmrMediaService : Service() {
             "ASMRHelper:PlaybackWakeLock"
         )
 
+        // AudioFocus: receive callbacks for phone calls, alarms, etc.
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
         setupMediaSession()
         playerManager.setStateListener { state ->
             updateNotification(state)
             updateMediaSessionState(state)
             manageWakeLock(state.isPlaying)
+            manageAudioFocus(state.isPlaying)
             // Notify widget only on actual play/pause or title changes (not
             // on every 200ms progress tick — avoids excessive broadcasts).
             val currentTitle = state.currentAudio?.title ?: "ASMRHelper"
@@ -76,11 +117,10 @@ class AsmrMediaService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val prefs = getSharedPreferences("asmr_settings", MODE_PRIVATE)
-        if (!prefs.getBoolean("show_notification", true)) {
-            stopSelf(); return START_NOT_STICKY
-        }
-
+        // Always start the foreground service. Android requires a notification
+        // for ALL foreground services — there's no way to run without one.
+        // The user's "show_notification" pref only controls lock-screen
+        // visibility, not whether the service runs.
         MediaButtonReceiver.handleIntent(mediaSession, intent)
         val state = playerManager.state.value
         val notification = buildNotification(state)
@@ -126,6 +166,7 @@ class AsmrMediaService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        abandonAudioFocus()
         releaseWakeLock()
         mediaSession.isActive = false
         mediaSession.release()
@@ -149,6 +190,64 @@ class AsmrMediaService : Service() {
         try {
             if (wakeLock?.isHeld == true) wakeLock?.release()
         } catch (_: Exception) { }
+    }
+
+    // ── AudioFocus ────────────────────────────────────────
+
+    private fun manageAudioFocus(isPlaying: Boolean) {
+        if (isPlaying && !hasAudioFocus) {
+            requestAudioFocus()
+        } else if (!isPlaying && hasAudioFocus) {
+            // Don't abandon on pause — only on permanent stop.
+            // This keeps us registered for focus changes so we can auto-resume
+            // when the interrupting app (e.g. phone call) releases focus.
+        }
+    }
+
+    private fun requestAudioFocus() {
+        val am = audioManager ?: return
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val attr = AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .build()
+                audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                    .setAudioAttributes(attr)
+                    .setOnAudioFocusChangeListener(audioFocusListener)
+                    .build()
+                val result = am.requestAudioFocus(audioFocusRequest!!)
+                hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+            } else {
+                @Suppress("DEPRECATION")
+                val result = am.requestAudioFocus(
+                    audioFocusListener,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN
+                )
+                hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+            }
+            android.util.Log.d("AsmrMedia", "requestAudioFocus → granted=$hasAudioFocus")
+        } catch (e: Exception) {
+            android.util.Log.e("AsmrMedia", "requestAudioFocus failed: ${e.message}")
+            hasAudioFocus = false
+        }
+    }
+
+    private fun abandonAudioFocus() {
+        try {
+            val am = audioManager ?: return
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                audioFocusRequest?.let { am.abandonAudioFocusRequest(it) }
+            } else {
+                @Suppress("DEPRECATION")
+                am.abandonAudioFocus(audioFocusListener)
+            }
+            hasAudioFocus = false
+            android.util.Log.d("AsmrMedia", "abandonAudioFocus")
+        } catch (e: Exception) {
+            android.util.Log.e("AsmrMedia", "abandonAudioFocus failed: ${e.message}")
+        }
     }
 
     // ── Notification ──────────────────────────────────────
@@ -218,13 +317,10 @@ class AsmrMediaService : Service() {
     /** Smart notification update — only rebuilds when content changes.
      *  Progress-only ticks are skipped (throttled to once per second). */
     private fun updateNotification(state: PlayerState) {
-        val prefs = getSharedPreferences("asmr_settings", MODE_PRIVATE)
-        if (!prefs.getBoolean("show_notification", true)) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-            return
-        }
-
+        // Always show a notification — Android requires it for foreground
+        // services. The pref only controls lock-screen visibility, not whether
+        // the notification exists. Without a notification, startForeground()
+        // crashes the service after 5 seconds (ANR).
         val title = state.currentAudio?.title
         val artist = state.currentAudio?.artist
         val isPlaying = state.isPlaying

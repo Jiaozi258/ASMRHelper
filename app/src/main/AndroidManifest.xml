@@ -54,6 +54,17 @@
                 android:resource="@xml/asmr_widget_info" />
         </receiver>
 
+        <!-- MediaButtonReceiver: handles notification play/pause/skip buttons
+             and Bluetooth/headset media key events. Required for
+             MediaButtonReceiver.buildMediaButtonPendingIntent() to work. -->
+        <receiver
+            android:name="androidx.media.session.MediaButtonReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name=".player.AsmrMediaService"
             android:exported="false"
