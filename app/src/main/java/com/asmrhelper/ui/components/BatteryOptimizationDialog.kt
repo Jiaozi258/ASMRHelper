@@ -1,15 +1,12 @@
 package com.asmrhelper.ui.components
 
-import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.asmrhelper.util.BatteryOptimizationHelper
@@ -99,25 +96,4 @@ fun BatteryOptimizationDialog(
             }
         }
     )
-}
-
-/**
- * Checks whether the dialog should be shown and returns a state. Call this
- * once at the top level and pass it to your content.
- *
- * Usage:
- * ```
- * val showBatteryDialog = rememberBatteryDialogState()
- * if (showBatteryDialog) {
- *     BatteryOptimizationDialog(onDismiss = { showBatteryDialog = false })
- * }
- * ```
- */
-@Composable
-fun rememberBatteryDialogState(): MutableState<Boolean> {
-    val context = LocalContext.current
-    val shouldShow = remember {
-        BatteryOptimizationHelper.shouldShowDialog(context)
-    }
-    return remember { mutableStateOf(shouldShow) }
 }

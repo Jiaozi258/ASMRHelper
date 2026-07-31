@@ -84,6 +84,7 @@ import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.ui.components.HypnosisBgType
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.ControlWhite
+import com.asmrhelper.util.BatteryOptimizationHelper
 import java.io.File
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
@@ -257,27 +258,34 @@ fun SettingsScreen(
                 HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
 
                 // 后台播放保活（电池优化白名单）
+                // Check on every recomposition so status updates after user
+                // returns from system battery settings.
+                val isWhitelisted = BatteryOptimizationHelper.isWhitelisted(context)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
                         .clickable {
                             try {
-                                val intent = android.content.Intent(
-                                    android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                                    android.net.Uri.parse("package:${context.packageName}")
-                                )
-                                context.startActivity(intent)
-                            } catch (_: Exception) { }
-                        }
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                                BatteryOptimizationHelper.openBatterySettings(context)
+                                Toast.makeText(
+                                    context,
+                                    "请在列表中找到 ASMRHelper 并关闭电池优化",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "无法打开设置: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("后台播放保活", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                         Text(
-                            "关闭电池优化可防止切后台或息屏后被系统强行停止播放",
-                            color = TextHint,
+                            if (isWhitelisted) "已关闭电池优化，后台播放受保护"
+                            else "关闭电池优化可防止切后台或息屏后被系统强行停止播放",
+                            color = if (isWhitelisted) Color(0xFF4CAF50) else TextHint,
                             fontSize = 12.sp
                         )
                     }
