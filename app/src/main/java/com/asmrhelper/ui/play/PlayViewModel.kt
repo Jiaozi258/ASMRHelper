@@ -430,6 +430,11 @@ class PlayViewModel @Inject constructor(
     fun setBackgroundAudio(filePath: String) =
         playerManager.handleEvent(PlayerEvent.SetBackgroundAudio(filePath))
 
+    fun toggleAmbientLoop() {
+        val next = !_uiState.value.playerState.ambientLoopEnabled
+        playerManager.handleEvent(PlayerEvent.SetAmbientLoop(next))
+    }
+
     fun selectAmbientAudio(path: String?) {
         viewModelScope.launch {
             settingsRepository.setSelectedAmbientAudio(path)

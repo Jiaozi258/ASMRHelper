@@ -156,6 +156,7 @@ class PlayerManager @Inject constructor(
             is PlayerEvent.SetLoopMode -> _state.update { it.copy(loopMode = event.mode) }
             PlayerEvent.ToggleBackground -> toggleBackground()
             is PlayerEvent.SetBackgroundAudio -> setBackgroundAudio(event.filePath)
+            is PlayerEvent.SetAmbientLoop -> setAmbientLoop(event.enabled)
             is PlayerEvent.SetCrossfade -> _state.update { it.copy(crossfadeDurationMs = event.durationMs) }
             is PlayerEvent.FadeOut -> fadeOut(event.durationMs)
             is PlayerEvent.FadeIn -> fadeIn(event.durationMs)
@@ -271,11 +272,21 @@ class PlayerManager @Inject constructor(
         _state.update { it.copy(isBackgroundPlaying = !wasPlaying) }
     }
 
-    /** 设置背景音轨的音频文件 */
+    /** 设置背景音轨的音频文件。保留已有的循环模式设置。 */
     fun setBackgroundAudio(filePath: String) {
+        // Preserve repeat mode — if user previously enabled ambient loop,
+        // new ambient audio should also loop.
+        val currentRepeatMode = backgroundPlayer.repeatMode
         backgroundPlayer.setMediaItem(MediaItem.fromUri(filePath))
         backgroundPlayer.prepare()
+        backgroundPlayer.repeatMode = currentRepeatMode
         backgroundPlayer.playWhenReady = true
+    }
+
+    /** 设置环境音是否循环播放 */
+    fun setAmbientLoop(enabled: Boolean) {
+        backgroundPlayer.repeatMode = if (enabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+        _state.update { it.copy(ambientLoopEnabled = enabled) }
     }
 
     /** 停止并释放背景音轨 */

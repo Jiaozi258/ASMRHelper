@@ -13,6 +13,7 @@ sealed interface PlayerEvent {
     data class SetLoopMode(val mode: LoopMode) : PlayerEvent
     data object ToggleBackground : PlayerEvent
     data class SetBackgroundAudio(val filePath: String) : PlayerEvent
+    data class SetAmbientLoop(val enabled: Boolean) : PlayerEvent
     data class SetCrossfade(val durationMs: Int) : PlayerEvent
     data class FadeOut(val durationMs: Long = 3000L) : PlayerEvent
     data class FadeIn(val durationMs: Long = 3000L) : PlayerEvent

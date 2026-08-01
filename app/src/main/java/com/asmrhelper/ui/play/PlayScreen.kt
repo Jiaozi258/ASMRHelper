@@ -38,6 +38,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -1026,6 +1028,41 @@ fun PlayScreen(
                             }
                         }
                     }
+                    // ── Ambient loop toggle ──
+                    HorizontalDivider(
+                        color = DarkSurfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clickable { viewModel.toggleAmbientLoop() },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "循环播放",
+                                color = TextSecondary,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                "开启后环境音将反复播放",
+                                color = TextHint,
+                                fontSize = 11.sp
+                            )
+                        }
+                        Switch(
+                            checked = state.playerState.ambientLoopEnabled,
+                            onCheckedChange = { viewModel.toggleAmbientLoop() },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = LocalAccentColor.current,
+                                checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
+                            )
+                        )
+                    }
+
                     if (state.playerState.isBackgroundPlaying) {
                         HorizontalDivider(
                             color = DarkSurfaceVariant.copy(alpha = 0.5f),

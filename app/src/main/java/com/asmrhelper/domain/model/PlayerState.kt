@@ -7,6 +7,7 @@ data class PlayerState(
     val durationMs: Long = 0L,
     val loopMode: LoopMode = LoopMode.NONE,
     val isBackgroundPlaying: Boolean = false,
+    val ambientLoopEnabled: Boolean = false,
     val isPrivacyMode: Boolean = false,
     val crossfadeDurationMs: Int = 0  // 0=off, 3000, 5000, 10000
 )
