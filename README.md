@@ -1,15 +1,8 @@
 <div align="center">
 
-<img src="app/src/main/res/mipmap/ic_launcher.png" width="120" alt="ASMRHelper Icon"/>
-
 # ASMRHelper · ASMR 助手
 
 *沉浸式音频体验 · Immersive Audio Experience*
-
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.x-7F52FF?logo=kotlin)](https://kotlinlang.org)
-[![Compose](https://img.shields.io/badge/Compose-Material_3-4285F4?logo=jetpackcompose)](https://developer.android.com/compose)
-[![Min SDK](https://img.shields.io/badge/Min%20SDK-26-34A853?logo=android)](https://developer.android.com)
-[![License](https://img.shields.io/badge/License-Personal-blue)](LICENSE)
 
 <p>
   <a href="#english">🇺🇸 English</a> &nbsp;|&nbsp;
@@ -173,12 +166,6 @@ git clone https://github.com/JiaoZi258/ASMRHelper.git
 | Gradle | 8.x |
 | Kotlin | 2.x |
 
-## 📱 Screenshots
-
-> *(Screenshots to be added)*
-
-Main Player · Library · Playlist · Equalizer · Settings · Widget · Binaural Beats · Visualizer
-
 ## 📄 License
 
 This project is for personal and educational use. Not open for commercial redistribution.
@@ -337,12 +324,6 @@ git clone https://github.com/JiaoZi258/ASMRHelper.git
 | JDK | 17 |
 | Gradle | 8.x |
 | Kotlin | 2.x |
-
-## 📱 截图
-
-> *(待添加)*
-
-主播放界面 · 音频库 · 播放列表 · 均衡器 · 设置 · 小组件 · 双耳节拍 · 可视化波形
 
 ## 📄 许可证
 
