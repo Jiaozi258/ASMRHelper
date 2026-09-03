@@ -59,7 +59,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -424,8 +426,13 @@ fun LibraryScreen(
 
         // 歌词编辑对话框
         if (showLyricsDialog && lyricsAudio != null) {
-            var lyricsText by remember(lyricsAudio) {
-                mutableStateOf(com.asmrhelper.util.LyricsStore.loadLyrics(context, lyricsAudio!!.filePath) ?: "")
+            val scope = rememberCoroutineScope()
+            var lyricsText by remember(lyricsAudio) { mutableStateOf("") }
+            // 在 IO 线程异步加载歌词，避免在主线程组合期间做文件 IO 导致卡顿/ANR
+            LaunchedEffect(lyricsAudio) {
+                lyricsText = withContext(Dispatchers.IO) {
+                    com.asmrhelper.util.LyricsStore.loadLyrics(context, lyricsAudio!!.filePath) ?: ""
+                }
             }
             AlertDialog(
                 onDismissRequest = {
@@ -452,7 +459,11 @@ fun LibraryScreen(
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        com.asmrhelper.util.LyricsStore.saveLyrics(context, lyricsAudio!!.filePath, lyricsText)
+                        val path = lyricsAudio!!.filePath
+                        val text = lyricsText
+                        scope.launch(Dispatchers.IO) {
+                            com.asmrhelper.util.LyricsStore.saveLyrics(context, path, text)
+                        }
                         Toast.makeText(context, "歌词已保存", Toast.LENGTH_SHORT).show()
                         showLyricsDialog = false
                         lyricsAudio = null

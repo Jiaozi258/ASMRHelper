@@ -285,7 +285,12 @@ class AsmrMediaService : Service() {
                     android.util.Log.d("AsmrMedia", "Headset: SKIP_PREV received")
                     playerManager.handleEvent(PlayerEvent.Previous)
                 }
-                override fun onStop() = stopSelf()
+                override fun onStop() {
+                    // "停止"（蓝牙/耳机/语音助手）应停止播放，而不是只杀服务
+                    // 让播放器继续出声（僵尸播放）。playerManager.stop() 会暂停
+                    // 主播放器并停止环境音。
+                    playerManager.stop()
+                }
             })
         }
         mediaSession.isActive = true

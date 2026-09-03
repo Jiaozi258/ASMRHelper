@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -378,11 +379,16 @@ class PlayViewModel @Inject constructor(
             }
         }
 
-        // 监听当前音频变化，同步收藏状态
+        // 监听当前音频变化，同步收藏状态。
+        // distinctUntilChanged：只在切歌时同步，避免 200ms 的进度 tick 用
+        // 缓存的 isFavorite 反复覆盖用户刚点击的收藏状态（收藏回弹）。
         viewModelScope.launch {
-            playerManager.state.map { it.currentAudio }.collect { audio ->
-                _currentFavorite.value = audio?.isFavorite ?: false
-            }
+            playerManager.state
+                .map { it.currentAudio }
+                .distinctUntilChanged()
+                .collect { audio ->
+                    _currentFavorite.value = audio?.isFavorite ?: false
+                }
         }
     }
 
@@ -460,8 +466,20 @@ class PlayViewModel @Inject constructor(
     }
 
     // ── 变速变调 ───────────────────────────────────────
-    fun setPlaybackSpeed(speed: Float) = playerManager.setPlaybackSpeed(speed)
-    fun setPlaybackPitch(pitch: Float) = playerManager.setPlaybackPitch(pitch)
+    private val _playbackSpeed = MutableStateFlow(1f)
+    val playbackSpeed: StateFlow<Float> = _playbackSpeed
+    private val _playbackPitch = MutableStateFlow(1f)
+    val playbackPitch: StateFlow<Float> = _playbackPitch
+
+    fun setPlaybackSpeed(speed: Float) {
+        _playbackSpeed.value = speed
+        playerManager.setPlaybackSpeed(speed)
+    }
+
+    fun setPlaybackPitch(pitch: Float) {
+        _playbackPitch.value = pitch
+        playerManager.setPlaybackPitch(pitch)
+    }
 
     // ── 切片 ───────────────────────────────────────────
     fun setSlice(startMs: Long, endMs: Long) = playerManager.setSlice(startMs, endMs)

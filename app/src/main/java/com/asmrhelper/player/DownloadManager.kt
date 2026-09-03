@@ -72,6 +72,9 @@ class DownloadManager @Inject constructor(
     fun cancel() {
         downloadJob?.cancel()
         downloadJob = null
+        // 主动断开下载 socket，使阻塞的 HttpURLConnection.read() 中断，
+        // 否则取消只取消协程、下载仍会继续到完成。
+        extractor.cancelActiveDownload()
         _state.value = DownloadState(false, 0f, "")
     }
 }

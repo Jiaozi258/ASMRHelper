@@ -499,8 +499,11 @@ fun PlayScreen(
                 .padding(bottom = 20.dp)
         ) {
             // 可拖动进度条（local drag state for smooth seeking）
+            // 钳制到 0..1：缓冲/VBR/取整可能让 progressMs 略大于 durationMs，
+            // 超出会触发 Slider 的 IllegalArgumentException 崩溃。
             val progressFraction = if (state.playerState.durationMs > 0)
-                state.playerState.progressMs.toFloat() / state.playerState.durationMs else 0f
+                (state.playerState.progressMs.toFloat() / state.playerState.durationMs).coerceIn(0f, 1f)
+            else 0f
             val isPlaying = state.playerState.isPlaying
             var isDragging by remember { mutableStateOf(false) }
             var dragFraction by remember { mutableFloatStateOf(progressFraction) }
@@ -530,6 +533,7 @@ fun PlayScreen(
                     viewModel.seekTo(positionMs)
                 },
                 modifier = Modifier.fillMaxWidth(),
+                valueRange = 0f..1f,
                 colors = SliderDefaults.colors(
                     thumbColor = LocalAccentColor.current,
                     activeTrackColor = LocalAccentColor.current,
@@ -981,8 +985,7 @@ fun PlayScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clickable { viewModel.toggleAmbientLoop() },
+                            .padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {

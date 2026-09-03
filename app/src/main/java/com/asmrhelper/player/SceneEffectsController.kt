@@ -3,6 +3,7 @@ package com.asmrhelper.player
 import android.media.audiofx.BassBoost
 import android.media.audiofx.LoudnessEnhancer
 import android.media.audiofx.PresetReverb
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.asmrhelper.di.MainPlayer
 import kotlinx.coroutines.CoroutineScope
@@ -54,33 +55,38 @@ class SceneEffectsController @Inject constructor(
     val loudnessGain: StateFlow<Int> = _loudnessGain.asStateFlow() // dB * 100
 
     init {
-        initJob = scope.launch {
-            var attempts = 0
-            while (isActive && attempts < 20) {
-                val sessionId = mainPlayer.audioSessionId
-                if (sessionId > 0) {
-                    try {
-                        reverb = PresetReverb(0, sessionId).apply {
-                            enabled = false
-                            preset = PresetReverb.PRESET_NONE
-                        }
-                    } catch (_: Exception) { reverb = null }
-                    try {
-                        bassBoost = BassBoost(0, sessionId).apply { enabled = false }
-                    } catch (_: Exception) { bassBoost = null }
-                    try {
-                        loudness = LoudnessEnhancer(sessionId).apply {
-                            enabled = false
-                            setTargetGain(0)
-                        }
-                    } catch (_: Exception) { loudness = null }
-                    _isReady.value = true
-                    break
+        // 用 Player.Listener 在播放器就绪（STATE_READY，audioSessionId 生效）时
+        // 挂载音效，而不是有界轮询：之前的 20×500ms 轮询会在用户 10 秒后才
+        // 开始播放时永久放弃，导致场景音效全程静默失效。
+        mainPlayer.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY && !_isReady.value) {
+                    attachEffects()
                 }
-                attempts++
-                delay(500L)
             }
-        }
+        })
+        if (mainPlayer.playbackState == Player.STATE_READY) attachEffects()
+    }
+
+    private fun attachEffects() {
+        val sessionId = mainPlayer.audioSessionId
+        if (sessionId <= 0 || _isReady.value) return
+        try {
+            reverb = PresetReverb(0, sessionId).apply {
+                enabled = false
+                preset = PresetReverb.PRESET_NONE
+            }
+        } catch (_: Exception) { reverb = null }
+        try {
+            bassBoost = BassBoost(0, sessionId).apply { enabled = false }
+        } catch (_: Exception) { bassBoost = null }
+        try {
+            loudness = LoudnessEnhancer(sessionId).apply {
+                enabled = false
+                setTargetGain(0)
+            }
+        } catch (_: Exception) { loudness = null }
+        _isReady.value = true
     }
 
     /** 应用场景预设 */
@@ -108,7 +114,8 @@ class SceneEffectsController @Inject constructor(
                 // 失真声：高响度增益 + 无混响（黑胶颗粒感）
                 loudness?.apply {
                     enabled = true
-                    setTargetGain(800) // +8 dB 增益，模拟过载失真
+                    // 优先使用用户设置的响度增益；未设置时用默认 +8 dB
+                    setTargetGain(if (_loudnessGain.value > 0) _loudnessGain.value else 800)
                 }
                 bassBoost?.apply {
                     enabled = true
@@ -153,13 +160,13 @@ class SceneEffectsController @Inject constructor(
     fun setLoudnessGain(gainDbX100: Int) {
         val clamped = gainDbX100.coerceIn(0, 1000)
         _loudnessGain.value = clamped
-        loudness?.apply {
-            enabled = clamped > 0
-            setTargetGain(clamped)
-        }
-        // 若当前场景使用响度（失真声），重新应用
+        // 仅在"失真声"场景（使用响度增益）时直接应用；不要重放整个场景，
+        // 否则会把用户刚调的增益覆盖回硬编码的 +8dB。
         if (_currentScene.value == SceneEffect.DISTORTED) {
-            applyScene(SceneEffect.DISTORTED)
+            loudness?.apply {
+                enabled = clamped > 0
+                setTargetGain(clamped)
+            }
         }
     }
 

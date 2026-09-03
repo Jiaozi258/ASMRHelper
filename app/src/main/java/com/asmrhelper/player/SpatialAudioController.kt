@@ -5,9 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,12 +47,14 @@ class SpatialAudioController @Inject constructor() {
         if (audioSessionId == 0) return
 
         try {
-            virtualizer = Virtualizer(0, audioSessionId).apply {
-                enabled = true
-                setStrength(300.toShort())
-            }
+            virtualizer = Virtualizer(0, audioSessionId)
+            // 重新应用当前模式强度（此时 virtualizer 已就绪）
+            applyModeStrength()
+            isActive = currentMode != SpatialMode.OFF
         } catch (_: Exception) {
             // Audio effects not supported on this device
+            virtualizer = null
+            isActive = false
         }
     }
 
@@ -62,37 +62,41 @@ class SpatialAudioController @Inject constructor() {
         currentMode = mode
         animJob?.cancel()
 
-        when (mode) {
-            SpatialMode.OFF -> {
-                virtualizer?.enabled = false
-                isActive = false
-            }
+        if (mode == SpatialMode.OFF) {
+            isActive = false
+            virtualizer?.enabled = false
+            return
+        }
+        // 若 virtualizer 尚未创建（尚未 attach），这里先不置 isActive=true，
+        // 让 ViewModel 的 attach 守卫能触发 attach()；attach() 完成后会
+        // 通过 applyModeStrength() 应用 currentMode。
+        if (virtualizer == null) return
+        applyModeStrength()
+        isActive = true
+    }
+
+    /** 将 currentMode 的强度应用到 virtualizer（virtualizer 非空时有效）。 */
+    private fun applyModeStrength() {
+        val v = virtualizer ?: return
+        when (currentMode) {
+            SpatialMode.OFF -> v.enabled = false
             SpatialMode.D3 -> {
-                virtualizer?.apply {
-                    enabled = true
-                    setStrength(300.toShort())
-                }
-                isActive = true
+                v.enabled = true
+                v.setStrength(300.toShort())
             }
             SpatialMode.WIDE -> {
-                virtualizer?.apply {
-                    enabled = true
-                    setStrength(800.toShort())
-                }
-                isActive = true
+                v.enabled = true
+                v.setStrength(800.toShort())
             }
             SpatialMode.SWEEP, SpatialMode.CIRCLE -> {
-                virtualizer?.apply {
-                    enabled = true
-                    setStrength(400.toShort())
-                }
-                isActive = true
-                startPanAnimation(mode == SpatialMode.CIRCLE)
+                v.enabled = true
+                v.setStrength(400.toShort())
+                startPanAnimation(currentMode == SpatialMode.CIRCLE)
             }
         }
     }
 
-    /** 设置左右平衡 (-1.0 = 全左, 0 = 居中, 1.0 = 全右)。
+    /** 设置左右平衡 (-1.0 = 全左, 0 = 居中, 1 = 全右)。
      *  通过 Virtualizer 强度近似（Android 无独立 Balance 类）。 */
     fun setBalance(value: Float) {
         _balance.value = value.coerceIn(-1f, 1f)
@@ -124,9 +128,11 @@ class SpatialAudioController @Inject constructor() {
             while (isActive) {
                 if (circular) {
                     val depth = (sin(t * 1.7f) * 0.5f + 0.5f).toFloat()
-                    virtualizer?.setStrength(
-                        (400 + depth * 500).toInt().coerceIn(0, 1000).toShort()
-                    )
+                    try {
+                        virtualizer?.setStrength(
+                            (400 + depth * 500).toInt().coerceIn(0, 1000).toShort()
+                        )
+                    } catch (_: Exception) { }
                 }
                 t += 0.05f * surroundSpeed
                 delay((30L / surroundSpeed).toLong().coerceAtLeast(10L))
@@ -137,10 +143,14 @@ class SpatialAudioController @Inject constructor() {
     fun release() {
         animJob?.cancel()
         animJob = null
-        scope.cancel()
-        virtualizer?.apply { enabled = false; release() }
+        // 不再 cancel scope：这是单例，scope 必须跨 attach/release 周期存活，
+        // 否则后续 startPanAnimation 的 scope.launch 会落到已取消的 scope 上，
+        // 导致扫掠/环绕动画静默失效。
+        virtualizer?.let {
+            try { it.enabled = false; it.release() } catch (_: Exception) { }
+        }
         virtualizer = null
         isActive = false
-        currentMode = SpatialMode.OFF
+        // 保留 currentMode，使重新 attach 时能恢复用户已选的模式
     }
 }

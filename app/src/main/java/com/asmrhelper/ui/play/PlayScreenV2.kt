@@ -213,9 +213,16 @@ fun PlayScreenV2(
             // ── 4. 进度条 + 时间 ──────────────────────────
             val progress = state.playerState.progressMs
             val duration = state.playerState.durationMs
+            var isDragging by remember { mutableStateOf(false) }
+            var dragValue by remember { mutableStateOf(0f) }
             Slider(
-                value = if (duration > 0) progress.toFloat().coerceIn(0f, duration.toFloat()) else 0f,
-                onValueChange = { viewModel.seekTo(it.toLong()) },
+                value = if (isDragging) dragValue
+                else if (duration > 0) progress.toFloat().coerceIn(0f, duration.toFloat()) else 0f,
+                onValueChange = { isDragging = true; dragValue = it },
+                onValueChangeFinished = {
+                    isDragging = false
+                    viewModel.seekTo(dragValue.toLong())
+                },
                 valueRange = 0f..(duration.takeIf { it > 0 } ?: 1L).toFloat(),
                 modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
@@ -463,12 +470,13 @@ fun PlayScreenV2(
 
     // ── 音效器对话框 ───────────────────────────────────
     if (showEffectsDialog) {
-        var speed by remember { mutableStateOf(1f) }
-        var pitch by remember { mutableStateOf(1f) }
         val eqLevels by viewModel.eqBandLevels.collectAsStateWithLifecycle()
         val currentScene by viewModel.currentSceneEffect.collectAsStateWithLifecycle()
         val loudness by viewModel.loudnessGain.collectAsStateWithLifecycle()
         val balance by viewModel.stereoBalance.collectAsStateWithLifecycle()
+        // 用真实状态而非本地 remember(1f)：否则重开对话框会复位到 1.0x
+        val playbackSpeed by viewModel.playbackSpeed.collectAsStateWithLifecycle()
+        val playbackPitch by viewModel.playbackPitch.collectAsStateWithLifecycle()
 
         AlertDialog(
             onDismissRequest = { showEffectsDialog = false },
@@ -514,17 +522,17 @@ fun PlayScreenV2(
 
                     // 变速变调
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
-                    Text("变速 ${"%.2f".format(speed)}x", color = TextSecondary, fontSize = 13.sp)
+                    Text("变速 ${"%.2f".format(playbackSpeed)}x", color = TextSecondary, fontSize = 13.sp)
                     Slider(
-                        value = speed,
-                        onValueChange = { speed = it; viewModel.setPlaybackSpeed(it) },
+                        value = playbackSpeed,
+                        onValueChange = { viewModel.setPlaybackSpeed(it) },
                         valueRange = 0.5f..2f,
                         colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                     )
-                    Text("变调 ${"%.2f".format(pitch)}x", color = TextSecondary, fontSize = 13.sp)
+                    Text("变调 ${"%.2f".format(playbackPitch)}x", color = TextSecondary, fontSize = 13.sp)
                     Slider(
-                        value = pitch,
-                        onValueChange = { pitch = it; viewModel.setPlaybackPitch(it) },
+                        value = playbackPitch,
+                        onValueChange = { viewModel.setPlaybackPitch(it) },
                         valueRange = 0.5f..2f,
                         colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                     )
@@ -569,8 +577,9 @@ fun PlayScreenV2(
     // ── 切片对话框 ─────────────────────────────────────
     if (showSliceDialog) {
         val duration = state.playerState.durationMs
-        var startMs by remember { mutableStateOf(0f) }
-        var endMs by remember { mutableStateOf(duration.toFloat()) }
+        // 用 duration 作为 key，避免在未加载（duration=0）或切歌时滑杆卡在 0
+        var startMs by remember(duration) { mutableStateOf(0f) }
+        var endMs by remember(duration) { mutableStateOf(duration.toFloat()) }
         AlertDialog(
             onDismissRequest = { showSliceDialog = false },
             title = { Text("切片播放（A-B 循环）", color = TextPrimary) },

@@ -695,8 +695,8 @@ fun SettingsScreen(
                                     Text(preset.name, color = if (selected) LocalAccentColor.current else TextSecondary, fontSize = 12.sp)
                                 }
                             }
-                            // 自定义预设
-                            val custom = viewModel.loadCustomEqPreset()
+                            // 自定义预设（remember 缓存，避免每次重组都同步读 SharedPreferences）
+                            val custom = remember { viewModel.loadCustomEqPreset() }
                             if (custom != null) {
                                 val selected = eqCurrentPreset == custom.name
                                 Box(
@@ -936,7 +936,7 @@ fun SettingsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.Delete, null, tint = ErrorRed.copy(alpha = 0.8f))
                         Spacer(Modifier.width(10.dp))
-                        Text("清除音频缓存", color = TextPrimary, fontSize = 15.sp)
+                        Text("清除全部缓存", color = TextPrimary, fontSize = 15.sp)
                     }
                     Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
                 }
@@ -1567,30 +1567,6 @@ fun SettingsScreen(
                         uncheckedTrackColor = DarkSurfaceVariant
                     )
                 )
-            }
-
-            SectionSpacer()
-
-            // ═══ 播放历史 ═══════════════════════════════════
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onNavigateToHistory() }
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("播放历史", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
-                }
             }
 
             SectionSpacer()

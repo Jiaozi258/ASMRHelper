@@ -2,6 +2,7 @@ package com.asmrhelper.player
 
 import android.content.Context
 import android.media.audiofx.Equalizer
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.asmrhelper.di.MainPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -67,37 +68,42 @@ class EqualizerController @Inject constructor(
     }
 
     init {
-        initJob = scope.launch {
-            var attempts = 0
-            while (isActive && attempts < 20) {
-                val sessionId = mainPlayer.audioSessionId
-                if (sessionId > 0) {
-                    try {
-                        val eq = Equalizer(0, sessionId).apply { enabled = true }
-                        val numBands = eq.numberOfBands.toInt()
-
-                        // 收集设备所有频段的中心频率 (Hz)
-                        val deviceBands = (0 until numBands).map { b ->
-                            b to eq.getCenterFreq(b.toShort())
-                        }
-                        actualBandIndices.clear()
-                        // 为每个 UI 频段（31~16k Hz）找到最接近的设备频段
-                        for (uiFreq in bandFrequencies) {
-                            val nearest = deviceBands.minByOrNull { (_, f) -> kotlin.math.abs(f - uiFreq) }
-                            val idx = nearest?.first?.toShort() ?: 0
-                            actualBandIndices.add(idx)
-                        }
-                        equalizer = eq
-                        _isEnabled.value = true
-                        applyLevels(_bandLevels.value)
-                        break
-                    } catch (_: Exception) {
-                        _isEnabled.value = false
-                    }
+        // 用 Player.Listener 在播放器就绪（STATE_READY，audioSessionId 生效）时
+        // 挂载均衡器，而不是有界轮询：之前的 20×500ms 轮询会在用户 10 秒后才
+        // 开始播放时永久放弃，导致 EQ 全程静默失效。
+        mainPlayer.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY && equalizer == null) {
+                    attachEqualizer()
                 }
-                attempts++
-                delay(500L)
             }
+        })
+        if (mainPlayer.playbackState == Player.STATE_READY) attachEqualizer()
+    }
+
+    private fun attachEqualizer() {
+        val sessionId = mainPlayer.audioSessionId
+        if (sessionId <= 0 || equalizer != null) return
+        try {
+            val eq = Equalizer(0, sessionId).apply { enabled = true }
+            val numBands = eq.numberOfBands.toInt()
+
+            // 收集设备所有频段的中心频率 (Hz)
+            val deviceBands = (0 until numBands).map { b ->
+                b to eq.getCenterFreq(b.toShort())
+            }
+            actualBandIndices.clear()
+            // 为每个 UI 频段（31~16k Hz）找到最接近的设备频段
+            for (uiFreq in bandFrequencies) {
+                val nearest = deviceBands.minByOrNull { (_, f) -> kotlin.math.abs(f - uiFreq) }
+                val idx = nearest?.first?.toShort() ?: 0
+                actualBandIndices.add(idx)
+            }
+            equalizer = eq
+            _isEnabled.value = true
+            applyLevels(_bandLevels.value)
+        } catch (_: Exception) {
+            _isEnabled.value = false
         }
     }
 
@@ -115,7 +121,7 @@ class EqualizerController @Inject constructor(
 
     /** 应用预设 */
     fun applyPreset(preset: EqPreset) {
-        _bandLevels.value = preset.values.toList()
+        _bandLevels.value = preset.values.map { it.coerceIn(-10f, 10f) }
         _currentPreset.value = preset.name
         applyLevels(preset.values)
     }
@@ -138,7 +144,7 @@ class EqualizerController @Inject constructor(
         val valuesJson = prefs.getString("custom_preset_values", null) ?: return null
         return try {
             val arr = org.json.JSONArray(valuesJson)
-            val values = (0 until arr.length()).map { arr.getDouble(it).toFloat() }
+            val values = (0 until arr.length()).map { arr.getDouble(it).toFloat().coerceIn(-10f, 10f) }
             EqPreset(name, values)
         } catch (_: Exception) { null }
     }
@@ -149,7 +155,7 @@ class EqualizerController @Inject constructor(
 
     private fun applyLevels(values: List<Float>) {
         for (i in values.indices) {
-            applySingleBand(i, values[i])
+            applySingleBand(i, values[i].coerceIn(-10f, 10f))
         }
     }
 

@@ -37,6 +37,15 @@ class VideoAudioExtractor @Inject constructor(
 ) {
     private var lastError: String? = null
 
+    /** 当前进行中的下载连接，用于取消时主动断开以中断阻塞读取。 */
+    @Volatile private var activeConnection: HttpURLConnection? = null
+
+    /** 取消进行中的下载：断开底层 socket 使阻塞的 read() 抛出异常。 */
+    fun cancelActiveDownload() {
+        try { activeConnection?.disconnect() } catch (_: Exception) { }
+        activeConnection = null
+    }
+
     /** Set before [extractAudio] to force a specific platform extractor.
      *  "auto" (or null) → detect from URL; "bilibili" | "youtube" | "douyin" → force. */
     var selectedPlatform: String? = null
@@ -503,17 +512,22 @@ class VideoAudioExtractor @Inject constructor(
         }
         val total = conn.contentLengthLong
         val input = conn.inputStream ?: throw IOException("下载流为空")
-        input.use { s -> dest.outputStream().use { o ->
-                val buf = ByteArray(65536); var dl = 0L; var n: Int
-                while (s.read(buf).also { n = it } != -1) {
-                    o.write(buf, 0, n); dl += n
-                    if (total > 0L) {
-                        val pct = startPct + (endPct - startPct) * (dl.toFloat() / total)
-                        onProgress(pct.coerceAtMost(endPct))
+        activeConnection = conn
+        try {
+            input.use { s -> dest.outputStream().use { o ->
+                    val buf = ByteArray(65536); var dl = 0L; var n: Int
+                    while (s.read(buf).also { n = it } != -1) {
+                        o.write(buf, 0, n); dl += n
+                        if (total > 0L) {
+                            val pct = startPct + (endPct - startPct) * (dl.toFloat() / total)
+                            onProgress(pct.coerceAtMost(endPct))
+                        }
                     }
-                }
-        } }
-        conn.disconnect()
+            } }
+        } finally {
+            activeConnection = null
+            conn.disconnect()
+        }
     }
 
     private fun downloadFileGeneric(
@@ -535,17 +549,22 @@ class VideoAudioExtractor @Inject constructor(
         }
         val total = conn.contentLengthLong
         val input = conn.inputStream ?: throw IOException("下载流为空")
-        input.use { s -> dest.outputStream().use { o ->
-                val buf = ByteArray(16384); var dl = 0L; var n: Int
-                while (s.read(buf).also { n = it } != -1) {
-                    o.write(buf, 0, n); dl += n
-                    if (total > 0L) {
-                        val pct = startPct + (endPct - startPct) * (dl.toFloat() / total)
-                        onProgress(pct.coerceAtMost(endPct))
+        activeConnection = conn
+        try {
+            input.use { s -> dest.outputStream().use { o ->
+                    val buf = ByteArray(16384); var dl = 0L; var n: Int
+                    while (s.read(buf).also { n = it } != -1) {
+                        o.write(buf, 0, n); dl += n
+                        if (total > 0L) {
+                            val pct = startPct + (endPct - startPct) * (dl.toFloat() / total)
+                            onProgress(pct.coerceAtMost(endPct))
+                        }
                     }
-                }
-        } }
-        conn.disconnect()
+            } }
+        } finally {
+            activeConnection = null
+            conn.disconnect()
+        }
     }
 
     /** Translate an HTTP status code into a human-readable Chinese message. */

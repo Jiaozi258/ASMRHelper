@@ -61,7 +61,7 @@ class NoiseGenerator @Inject constructor() {
         currentType = type
         // resetState() is called inside fill loop for thread safety — not here
 
-        val track = AudioTrack.Builder()
+        val newTrack = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -78,17 +78,29 @@ class NoiseGenerator @Inject constructor() {
             .setBufferSizeInBytes(bufferSize)
             .build()
 
-        this.track = track
-        track.play()
-        track.setStereoVolume(volume, volume)
+        track = newTrack
+        newTrack.play()
+        newTrack.setStereoVolume(volume, volume)
         isPlaying = true
 
         generateJob = scope.launch {
             resetState()
             val buffer = ShortArray(bufferSize / 2)
-            while (isActive) {
-                fillBuffer(buffer, type)
-                track.write(buffer, 0, buffer.size)
+            try {
+                while (isActive) {
+                    fillBuffer(buffer, type)
+                    newTrack.write(buffer, 0, buffer.size)
+                }
+            } catch (_: Exception) {
+                // write() may fail after the track is externally stopped/paused.
+            } finally {
+                // Release the track on the generation thread AFTER write()
+                // has returned — never while a native write() is in flight,
+                // which would cause a SIGSEGV/IllegalStateException.
+                try { newTrack.release() } catch (_: Exception) { }
+                if (track === newTrack) {
+                    track = null
+                }
             }
         }
     }
@@ -97,14 +109,11 @@ class NoiseGenerator @Inject constructor() {
         isPlaying = false           // signal generation to stop first
         generateJob?.cancel()
         generateJob = null
-        // Small delay to let the coroutine exit cleanly before releasing
-        // track, avoiding native crash from releasing during write().
-        try {
-            track?.pause()
-            track?.flush()
-            track?.release()
-        } catch (_: Exception) { }
-        track = null
+        // Unblock a blocked write() and stop audio immediately. Do NOT
+        // release() here — the generation coroutine releases the track in its
+        // finally block, avoiding a native crash from releasing during write().
+        try { track?.pause() } catch (_: Exception) { }
+        try { track?.flush() } catch (_: Exception) { }
     }
 
     private fun fillBuffer(buffer: ShortArray, type: NoiseType) {

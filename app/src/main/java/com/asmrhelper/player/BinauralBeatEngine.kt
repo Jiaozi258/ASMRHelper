@@ -37,7 +37,7 @@ data class BinauralPreset(
 
 class BinauralBeatEngine {
 
-    private var audioTrack: AudioTrack? = null
+    @Volatile private var audioTrack: AudioTrack? = null
     private var generationJob: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     @Volatile private var _isPlaying = false
@@ -61,11 +61,10 @@ class BinauralBeatEngine {
         _isPlaying = false
         generationJob?.cancel()
         generationJob = null
-        audioTrack?.let {
-            it.stop()
-            it.release()
-        }
-        audioTrack = null
+        // Unblock a blocked write(); the generation coroutine releases the
+        // track in its finally block after write() returns.
+        try { audioTrack?.pause() } catch (_: Exception) { }
+        try { audioTrack?.flush() } catch (_: Exception) { }
     }
 
     fun release() {
@@ -84,7 +83,7 @@ class BinauralBeatEngine {
             AudioFormat.ENCODING_PCM_16BIT
         ).coerceAtLeast(sampleRate / 10 * 4) // ~100ms buffer
 
-        audioTrack = AudioTrack(
+        val track = AudioTrack(
             AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
@@ -98,29 +97,49 @@ class BinauralBeatEngine {
             AudioTrack.MODE_STREAM,
             android.media.AudioManager.AUDIO_SESSION_ID_GENERATE
         )
+        audioTrack = track
+
+        // stop() may have been called before the track was created — bail out
+        // to avoid a brief audible blip.
+        if (!_isPlaying) {
+            try { track.release() } catch (_: Exception) { }
+            audioTrack = null
+            return
+        }
 
         val samples = ShortArray(bufferSize / 2)
         var phaseLeft = 0.0
         var phaseRight = 0.0
 
-        audioTrack?.play()
-        audioTrack?.setStereoVolume(volume, volume)
+        try {
+            track.play()
+            track.setStereoVolume(volume, volume)
 
-        while (_isPlaying) {
-            val incrementLeft = 2.0 * PI * leftFreq / sampleRate
-            val incrementRight = 2.0 * PI * rightFreq / sampleRate
+            while (_isPlaying) {
+                val incrementLeft = 2.0 * PI * leftFreq / sampleRate
+                val incrementRight = 2.0 * PI * rightFreq / sampleRate
 
-            val amp = (Short.MAX_VALUE * volume).toInt()
-            for (i in 0 until (samples.size - 1) step 2) {
-                samples[i] = (sin(phaseLeft) * amp).toInt().toShort()
-                samples[i + 1] = (sin(phaseRight) * amp).toInt().toShort()
-                phaseLeft += incrementLeft
-                phaseRight += incrementRight
+                val amp = (Short.MAX_VALUE * volume).toInt()
+                for (i in 0 until (samples.size - 1) step 2) {
+                    samples[i] = (sin(phaseLeft) * amp).toInt().toShort()
+                    samples[i + 1] = (sin(phaseRight) * amp).toInt().toShort()
+                    phaseLeft += incrementLeft
+                    phaseRight += incrementRight
+                }
+                phaseLeft %= 2.0 * PI
+                phaseRight %= 2.0 * PI
+
+                track.write(samples, 0, samples.size)
             }
-            phaseLeft %= 2.0 * PI
-            phaseRight %= 2.0 * PI
-
-            audioTrack?.write(samples, 0, samples.size)
+        } catch (_: Exception) {
+            // write() may fail after the track is externally stopped.
+        } finally {
+            // Release on the generation thread after write() returns — never
+            // during a blocked native write().
+            try { track.release() } catch (_: Exception) { }
+            if (audioTrack === track) {
+                audioTrack = null
+            }
         }
     }
 }

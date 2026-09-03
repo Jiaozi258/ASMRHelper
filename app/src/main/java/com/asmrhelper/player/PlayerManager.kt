@@ -31,7 +31,8 @@ class PlayerManager @Inject constructor(
     @MainPlayer private val mainPlayer: ExoPlayer,
     @BackgroundPlayer private val backgroundPlayer: ExoPlayer,
     @ApplicationContext private val context: Context,
-    private val playHistoryRepository: com.asmrhelper.data.repository.PlayHistoryRepositoryImpl
+    private val playHistoryRepository: com.asmrhelper.data.repository.PlayHistoryRepositoryImpl,
+    private val audioFocusManager: AudioFocusManager
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -40,6 +41,10 @@ class PlayerManager @Inject constructor(
 
     private var currentPlaylist: List<Audio> = emptyList()
     private var currentIndex: Int = -1
+
+    // 音频焦点丢失前的播放状态，用于重新获得焦点后恢复
+    private var resumeMainOnFocus = false
+    private var resumeBackgroundOnFocus = false
 
     // External state change listener (e.g., for MediaService notification updates)
     private var onStateChanged: ((PlayerState) -> Unit)? = null
@@ -118,6 +123,32 @@ class PlayerManager @Inject constructor(
     }
 
     init {
+        // ── 音频焦点：统一管理主播放器与环境音的暂停/恢复 ──
+        audioFocusManager.onFocusLost = {
+            resumeMainOnFocus = mainPlayer.isPlaying
+            resumeBackgroundOnFocus = backgroundPlayer.isPlaying
+            mainPlayer.pause()
+            backgroundPlayer.pause()
+            _state.update { it.copy(isPlaying = false, isBackgroundPlaying = false) }
+        }
+        audioFocusManager.onFocusDuck = {
+            mainPlayer.volume = 0.2f
+            backgroundPlayer.volume = 0.2f
+        }
+        audioFocusManager.onFocusGained = {
+            mainPlayer.volume = 1f
+            backgroundPlayer.volume = 1f
+            if (resumeMainOnFocus) {
+                resumeMainOnFocus = false
+                if (mainPlayer.playbackState == Player.STATE_ENDED) mainPlayer.seekTo(0)
+                mainPlayer.play()
+            }
+            if (resumeBackgroundOnFocus) {
+                resumeBackgroundOnFocus = false
+                backgroundPlayer.play()
+            }
+        }
+
         // ── 记忆播放：恢复上次的歌曲和播放位置 ──
         // 修复"假保留"问题：之前只把标题写进 UI，但没有 prepare 播放器，
         // 导致点播放按钮无效。现在真正 prepare 播放器并 seek 到上次位置。
@@ -202,7 +233,7 @@ class PlayerManager @Inject constructor(
                     if (pos < lastBgPos - 300L) {
                         // 已循环回开头 — 渐入
                         fadeBackgroundIn()
-                    } else if (dur - pos < 800L && backgroundPlayer.volume > 0.05f) {
+                    } else if (dur - pos < 800L && !bgFadingOut) {
                         // 接近结尾 — 渐出
                         fadeBackgroundOut(800L)
                     }
@@ -244,8 +275,13 @@ class PlayerManager @Inject constructor(
 
     // ── 环境音渐入渐出辅助方法 ─────────────────────────
 
+    private var bgFadeJob: Job? = null
+    @Volatile private var bgFadingOut = false
+
     private fun fadeBackgroundIn() {
-        scope.launch {
+        bgFadingOut = false
+        bgFadeJob?.cancel()
+        bgFadeJob = scope.launch {
             val steps = 20
             backgroundPlayer.volume = 0f
             for (i in 1..steps) {
@@ -257,23 +293,41 @@ class PlayerManager @Inject constructor(
     }
 
     private fun fadeBackgroundOut(durationMs: Long = 1000L) {
-        scope.launch {
-            val steps = 20
-            val stepMs = durationMs / steps
-            for (i in steps downTo 1) {
-                backgroundPlayer.volume = i.toFloat() / steps
-                delay(stepMs)
+        // 防止循环边界处重复启动多个重叠的渐出协程（音量抖动）
+        if (bgFadingOut) return
+        bgFadingOut = true
+        bgFadeJob?.cancel()
+        bgFadeJob = scope.launch {
+            try {
+                val steps = 20
+                val stepMs = durationMs / steps
+                for (i in steps downTo 1) {
+                    backgroundPlayer.volume = i.toFloat() / steps
+                    delay(stepMs)
+                }
+                // 保持静音，等待 fadeBackgroundIn 或停止后恢复
+                backgroundPlayer.volume = 0f
+            } finally {
+                bgFadingOut = false
             }
-            // 保持静音，等待 fadeBackgroundIn 或停止后恢复
-            backgroundPlayer.volume = 0f
         }
     }
 
     fun handleEvent(event: PlayerEvent) {
         when (event) {
             is PlayerEvent.Play -> play(event.audio, event.playlist)
-            PlayerEvent.Pause -> mainPlayer.pause()
-            PlayerEvent.Resume -> mainPlayer.play()
+            PlayerEvent.Pause -> {
+                mainPlayer.pause()
+                audioFocusManager.abandonFocus()
+            }
+            PlayerEvent.Resume -> {
+                // 修复：歌曲自然播完后（STATE_ENDED）直接 play() 是空操作。
+                // 先 seek 回开头，播放器才回到 READY 状态可再次播放。
+                if (mainPlayer.playbackState == Player.STATE_ENDED) {
+                    mainPlayer.seekTo(0)
+                }
+                mainPlayer.play()
+            }
             PlayerEvent.Next -> skipToNext()
             PlayerEvent.Previous -> skipToPrevious()
             is PlayerEvent.SeekTo -> mainPlayer.seekTo(event.positionMs)
@@ -335,8 +389,10 @@ class PlayerManager @Inject constructor(
         // leaving the volume at a partial value.
         mainPlayer.volume = 1f
         currentPlaylist = playlist.ifEmpty { listOf(audio) }
-        currentIndex = currentPlaylist.indexOfFirst { it.id == audio.id }
-            .let { if (it >= 0) it else currentPlaylist.indexOfFirst { a -> a.filePath == audio.filePath } }
+        // 优先按 filePath（稳定唯一）匹配，其次按 id 兜底——避免多个 id==0
+        // 的音频（记忆播放/历史/触发器）互相碰撞导致下一首/上一首定位错位。
+        currentIndex = currentPlaylist.indexOfFirst { a -> a.filePath == audio.filePath }
+            .let { if (it >= 0) it else currentPlaylist.indexOfFirst { a -> a.id == audio.id } }
             .coerceAtLeast(0)
 
         val crossfadeMs = _state.value.crossfadeDurationMs
@@ -381,6 +437,7 @@ class PlayerManager @Inject constructor(
             } catch (_: Exception) { /* best-effort */ }
         }
         startMediaServiceIfNeeded()
+        audioFocusManager.requestFocus()
     }
 
     /** Always start the foreground service during playback.
@@ -417,9 +474,12 @@ class PlayerManager @Inject constructor(
 
     private fun skipToPrevious() {
         if (currentPlaylist.isEmpty() || currentIndex < 0) return
-        val prevIndex = if (mainPlayer.currentPosition > 3000L) currentIndex
-        else (currentIndex - 1 + currentPlaylist.size) % currentPlaylist.size
-        play(currentPlaylist[prevIndex], currentPlaylist)
+        // 超过 3 秒：回到本曲开头；否则跳到上一首，但在第一首时不再回绕到最后。
+        if (mainPlayer.currentPosition > 3000L || currentIndex == 0) {
+            mainPlayer.seekTo(0)
+            return
+        }
+        play(currentPlaylist[currentIndex - 1], currentPlaylist)
     }
 
     private fun handlePlaybackEnded() {
@@ -430,6 +490,9 @@ class PlayerManager @Inject constructor(
             }
             LoopMode.LIST, LoopMode.SHUFFLE -> skipToNext()
             LoopMode.NONE -> {
+                // 复位到开头并暂停，使播放器回到可再次播放的状态
+                mainPlayer.seekTo(0)
+                mainPlayer.pause()
                 _state.update { it.copy(isPlaying = false) }
             }
         }
@@ -458,6 +521,7 @@ class PlayerManager @Inject constructor(
                 backgroundPlayer.volume = 0f
                 fadeBackgroundIn()
             }
+            audioFocusManager.requestFocus()
         }
         _state.update { it.copy(isBackgroundPlaying = !wasPlaying) }
     }
@@ -476,6 +540,7 @@ class PlayerManager @Inject constructor(
         } else {
             backgroundPlayer.volume = 1f
         }
+        audioFocusManager.requestFocus()
     }
 
     /** 设置环境音是否循环播放 */
@@ -535,6 +600,7 @@ class PlayerManager @Inject constructor(
         mainPlayer.pause()
         backgroundPlayer.stop()
         _state.update { it.copy(isPlaying = false, isBackgroundPlaying = false) }
+        audioFocusManager.abandonFocus()
     }
 
     fun release() {

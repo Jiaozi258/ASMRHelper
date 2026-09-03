@@ -18,9 +18,8 @@ import javax.inject.Singleton
 object PlayerModule {
 
     /** Audio attributes that tell the OS this is music playback.
-     *  `handleAudioFocus=true` lets ExoPlayer automatically request/abandon
-     *  audio focus — critical for Chinese ROMs (MIUI/ColorOS) to not kill
-     *  the app as "rogue background audio". */
+     *  `handleAudioFocus=false` — 音频焦点由 AudioFocusManager 统一管理，
+     *  避免两个 ExoPlayer 各自争抢焦点导致点播放自动切回暂停的回归。 */
     private val musicAudioAttributes = AudioAttributes.Builder()
         .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
         .setUsage(C.USAGE_MEDIA)
@@ -31,7 +30,7 @@ object PlayerModule {
     @MainPlayer
     fun provideMainPlayer(@ApplicationContext context: Context): ExoPlayer =
         ExoPlayer.Builder(context)
-            .setAudioAttributes(musicAudioAttributes, /* handleAudioFocus = */ true)
+            .setAudioAttributes(musicAudioAttributes, /* handleAudioFocus = */ false)
             .build()
 
     @Provides
