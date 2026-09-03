@@ -65,6 +65,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.asmrhelper.domain.model.Audio
@@ -132,6 +133,10 @@ fun LibraryScreen(
     // Delete confirmation dialog state
     var showDeleteDialog by remember { mutableStateOf(false) }
     var audioToDelete by remember { mutableStateOf<Audio?>(null) }
+
+    // Lyrics dialog state
+    var showLyricsDialog by remember { mutableStateOf(false) }
+    var lyricsAudio by remember { mutableStateOf<Audio?>(null) }
 
     // Collect scan result messages
     LaunchedEffect(Unit) {
@@ -280,6 +285,10 @@ fun LibraryScreen(
                     onDeleteAudio = { audio ->
                         audioToDelete = audio
                         showDeleteDialog = true
+                    },
+                    onAddLyrics = { audio ->
+                        lyricsAudio = audio
+                        showLyricsDialog = true
                     }
                 )
                 1 -> FavoritesTab(
@@ -291,6 +300,10 @@ fun LibraryScreen(
                     onDeleteAudio = { audio ->
                         audioToDelete = audio
                         showDeleteDialog = true
+                    },
+                    onAddLyrics = { audio ->
+                        lyricsAudio = audio
+                        showLyricsDialog = true
                     }
                 )
                 2 -> FileBrowserScreen(
@@ -408,6 +421,57 @@ fun LibraryScreen(
                 shape = RoundedCornerShape(16.dp)
             )
         }
+
+        // 歌词编辑对话框
+        if (showLyricsDialog && lyricsAudio != null) {
+            var lyricsText by remember(lyricsAudio) {
+                mutableStateOf(com.asmrhelper.util.LyricsStore.loadLyrics(context, lyricsAudio!!.filePath) ?: "")
+            }
+            AlertDialog(
+                onDismissRequest = {
+                    showLyricsDialog = false
+                    lyricsAudio = null
+                },
+                title = {
+                    Text(
+                        text = "添加歌词 - ${lyricsAudio!!.title}",
+                        color = TextPrimary,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                text = {
+                    androidx.compose.material3.OutlinedTextField(
+                        value = lyricsText,
+                        onValueChange = { lyricsText = it },
+                        placeholder = { Text("粘贴或输入歌词，支持 [00:00.00] 时间标签", color = TextHint) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp, color = TextPrimary)
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        com.asmrhelper.util.LyricsStore.saveLyrics(context, lyricsAudio!!.filePath, lyricsText)
+                        Toast.makeText(context, "歌词已保存", Toast.LENGTH_SHORT).show()
+                        showLyricsDialog = false
+                        lyricsAudio = null
+                    }) {
+                        Text("保存", color = LocalAccentColor.current)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showLyricsDialog = false
+                        lyricsAudio = null
+                    }) {
+                        Text("取消", color = TextSecondary)
+                    }
+                },
+                containerColor = DarkSurface,
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
     }
 }
 
@@ -422,7 +486,8 @@ private fun AllAudioTab(
     onPlayAudio: (Audio) -> Unit,
     onSetBackground: (Audio) -> Unit,
     onToggleFavorite: (Long, Boolean) -> Unit,
-    onDeleteAudio: (Audio) -> Unit = {}
+    onDeleteAudio: (Audio) -> Unit = {},
+    onAddLyrics: (Audio) -> Unit = {}
 ) {
     if (audios.isEmpty()) {
         EmptyState(message = "暂无音频，请点击右上角扫描按钮")
@@ -439,7 +504,8 @@ private fun AllAudioTab(
                     onPlay = { onPlayAudio(audio) },
                     onSetBackground = { onSetBackground(audio) },
                     onToggleFavorite = { onToggleFavorite(audio.id, !audio.isFavorite) },
-                    onDelete = { onDeleteAudio(audio) }
+                    onDelete = { onDeleteAudio(audio) },
+                    onAddLyrics = { onAddLyrics(audio) }
                 )
             }
         }
@@ -457,7 +523,8 @@ private fun FavoritesTab(
     onPlayAudio: (Audio) -> Unit,
     onSetBackground: (Audio) -> Unit,
     onToggleFavorite: (Long, Boolean) -> Unit,
-    onDeleteAudio: (Audio) -> Unit = {}
+    onDeleteAudio: (Audio) -> Unit = {},
+    onAddLyrics: (Audio) -> Unit = {}
 ) {
     if (favorites.isEmpty()) {
         EmptyState(message = "暂无收藏")
@@ -474,7 +541,8 @@ private fun FavoritesTab(
                     onPlay = { onPlayAudio(audio) },
                     onSetBackground = { onSetBackground(audio) },
                     onToggleFavorite = { onToggleFavorite(audio.id, !audio.isFavorite) },
-                    onDelete = { onDeleteAudio(audio) }
+                    onDelete = { onDeleteAudio(audio) },
+                    onAddLyrics = { onAddLyrics(audio) }
                 )
             }
         }
@@ -507,7 +575,8 @@ private fun AudioItemCard(
     onPlay: () -> Unit,
     onSetBackground: () -> Unit = {},
     onToggleFavorite: () -> Unit,
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onAddLyrics: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -564,6 +633,14 @@ private fun AudioItemCard(
                 color = TextHint,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
+
+            // 添加歌词按钮
+            TextButton(
+                onClick = onAddLyrics,
+                modifier = Modifier.height(36.dp)
+            ) {
+                Text("歌词", color = TextHint, fontSize = 12.sp)
+            }
 
             // 收藏切换按钮
             IconButton(
