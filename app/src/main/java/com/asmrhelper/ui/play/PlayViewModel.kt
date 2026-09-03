@@ -158,6 +158,13 @@ class PlayViewModel @Inject constructor(
     val triggerParticleCount: StateFlow<Int> = _triggerParticleCount
     val triggerCooldownMs: StateFlow<Int> = _triggerCooldownMs
 
+    // ── 收藏 / 快进时间：必须在 init 之前声明 ──
+    // init 里的协程会立即运行并写这些 StateFlow，声明在 init 之后会导致 NPE
+    private val _currentFavorite = MutableStateFlow(false)
+    val currentFavorite: StateFlow<Boolean> = _currentFavorite
+    private val _seekTimeSeconds = MutableStateFlow(15)
+    val seekTimeSeconds: StateFlow<Int> = _seekTimeSeconds
+
     init {
         // 合并播放器状态、音频列表和隐私模式
         viewModelScope.launch {
@@ -450,14 +457,6 @@ class PlayViewModel @Inject constructor(
         val current = uiState.value.playerState.progressMs
         playerManager.handleEvent(PlayerEvent.SeekTo((current - seconds * 1000L).coerceAtLeast(0L)))
     }
-
-    // ── 收藏 ───────────────────────────────────────────
-    private val _currentFavorite = kotlinx.coroutines.flow.MutableStateFlow(false)
-    val currentFavorite: StateFlow<Boolean> = _currentFavorite
-
-    // ── 快进/快退时间 ─────────────────────────────────
-    private val _seekTimeSeconds = kotlinx.coroutines.flow.MutableStateFlow(15)
-    val seekTimeSeconds: StateFlow<Int> = _seekTimeSeconds
 
     fun toggleFavorite() {
         val audio = uiState.value.playerState.currentAudio ?: return
