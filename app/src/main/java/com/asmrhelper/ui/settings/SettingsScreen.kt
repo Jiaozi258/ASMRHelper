@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -524,6 +525,7 @@ fun SettingsScreen(
             SectionHeader(icon = Icons.Filled.GraphicEq, title = "均衡器")
             val eqEnabled by viewModel.eqEnabled.collectAsStateWithLifecycle()
             val eqLevels by viewModel.eqBandLevels.collectAsStateWithLifecycle()
+            val eqCurrentPreset by viewModel.eqCurrentPreset.collectAsStateWithLifecycle()
 
             Card(
                 modifier = Modifier
@@ -536,13 +538,53 @@ fun SettingsScreen(
                     if (!eqEnabled) {
                         Text("均衡器未就绪，请先播放一首音频", color = TextHint, fontSize = 13.sp)
                     } else {
-                        val bandLabels = listOf("🔈 低音", "🎵 中音", "🔔 高音")
+                        // ── 预设选择 ──
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            com.asmrhelper.player.EqualizerController.PRESETS.forEach { preset ->
+                                val selected = eqCurrentPreset == preset.name
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (selected) LocalAccentColor.current.copy(alpha = 0.2f) else DarkSurfaceVariant)
+                                        .clickable { viewModel.applyEqPreset(preset) }
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(preset.name, color = if (selected) LocalAccentColor.current else TextSecondary, fontSize = 12.sp)
+                                }
+                            }
+                            // 自定义预设
+                            val custom = viewModel.loadCustomEqPreset()
+                            if (custom != null) {
+                                val selected = eqCurrentPreset == custom.name
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (selected) LocalAccentColor.current.copy(alpha = 0.2f) else DarkSurfaceVariant)
+                                        .clickable { viewModel.applyEqPreset(custom) }
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(custom.name, color = if (selected) LocalAccentColor.current else TextSecondary, fontSize = 12.sp)
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // ── 10 段频段调节 ──
+                        val freqLabels = viewModel.eqBandFrequencies
                         eqLevels.forEachIndexed { i, level ->
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(bandLabels[i], color = TextSecondary, fontSize = 12.sp, modifier = Modifier.width(70.dp))
+                                val freq = freqLabels.getOrElse(i) { 0 }
+                                val freqLabel = if (freq >= 1000) "${freq / 1000}k" else "$freq"
+                                Text(freqLabel, color = TextSecondary, fontSize = 11.sp, modifier = Modifier.width(44.dp))
                                 Slider(
                                     value = level,
                                     onValueChange = { viewModel.setEqBand(i, it) },
@@ -556,17 +598,58 @@ fun SettingsScreen(
                                 Text(
                                     "${if (level >= 0) "+" else ""}${"%.0f".format(level)}",
                                     color = if (level != 0f) LocalAccentColor.current else TextHint,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.width(38.dp),
+                                    fontSize = 10.sp,
+                                    modifier = Modifier.width(34.dp),
                                     textAlign = TextAlign.End
                                 )
                             }
                         }
-                        TextButton(
-                            onClick = { viewModel.resetEq() },
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
+
+                        // ── 保存为自定义预设 + 重置 ──
+                        var showSavePreset by remember { mutableStateOf(false) }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
                         ) {
-                            Text("重置", color = TextSecondary, fontSize = 12.sp)
+                            TextButton(onClick = { showSavePreset = true }) {
+                                Text("保存为自定义", color = LocalAccentColor.current, fontSize = 12.sp)
+                            }
+                            TextButton(onClick = { viewModel.resetEq() }) {
+                                Text("重置", color = TextSecondary, fontSize = 12.sp)
+                            }
+                        }
+
+                        if (showSavePreset) {
+                            var presetName by remember { mutableStateOf("") }
+                            AlertDialog(
+                                onDismissRequest = { showSavePreset = false },
+                                title = { Text("保存自定义预设", color = TextPrimary) },
+                                text = {
+                                    androidx.compose.material3.OutlinedTextField(
+                                        value = presetName,
+                                        onValueChange = { presetName = it },
+                                        placeholder = { Text("预设名称", color = TextHint) },
+                                        singleLine = true,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = {
+                                            if (presetName.isNotBlank()) {
+                                                viewModel.saveCustomEqPreset(presetName)
+                                                showSavePreset = false
+                                            }
+                                        },
+                                        enabled = presetName.isNotBlank()
+                                    ) { Text("保存", color = LocalAccentColor.current) }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showSavePreset = false }) { Text("取消", color = TextSecondary) }
+                                },
+                                containerColor = DarkSurface,
+                                shape = RoundedCornerShape(16.dp)
+                            )
                         }
                     }
                 }

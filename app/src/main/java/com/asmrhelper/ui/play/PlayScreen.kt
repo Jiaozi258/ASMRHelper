@@ -235,7 +235,10 @@ fun PlayScreen(
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
                     .height(48.dp)
-                    .background(Color.Black.copy(alpha = 0.4f))
+                    // 移除黑色背景条，让波形直接叠加在背景上，为粒子特效腾出空间
+                    .background(androidx.compose.ui.graphics.Brush.verticalGradient(
+                        listOf(Color.Black.copy(alpha = 0.25f), Color.Transparent)
+                    ))
             ) {
                 SoundCloudWaveform(
                     waveformBytes = waveformBytes,

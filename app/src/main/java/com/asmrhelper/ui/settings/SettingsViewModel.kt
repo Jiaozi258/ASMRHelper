@@ -9,6 +9,7 @@ import com.asmrhelper.domain.repository.AudioRepository
 import com.asmrhelper.domain.repository.PlaylistRepository
 import com.asmrhelper.domain.repository.SettingsRepository
 import com.asmrhelper.player.EqualizerController
+import com.asmrhelper.player.EqPreset
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -283,10 +284,14 @@ class SettingsViewModel @Inject constructor(
 
     val eqEnabled: StateFlow<Boolean> = equalizerController.isEnabled
     val eqBandLevels: StateFlow<List<Float>> = equalizerController.bandLevels
-    val eqBandLabels: List<String> = equalizerController.bandLabels
+    val eqBandFrequencies: List<Int> = equalizerController.bandFrequencies
+    val eqCurrentPreset: StateFlow<String> = equalizerController.currentPreset
 
     fun setEqBand(band: Int, levelDb: Float) = equalizerController.setBandLevel(band, levelDb)
     fun resetEq() = equalizerController.reset()
+    fun applyEqPreset(preset: EqPreset) = equalizerController.applyPreset(preset)
+    fun saveCustomEqPreset(name: String) = equalizerController.saveCustomPreset(name)
+    fun loadCustomEqPreset(): EqPreset? = equalizerController.loadCustomPreset()
 
     // ── 遮罩工具 ──────────────────────────────────────────
 

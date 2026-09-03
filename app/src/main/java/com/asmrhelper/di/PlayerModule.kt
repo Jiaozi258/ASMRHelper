@@ -50,6 +50,7 @@ object PlayerModule {
     @Provides
     @Singleton
     fun provideEqualizerController(
-        @MainPlayer mainPlayer: ExoPlayer
-    ): EqualizerController = EqualizerController(mainPlayer)
+        @MainPlayer mainPlayer: ExoPlayer,
+        @ApplicationContext context: Context
+    ): EqualizerController = EqualizerController(mainPlayer, context)
 }
