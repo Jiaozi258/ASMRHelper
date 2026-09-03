@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -49,6 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -464,6 +466,9 @@ fun PlayScreenV2(
         var speed by remember { mutableStateOf(1f) }
         var pitch by remember { mutableStateOf(1f) }
         val eqLevels by viewModel.eqBandLevels.collectAsStateWithLifecycle()
+        val currentScene by viewModel.currentSceneEffect.collectAsStateWithLifecycle()
+        val loudness by viewModel.loudnessGain.collectAsStateWithLifecycle()
+        val balance by viewModel.stereoBalance.collectAsStateWithLifecycle()
 
         AlertDialog(
             onDismissRequest = { showEffectsDialog = false },
@@ -471,10 +476,44 @@ fun PlayScreenV2(
             text = {
                 Column(
                     modifier = Modifier
-                        .height(360.dp)
+                        .height(420.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // 变速
+                    // 场景效果
+                    Text("场景效果", color = TextSecondary, fontSize = 13.sp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        com.asmrhelper.player.SceneEffect.entries.forEach { scene ->
+                            val selected = currentScene == scene
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (selected) LocalAccentColor.current.copy(alpha = 0.2f) else DarkSurfaceVariant)
+                                    .clickable { viewModel.applySceneEffect(scene) }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text(scene.label, color = if (selected) LocalAccentColor.current else TextSecondary, fontSize = 12.sp)
+                            }
+                        }
+                    }
+
+                    // 响度（音量阈值 - 响度模式）
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+                    Text("响度 ${if (loudness == 0) "关闭" else "+${loudness / 100}.${(loudness % 100) / 10}dB"}", color = TextSecondary, fontSize = 13.sp)
+                    Slider(
+                        value = loudness.toFloat(),
+                        onValueChange = { viewModel.setLoudnessGain(it.toInt()) },
+                        valueRange = 0f..1000f,
+                        steps = 9,
+                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                    )
+
+                    // 变速变调
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
                     Text("变速 ${"%.2f".format(speed)}x", color = TextSecondary, fontSize = 13.sp)
                     Slider(
                         value = speed,
@@ -482,7 +521,6 @@ fun PlayScreenV2(
                         valueRange = 0.5f..2f,
                         colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                     )
-                    // 变调
                     Text("变调 ${"%.2f".format(pitch)}x", color = TextSecondary, fontSize = 13.sp)
                     Slider(
                         value = pitch,
@@ -490,10 +528,22 @@ fun PlayScreenV2(
                         valueRange = 0.5f..2f,
                         colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                     )
+
+                    // 立体声左右平衡
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
-                    Text("均衡器（3 段，更多频段可在设置中调节）", color = TextHint, fontSize = 12.sp)
+                    Text("左右平衡 ${when { balance < -0.05f -> "偏左"; balance > 0.05f -> "偏右"; else -> "居中" }}", color = TextSecondary, fontSize = 13.sp)
+                    Slider(
+                        value = balance,
+                        onValueChange = { viewModel.setStereoBalance(it) },
+                        valueRange = -1f..1f,
+                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                    )
+
+                    // 均衡器
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+                    Text("均衡器（更多频段可在设置中调节）", color = TextHint, fontSize = 12.sp)
                     val bandLabels = listOf("低音", "中音", "高音")
-                    eqLevels.forEachIndexed { i, level ->
+                    eqLevels.take(3).forEachIndexed { i, level ->
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
                             Text(bandLabels.getOrElse(i) { "频段$i" }, color = TextSecondary, fontSize = 12.sp, modifier = Modifier.width(44.dp))
                             Slider(

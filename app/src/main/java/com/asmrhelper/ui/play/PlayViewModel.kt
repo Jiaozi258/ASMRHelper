@@ -28,6 +28,8 @@ import com.asmrhelper.player.PlayerEvent
 import com.asmrhelper.player.PlayerManager
 import com.asmrhelper.player.SpatialAudioController
 import com.asmrhelper.player.SpatialMode
+import com.asmrhelper.player.SceneEffectsController
+import com.asmrhelper.player.SceneEffect
 import com.asmrhelper.util.maskPrivacy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -112,7 +114,8 @@ class PlayViewModel @Inject constructor(
     private val hapticFeedbackController: HapticFeedbackController,
     private val sceneRepository: SceneRepository,
     private val bookmarkRepository: BookmarkRepository,
-    private val equalizerController: EqualizerController
+    private val equalizerController: EqualizerController,
+    private val sceneEffectsController: SceneEffectsController
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayUiState())
@@ -731,6 +734,20 @@ class PlayViewModel @Inject constructor(
         spatialAudioController.setMode(SpatialMode.OFF)
         _uiState.update { it.copy(spatialMode = "OFF") }
     }
+
+    // ── 场景效果 ──────────────────────────────────────────
+    val currentSceneEffect: StateFlow<SceneEffect> = sceneEffectsController.currentScene
+    val loudnessGain: StateFlow<Int> = sceneEffectsController.loudnessGain
+
+    fun applySceneEffect(scene: SceneEffect) = sceneEffectsController.applyScene(scene)
+    fun setLoudnessGain(gainDbX100: Int) = sceneEffectsController.setLoudnessGain(gainDbX100)
+
+    // ── 立体声高级调节 ────────────────────────────────────
+    val stereoBalance: StateFlow<Float> = spatialAudioController.balanceValue
+
+    fun setStereoBalance(value: Float) = spatialAudioController.setBalance(value)
+    fun setStereoDistance(strength: Int) = spatialAudioController.setDistance(strength)
+    fun setSurroundSpeed(speed: Float) = spatialAudioController.setSurroundSpeed(speed)
 
     // ── 淡入淡出 ──────────────────────────────────────────
 
