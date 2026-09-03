@@ -73,4 +73,33 @@ interface SettingsRepository {
     // ── 记忆播放 ───────────────────────────────────────
     fun getRememberPlayback(): Flow<Boolean>
     suspend fun setRememberPlayback(enabled: Boolean)
+
+    // ── 播放设置 ───────────────────────────────────────
+    // 断开蓝牙/耳机时停止播放
+    fun getBluetoothStopEnabled(): Flow<Boolean>
+    suspend fun setBluetoothStopEnabled(enabled: Boolean)
+    // 连接耳机时自动续播
+    fun getBluetoothResumeEnabled(): Flow<Boolean>
+    suspend fun setBluetoothResumeEnabled(enabled: Boolean)
+    // 其他应用播放音频时暂停
+    fun getPauseOnOtherAudio(): Flow<Boolean>
+    suspend fun setPauseOnOtherAudio(enabled: Boolean)
+    // 快进/快退时间（秒，5~30）
+    fun getSeekTimeSeconds(): Flow<Int>
+    suspend fun setSeekTimeSeconds(seconds: Int)
+    // 播放时渐强/暂停时渐弱音量的时长（ms，0=关闭）
+    fun getVolumeFadeMs(): Flow<Int>
+    suspend fun setVolumeFadeMs(ms: Int)
+
+    // ── 歌词设置 ───────────────────────────────────────
+    fun getLyricsFontSize(): Flow<Int>
+    suspend fun setLyricsFontSize(sp: Int)
+    fun getLyricsShadowEnabled(): Flow<Boolean>
+    suspend fun setLyricsShadowEnabled(enabled: Boolean)
+    fun getLyricsLineSpacing(): Flow<Float>
+    suspend fun setLyricsLineSpacing(spacing: Float)
+    fun getLyricsDisplayArea(): Flow<Int> // 0=上三分之一, 1=全屏
+    suspend fun setLyricsDisplayArea(area: Int)
+    fun getLyricsAlignment(): Flow<Int> // 0=居中, 1=左对齐, 2=右对齐
+    suspend fun setLyricsAlignment(alignment: Int)
 }

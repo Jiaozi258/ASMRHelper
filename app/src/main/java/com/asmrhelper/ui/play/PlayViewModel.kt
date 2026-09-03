@@ -368,6 +368,13 @@ class PlayViewModel @Inject constructor(
             }
         }
 
+        // 加载快进/快退时间设置
+        viewModelScope.launch {
+            settingsRepository.getSeekTimeSeconds().collect { seconds ->
+                _seekTimeSeconds.value = seconds
+            }
+        }
+
         // 监听当前音频变化，同步收藏状态
         viewModelScope.launch {
             playerManager.state.map { it.currentAudio }.collect { audio ->
@@ -415,23 +422,30 @@ class PlayViewModel @Inject constructor(
     fun previous() = playerManager.handleEvent(PlayerEvent.Previous)
     fun setLoopMode(mode: LoopMode) = playerManager.handleEvent(PlayerEvent.SetLoopMode(mode))
 
-    /** 快进 15 秒 */
+    /** 快进（时长可在设置中配置，默认 15 秒） */
     fun forward15s() {
+        val seconds = _seekTimeSeconds.value
         val current = uiState.value.playerState.progressMs
         val duration = uiState.value.playerState.durationMs
-        val target = (current + 15000L).coerceAtMost(if (duration > 0) duration else current + 15000L)
+        val delta = seconds * 1000L
+        val target = (current + delta).coerceAtMost(if (duration > 0) duration else current + delta)
         playerManager.handleEvent(PlayerEvent.SeekTo(target))
     }
 
-    /** 快退 15 秒 */
+    /** 快退（时长可在设置中配置，默认 15 秒） */
     fun rewind15s() {
+        val seconds = _seekTimeSeconds.value
         val current = uiState.value.playerState.progressMs
-        playerManager.handleEvent(PlayerEvent.SeekTo((current - 15000L).coerceAtLeast(0L)))
+        playerManager.handleEvent(PlayerEvent.SeekTo((current - seconds * 1000L).coerceAtLeast(0L)))
     }
 
     // ── 收藏 ───────────────────────────────────────────
     private val _currentFavorite = kotlinx.coroutines.flow.MutableStateFlow(false)
     val currentFavorite: StateFlow<Boolean> = _currentFavorite
+
+    // ── 快进/快退时间 ─────────────────────────────────
+    private val _seekTimeSeconds = kotlinx.coroutines.flow.MutableStateFlow(15)
+    val seekTimeSeconds: StateFlow<Int> = _seekTimeSeconds
 
     fun toggleFavorite() {
         val audio = uiState.value.playerState.currentAudio ?: return

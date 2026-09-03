@@ -518,6 +518,138 @@ fun SettingsScreen(
                 }
             }
 
+            // 断开蓝牙/耳机停止播放
+            val bluetoothStop by viewModel.bluetoothStopEnabled.collectAsStateWithLifecycle()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("断开设备停止播放", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text("蓝牙耳机/扬声器断开时自动暂停", color = TextHint, fontSize = 12.sp)
+                    }
+                    Switch(
+                        checked = bluetoothStop,
+                        onCheckedChange = { viewModel.setBluetoothStopEnabled(it) },
+                        colors = SwitchDefaults.colors(checkedThumbColor = LocalAccentColor.current, checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f), uncheckedThumbColor = TextSecondary, uncheckedTrackColor = DarkSurfaceVariant)
+                    )
+                }
+            }
+
+            // 连接耳机自动续播
+            val bluetoothResume by viewModel.bluetoothResumeEnabled.collectAsStateWithLifecycle()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("连接设备自动续播", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text("连接耳机/外接设备时自动继续播放", color = TextHint, fontSize = 12.sp)
+                    }
+                    Switch(
+                        checked = bluetoothResume,
+                        onCheckedChange = { viewModel.setBluetoothResumeEnabled(it) },
+                        colors = SwitchDefaults.colors(checkedThumbColor = LocalAccentColor.current, checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f), uncheckedThumbColor = TextSecondary, uncheckedTrackColor = DarkSurfaceVariant)
+                    )
+                }
+            }
+
+            // 其他应用播放暂停
+            val pauseOnOther by viewModel.pauseOnOtherAudio.collectAsStateWithLifecycle()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("其他应用播放时暂停", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text("其他应用播放音频/视频时本应用自动暂停", color = TextHint, fontSize = 12.sp)
+                    }
+                    Switch(
+                        checked = pauseOnOther,
+                        onCheckedChange = { viewModel.setPauseOnOtherAudio(it) },
+                        colors = SwitchDefaults.colors(checkedThumbColor = LocalAccentColor.current, checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f), uncheckedThumbColor = TextSecondary, uncheckedTrackColor = DarkSurfaceVariant)
+                    )
+                }
+            }
+
+            // 快进时间设置
+            val seekSeconds by viewModel.seekTimeSeconds.collectAsStateWithLifecycle()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                    Text("快进/快退时间：${seekSeconds} 秒", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Slider(
+                        value = seekSeconds.toFloat(),
+                        onValueChange = { viewModel.setSeekTimeSeconds(it.toInt()) },
+                        valueRange = 5f..30f,
+                        steps = 24,
+                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                    )
+                }
+            }
+
+            // 渐变音量时长
+            val volumeFadeMs by viewModel.volumeFadeMs.collectAsStateWithLifecycle()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                    Text(
+                        if (volumeFadeMs == 0) "渐变音量：关闭" else "渐变音量：${volumeFadeMs} ms",
+                        color = TextPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Slider(
+                        value = volumeFadeMs.toFloat(),
+                        onValueChange = { viewModel.setVolumeFadeMs(it.toInt()) },
+                        valueRange = 0f..3000f,
+                        steps = 29,
+                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                    )
+                    Text("播放时渐强、暂停时渐弱音量的过渡时长", color = TextHint, fontSize = 12.sp)
+                }
+            }
+
             SectionSpacer()
 
             // ═══ 均衡器 ═══════════════════════════════════
@@ -905,7 +1037,122 @@ fun SettingsScreen(
 
             SectionSpacer()
 
-            // ═══ 音频可视化 ═══════════════════════════════════════
+            // ═══ 歌词设置 ═══════════════════════════════════════
+
+            SectionHeader(icon = Icons.Filled.MusicNote, title = "歌词设置")
+            val lyricsFontSize by viewModel.lyricsFontSize.collectAsStateWithLifecycle()
+            val lyricsShadow by viewModel.lyricsShadowEnabled.collectAsStateWithLifecycle()
+            val lyricsLineSpacing by viewModel.lyricsLineSpacing.collectAsStateWithLifecycle()
+            val lyricsDisplayArea by viewModel.lyricsDisplayArea.collectAsStateWithLifecycle()
+            val lyricsAlignment by viewModel.lyricsAlignment.collectAsStateWithLifecycle()
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                    // 字体大小
+                    Text("字体大小：${lyricsFontSize} sp", color = TextPrimary, fontSize = 14.sp)
+                    Slider(
+                        value = lyricsFontSize.toFloat(),
+                        onValueChange = { viewModel.setLyricsFontSize(it.toInt()) },
+                        valueRange = 10f..32f,
+                        steps = 21,
+                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                    )
+
+                    // 行间距
+                    Text("行间距：${"%.1f".format(lyricsLineSpacing)}x", color = TextPrimary, fontSize = 14.sp)
+                    Slider(
+                        value = lyricsLineSpacing,
+                        onValueChange = { viewModel.setLyricsLineSpacing(it) },
+                        valueRange = 1f..3f,
+                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                    )
+
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+
+                    // 字体阴影
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("字体阴影", color = TextPrimary, fontSize = 14.sp)
+                            Text("为歌词文字添加阴影，提升可读性", color = TextHint, fontSize = 12.sp)
+                        }
+                        Switch(
+                            checked = lyricsShadow,
+                            onCheckedChange = { viewModel.setLyricsShadowEnabled(it) },
+                            colors = SwitchDefaults.colors(checkedThumbColor = LocalAccentColor.current, checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f), uncheckedThumbColor = TextSecondary, uncheckedTrackColor = DarkSurfaceVariant)
+                        )
+                    }
+
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+
+                    // 显示区域
+                    var displayAreaExpanded by remember { mutableStateOf(false) }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { displayAreaExpanded = true },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("显示区域", color = TextPrimary, fontSize = 14.sp)
+                            Text(if (lyricsDisplayArea == 0) "上三分之一" else "全屏", color = LocalAccentColor.current, fontSize = 12.sp)
+                        }
+                        Box {
+                            Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
+                            DropdownMenu(expanded = displayAreaExpanded, onDismissRequest = { displayAreaExpanded = false }) {
+                                listOf("上三分之一", "全屏").forEachIndexed { i, label ->
+                                    DropdownMenuItem(
+                                        text = { Text(label, color = TextPrimary) },
+                                        onClick = { viewModel.setLyricsDisplayArea(i); displayAreaExpanded = false }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+
+                    // 对齐方式
+                    var alignmentExpanded by remember { mutableStateOf(false) }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { alignmentExpanded = true },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("对齐方式", color = TextPrimary, fontSize = 14.sp)
+                            Text(listOf("居中", "左对齐", "右对齐").getOrElse(lyricsAlignment) { "居中" }, color = LocalAccentColor.current, fontSize = 12.sp)
+                        }
+                        Box {
+                            Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
+                            DropdownMenu(expanded = alignmentExpanded, onDismissRequest = { alignmentExpanded = false }) {
+                                listOf("居中", "左对齐", "右对齐").forEachIndexed { i, label ->
+                                    DropdownMenuItem(
+                                        text = { Text(label, color = TextPrimary) },
+                                        onClick = { viewModel.setLyricsAlignment(i); alignmentExpanded = false }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            SectionSpacer()
+
+            // ═══ 音频可视化 ═══════════════════════════════════
 
             SectionHeader(icon = Icons.Filled.GraphicEq, title = "音频可视化")
             val visualizerEnabled by viewModel.audioVisualizerEnabled.collectAsStateWithLifecycle()
@@ -1279,6 +1526,27 @@ fun SettingsScreen(
                 colors = CardDefaults.cardColors(containerColor = DarkSurface)
             ) {
                 AboutRow(label = "版本信息", value = "ASMRHelper v1.0.0")
+
+                HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
+
+                // 检查更新
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            Toast.makeText(context, "当前已是最新版本", Toast.LENGTH_SHORT).show()
+                        }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("检查更新", color = TextPrimary, fontSize = 14.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("v1.0.0", color = TextSecondary, fontSize = 13.sp)
+                        Spacer(Modifier.width(4.dp))
+                        Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
+                    }
+                }
 
                 HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
 

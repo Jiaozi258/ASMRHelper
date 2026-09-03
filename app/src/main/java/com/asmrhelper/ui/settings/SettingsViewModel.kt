@@ -280,6 +280,64 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setRememberPlayback(enabled) }
     }
 
+    // ── 播放设置 ──────────────────────────────────────
+
+    val bluetoothStopEnabled: StateFlow<Boolean> = settingsRepository.getBluetoothStopEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val bluetoothResumeEnabled: StateFlow<Boolean> = settingsRepository.getBluetoothResumeEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val pauseOnOtherAudio: StateFlow<Boolean> = settingsRepository.getPauseOnOtherAudio()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val seekTimeSeconds: StateFlow<Int> = settingsRepository.getSeekTimeSeconds()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 15)
+    val volumeFadeMs: StateFlow<Int> = settingsRepository.getVolumeFadeMs()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun setBluetoothStopEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setBluetoothStopEnabled(enabled) }
+    }
+    fun setBluetoothResumeEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setBluetoothResumeEnabled(enabled) }
+    }
+    fun setPauseOnOtherAudio(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setPauseOnOtherAudio(enabled) }
+    }
+    fun setSeekTimeSeconds(seconds: Int) {
+        viewModelScope.launch { settingsRepository.setSeekTimeSeconds(seconds) }
+    }
+    fun setVolumeFadeMs(ms: Int) {
+        viewModelScope.launch { settingsRepository.setVolumeFadeMs(ms) }
+    }
+
+    // ── 歌词设置 ──────────────────────────────────────
+
+    val lyricsFontSize: StateFlow<Int> = settingsRepository.getLyricsFontSize()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 16)
+    val lyricsShadowEnabled: StateFlow<Boolean> = settingsRepository.getLyricsShadowEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val lyricsLineSpacing: StateFlow<Float> = settingsRepository.getLyricsLineSpacing()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.5f)
+    val lyricsDisplayArea: StateFlow<Int> = settingsRepository.getLyricsDisplayArea()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val lyricsAlignment: StateFlow<Int> = settingsRepository.getLyricsAlignment()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun setLyricsFontSize(sp: Int) {
+        viewModelScope.launch { settingsRepository.setLyricsFontSize(sp) }
+    }
+    fun setLyricsShadowEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setLyricsShadowEnabled(enabled) }
+    }
+    fun setLyricsLineSpacing(spacing: Float) {
+        viewModelScope.launch { settingsRepository.setLyricsLineSpacing(spacing) }
+    }
+    fun setLyricsDisplayArea(area: Int) {
+        viewModelScope.launch { settingsRepository.setLyricsDisplayArea(area) }
+    }
+    fun setLyricsAlignment(alignment: Int) {
+        viewModelScope.launch { settingsRepository.setLyricsAlignment(alignment) }
+    }
+
     // ── 均衡器 ──────────────────────────────────────────
 
     val eqEnabled: StateFlow<Boolean> = equalizerController.isEnabled

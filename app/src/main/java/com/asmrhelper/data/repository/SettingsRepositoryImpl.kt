@@ -286,4 +286,78 @@ class SettingsRepositoryImpl @Inject constructor(
         prefs.edit().putBoolean("remember_playback", enabled).apply()
         _rememberPlayback.value = enabled
     }
+
+    // ── 播放设置 ───────────────────────────────────────
+
+    private val _bluetoothStop = MutableStateFlow(prefs.getBoolean("bluetooth_stop", true))
+    override fun getBluetoothStopEnabled(): Flow<Boolean> = _bluetoothStop
+    override suspend fun setBluetoothStopEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("bluetooth_stop", enabled).apply()
+        _bluetoothStop.value = enabled
+    }
+
+    private val _bluetoothResume = MutableStateFlow(prefs.getBoolean("bluetooth_resume", false))
+    override fun getBluetoothResumeEnabled(): Flow<Boolean> = _bluetoothResume
+    override suspend fun setBluetoothResumeEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("bluetooth_resume", enabled).apply()
+        _bluetoothResume.value = enabled
+    }
+
+    private val _pauseOnOtherAudio = MutableStateFlow(prefs.getBoolean("pause_on_other_audio", true))
+    override fun getPauseOnOtherAudio(): Flow<Boolean> = _pauseOnOtherAudio
+    override suspend fun setPauseOnOtherAudio(enabled: Boolean) {
+        prefs.edit().putBoolean("pause_on_other_audio", enabled).apply()
+        _pauseOnOtherAudio.value = enabled
+    }
+
+    private val _seekTimeSeconds = MutableStateFlow(prefs.getInt("seek_time_seconds", 15))
+    override fun getSeekTimeSeconds(): Flow<Int> = _seekTimeSeconds
+    override suspend fun setSeekTimeSeconds(seconds: Int) {
+        prefs.edit().putInt("seek_time_seconds", seconds.coerceIn(5, 30)).apply()
+        _seekTimeSeconds.value = seconds.coerceIn(5, 30)
+    }
+
+    private val _volumeFadeMs = MutableStateFlow(prefs.getInt("volume_fade_ms", 0))
+    override fun getVolumeFadeMs(): Flow<Int> = _volumeFadeMs
+    override suspend fun setVolumeFadeMs(ms: Int) {
+        prefs.edit().putInt("volume_fade_ms", ms).apply()
+        _volumeFadeMs.value = ms
+    }
+
+    // ── 歌词设置 ───────────────────────────────────────
+
+    private val _lyricsFontSize = MutableStateFlow(prefs.getInt("lyrics_font_size", 16))
+    override fun getLyricsFontSize(): Flow<Int> = _lyricsFontSize
+    override suspend fun setLyricsFontSize(sp: Int) {
+        prefs.edit().putInt("lyrics_font_size", sp.coerceIn(10, 32)).apply()
+        _lyricsFontSize.value = sp.coerceIn(10, 32)
+    }
+
+    private val _lyricsShadow = MutableStateFlow(prefs.getBoolean("lyrics_shadow", false))
+    override fun getLyricsShadowEnabled(): Flow<Boolean> = _lyricsShadow
+    override suspend fun setLyricsShadowEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("lyrics_shadow", enabled).apply()
+        _lyricsShadow.value = enabled
+    }
+
+    private val _lyricsLineSpacing = MutableStateFlow(prefs.getFloat("lyrics_line_spacing", 1.5f))
+    override fun getLyricsLineSpacing(): Flow<Float> = _lyricsLineSpacing
+    override suspend fun setLyricsLineSpacing(spacing: Float) {
+        prefs.edit().putFloat("lyrics_line_spacing", spacing.coerceIn(1f, 3f)).apply()
+        _lyricsLineSpacing.value = spacing.coerceIn(1f, 3f)
+    }
+
+    private val _lyricsDisplayArea = MutableStateFlow(prefs.getInt("lyrics_display_area", 0))
+    override fun getLyricsDisplayArea(): Flow<Int> = _lyricsDisplayArea
+    override suspend fun setLyricsDisplayArea(area: Int) {
+        prefs.edit().putInt("lyrics_display_area", area).apply()
+        _lyricsDisplayArea.value = area
+    }
+
+    private val _lyricsAlignment = MutableStateFlow(prefs.getInt("lyrics_alignment", 0))
+    override fun getLyricsAlignment(): Flow<Int> = _lyricsAlignment
+    override suspend fun setLyricsAlignment(alignment: Int) {
+        prefs.edit().putInt("lyrics_alignment", alignment).apply()
+        _lyricsAlignment.value = alignment
+    }
 }
