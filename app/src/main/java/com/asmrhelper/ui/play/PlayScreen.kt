@@ -304,6 +304,7 @@ fun PlayScreen(
                     LoopMode.NONE -> "→ 播完即止"
                     LoopMode.SINGLE -> "🔁 单曲循环"
                     LoopMode.LIST -> "🔁 列表循环"
+                    LoopMode.SHUFFLE -> "🔀 随机播放"
                 }
                 TextButton(onClick = { viewModel.cycleLoopMode() }) {
                     Text(
@@ -474,71 +475,8 @@ fun PlayScreen(
                 }
             }
 
-            // ── Equalizer ──
-            val eqEnabled by viewModel.eqEnabled.collectAsStateWithLifecycle()
-            if (eqEnabled) {
-                val eqLevels by viewModel.eqBandLevels.collectAsStateWithLifecycle()
-                var eqExpanded by remember { mutableStateOf(false) }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 2.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(DarkSurfaceVariant.copy(alpha = 0.3f))
-                        .clickable { eqExpanded = !eqExpanded }
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("🎚️ 均衡器", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    Icon(
-                        if (eqExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                        null, tint = TextHint, modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                AnimatedVisibility(visible = eqExpanded) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                    ) {
-                        val bandLabels = listOf("🔈 低音", "🎵 中音", "🔔 高音")
-                        eqLevels.forEachIndexed { i, level ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(bandLabels[i], color = TextSecondary, fontSize = 12.sp, modifier = Modifier.width(70.dp))
-                                Slider(
-                                    value = level,
-                                    onValueChange = { viewModel.setEqBand(i, it) },
-                                    valueRange = -10f..10f,
-                                    modifier = Modifier.weight(1f),
-                                    colors = SliderDefaults.colors(
-                                        thumbColor = LocalAccentColor.current,
-                                        activeTrackColor = LocalAccentColor.current
-                                    )
-                                )
-                                Text(
-                                    "${if (level >= 0) "+" else ""}${"%.0f".format(level)}",
-                                    color = if (level != 0f) LocalAccentColor.current else TextHint,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.width(38.dp),
-                                    textAlign = TextAlign.End
-                                )
-                            }
-                        }
-                        TextButton(
-                            onClick = { viewModel.resetEq() },
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        ) {
-                            Text("重置", color = TextSecondary, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
+            // ── 均衡器已移至设置界面 ──
+            // （此前均衡器面板会遮挡播放进度条，现已迁移到 设置 → 均衡器）
         }
 
         // 呼吸引导动画叠加层

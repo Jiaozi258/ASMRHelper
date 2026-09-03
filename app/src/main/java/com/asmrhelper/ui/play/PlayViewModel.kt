@@ -412,7 +412,8 @@ class PlayViewModel @Inject constructor(
         val nextMode = when (uiState.value.playerState.loopMode) {
             LoopMode.NONE -> LoopMode.SINGLE
             LoopMode.SINGLE -> LoopMode.LIST
-            LoopMode.LIST -> LoopMode.NONE
+            LoopMode.LIST -> LoopMode.SHUFFLE
+            LoopMode.SHUFFLE -> LoopMode.NONE
         }
         playerManager.handleEvent(PlayerEvent.SetLoopMode(nextMode))
     }

@@ -53,14 +53,36 @@ class PlayerManager @Inject constructor(
     // being killed by aggressive OEM power management.
 
     private val prefs = context.getSharedPreferences("asmr_player_state", Context.MODE_PRIVATE)
+    private val settingsPrefs = context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
 
-    /** Save last-played audio so the service can resume after restart. */
+    // ── Settings helpers ─────────────────────────────────
+    private fun isRememberPlaybackEnabled(): Boolean = settingsPrefs.getBoolean("remember_playback", true)
+    private fun isAmbientFadeEnabled(): Boolean = settingsPrefs.getBoolean("ambient_fade", false)
+    private fun getFadeOutMode(): Int = settingsPrefs.getInt("fade_out_mode", 0)
+
+    /** Save last-played audio so the service can resume after restart.
+     *  Respects the "remember playback" setting — disabled means no memory. */
     private fun saveLastPlayback(audio: Audio) {
+        if (!isRememberPlaybackEnabled()) return
         prefs.edit()
             .putString("last_file_path", audio.filePath)
             .putString("last_title", audio.title)
             .putString("last_artist", audio.artist)
             .putLong("last_duration_ms", audio.durationMs)
+            .apply()
+    }
+
+    private fun saveLastPosition(positionMs: Long) {
+        if (!isRememberPlaybackEnabled()) return
+        prefs.edit().putLong("last_position_ms", positionMs).apply()
+    }
+
+    private fun loadLastPosition(): Long = prefs.getLong("last_position_ms", 0L)
+
+    private fun clearSavedPlayback() {
+        prefs.edit()
+            .remove("last_file_path")
+            .remove("last_position_ms")
             .apply()
     }
 
@@ -90,20 +112,37 @@ class PlayerManager @Inject constructor(
         val mediaItem = MediaItem.fromUri(audio.filePath)
         mainPlayer.setMediaItem(mediaItem)
         mainPlayer.prepare()
+        mainPlayer.seekTo(loadLastPosition())
         mainPlayer.play()
         _state.update { it.copy(currentAudio = audio, isPlaying = true) }
     }
 
     init {
-        // Populate initial state with last-played audio so UI shows it on cold start
-        val saved = loadLastPlayback()
-        if (saved != null) {
-            _state.update { it.copy(currentAudio = saved, durationMs = saved.durationMs) }
+        // ── 记忆播放：恢复上次的歌曲和播放位置 ──
+        // 修复"假保留"问题：之前只把标题写进 UI，但没有 prepare 播放器，
+        // 导致点播放按钮无效。现在真正 prepare 播放器并 seek 到上次位置。
+        if (isRememberPlaybackEnabled()) {
+            val saved = loadLastPlayback()
+            if (saved != null) {
+                currentPlaylist = listOf(saved)
+                currentIndex = 0
+                _state.update { it.copy(currentAudio = saved, durationMs = saved.durationMs) }
+                val mediaItem = MediaItem.fromUri(saved.filePath)
+                mainPlayer.setMediaItem(mediaItem)
+                mainPlayer.prepare()
+                mainPlayer.seekTo(loadLastPosition())
+            }
+        } else {
+            clearSavedPlayback()
         }
 
         mainPlayer.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _state.update { it.copy(isPlaying = isPlaying) }
+                // 暂停时立即保存进度，实现精准定位
+                if (!isPlaying) {
+                    saveLastPosition(mainPlayer.currentPosition)
+                }
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -120,7 +159,8 @@ class PlayerManager @Inject constructor(
             }
         })
 
-        // 每秒更新进度（包括暂停时，以便 seek 后更新位置）
+        // 更新进度（200ms 节流），并周期保存播放位置（每 5 秒一次）
+        var lastPosSave = 0L
         scope.launch {
             while (true) {
                 val current = mainPlayer.currentPosition
@@ -132,8 +172,61 @@ class PlayerManager @Inject constructor(
                             durationMs = dur.takeIf { d -> d > 0 } ?: it.durationMs
                         )
                     }
+                    if (mainPlayer.isPlaying && current > 0L &&
+                        kotlin.math.abs(current - lastPosSave) >= 5000L) {
+                        lastPosSave = current
+                        saveLastPosition(current)
+                    }
                 }
                 delay(200L)
+            }
+        }
+
+        // ── 环境音循环交叉淡入淡出：在循环边界处淡出，循环后淡入 ──
+        scope.launch {
+            var lastBgPos = 0L
+            while (true) {
+                delay(150L)
+                if (!isAmbientFadeEnabled() || !backgroundPlayer.isPlaying) {
+                    lastBgPos = backgroundPlayer.currentPosition
+                    continue
+                }
+                val pos = backgroundPlayer.currentPosition
+                val dur = backgroundPlayer.duration
+                if (dur > 0L && backgroundPlayer.repeatMode == Player.REPEAT_MODE_ONE) {
+                    // 检测循环回绕（位置从接近结尾跳回开头）
+                    if (pos < lastBgPos - 300L) {
+                        // 已循环回开头 — 渐入
+                        fadeBackgroundIn()
+                    } else if (dur - pos < 800L && backgroundPlayer.volume > 0.05f) {
+                        // 接近结尾 — 渐出
+                        fadeBackgroundOut(800L)
+                    }
+                }
+                lastBgPos = pos
+            }
+        }
+
+        // ── 结尾淡出模式：歌曲接近结尾时渐出并停止 ──
+        scope.launch {
+            while (true) {
+                delay(200L)
+                if (pendingFadeOutAtEnd && mainPlayer.isPlaying) {
+                    val dur = mainPlayer.duration
+                    val pos = mainPlayer.currentPosition
+                    if (dur > 0L && dur - pos < fadeOutDurationMs) {
+                        pendingFadeOutAtEnd = false
+                        val remaining = (dur - pos).coerceAtLeast(100L)
+                        val steps = 15
+                        for (i in steps downTo 1) {
+                            mainPlayer.volume = i.toFloat() / steps
+                            delay(remaining / steps)
+                        }
+                        mainPlayer.pause()
+                        mainPlayer.volume = 1f
+                        _state.update { it.copy(isPlaying = false) }
+                    }
+                }
             }
         }
 
@@ -142,6 +235,33 @@ class PlayerManager @Inject constructor(
             _state.collect { state ->
                 onStateChanged?.invoke(state)
             }
+        }
+    }
+
+    // ── 环境音渐入渐出辅助方法 ─────────────────────────
+
+    private fun fadeBackgroundIn() {
+        scope.launch {
+            val steps = 20
+            backgroundPlayer.volume = 0f
+            for (i in 1..steps) {
+                backgroundPlayer.volume = i.toFloat() / steps
+                delay(50L) // 共 1 秒
+            }
+            backgroundPlayer.volume = 1f
+        }
+    }
+
+    private fun fadeBackgroundOut(durationMs: Long = 1000L) {
+        scope.launch {
+            val steps = 20
+            val stepMs = durationMs / steps
+            for (i in steps downTo 1) {
+                backgroundPlayer.volume = i.toFloat() / steps
+                delay(stepMs)
+            }
+            // 保持静音，等待 fadeBackgroundIn 或停止后恢复
+            backgroundPlayer.volume = 0f
         }
     }
 
@@ -166,12 +286,17 @@ class PlayerManager @Inject constructor(
     private var crossfadeJob: Job? = null
     private var fadeJob: Job? = null
 
+    // 结尾淡出模式：歌曲结尾时淡出并停止
+    private var pendingFadeOutAtEnd: Boolean = false
+    private var fadeOutDurationMs: Long = 5000L
+
     /** Returns the audio session ID for attaching audio effects. */
     fun getAudioSessionId(): Int = mainPlayer.audioSessionId
 
     private fun play(audio: Audio, playlist: List<Audio>) {
         crossfadeJob?.cancel()
         crossfadeJob = null
+        pendingFadeOutAtEnd = false
         // Reset volume in case a previous crossfade was cancelled mid-fade,
         // leaving the volume at a partial value.
         mainPlayer.volume = 1f
@@ -237,8 +362,22 @@ class PlayerManager @Inject constructor(
 
     private fun skipToNext() {
         if (currentPlaylist.isEmpty() || currentIndex < 0) return
-        val nextIndex = (currentIndex + 1) % currentPlaylist.size
-        if (nextIndex == 0 && _state.value.loopMode != LoopMode.LIST) return
+        val nextIndex = when (_state.value.loopMode) {
+            LoopMode.SHUFFLE -> {
+                // Random track, avoid repeating the same one when possible
+                if (currentPlaylist.size <= 1) 0
+                else {
+                    var idx = (currentPlaylist.indices).random()
+                    while (idx == currentIndex) idx = currentPlaylist.indices.random()
+                    idx
+                }
+            }
+            else -> {
+                val idx = (currentIndex + 1) % currentPlaylist.size
+                if (idx == 0 && _state.value.loopMode != LoopMode.LIST) return
+                idx
+            }
+        }
         play(currentPlaylist[nextIndex], currentPlaylist)
     }
 
@@ -255,7 +394,7 @@ class PlayerManager @Inject constructor(
                 mainPlayer.seekTo(0)
                 mainPlayer.play()
             }
-            LoopMode.LIST -> skipToNext()
+            LoopMode.LIST, LoopMode.SHUFFLE -> skipToNext()
             LoopMode.NONE -> {
                 _state.update { it.copy(isPlaying = false) }
             }
@@ -265,9 +404,26 @@ class PlayerManager @Inject constructor(
     private fun toggleBackground() {
         val wasPlaying = _state.value.isBackgroundPlaying
         if (wasPlaying) {
-            backgroundPlayer.pause()
+            // 停止环境音：若开启渐入渐出则先淡出再暂停
+            if (isAmbientFadeEnabled()) {
+                scope.launch {
+                    val steps = 20
+                    for (i in steps downTo 1) {
+                        backgroundPlayer.volume = i.toFloat() / steps
+                        delay(50L)
+                    }
+                    backgroundPlayer.pause()
+                    backgroundPlayer.volume = 1f
+                }
+            } else {
+                backgroundPlayer.pause()
+            }
         } else {
             backgroundPlayer.play()
+            if (isAmbientFadeEnabled()) {
+                backgroundPlayer.volume = 0f
+                fadeBackgroundIn()
+            }
         }
         _state.update { it.copy(isBackgroundPlaying = !wasPlaying) }
     }
@@ -281,6 +437,11 @@ class PlayerManager @Inject constructor(
         backgroundPlayer.prepare()
         backgroundPlayer.repeatMode = currentRepeatMode
         backgroundPlayer.playWhenReady = true
+        if (isAmbientFadeEnabled()) {
+            fadeBackgroundIn()
+        } else {
+            backgroundPlayer.volume = 1f
+        }
     }
 
     /** 设置环境音是否循环播放 */
@@ -296,6 +457,13 @@ class PlayerManager @Inject constructor(
     }
 
     private fun fadeOut(durationMs: Long) {
+        fadeOutDurationMs = durationMs
+        // 结尾淡出模式：等歌曲/音频接近结尾时再淡出
+        if (getFadeOutMode() == 1) {
+            pendingFadeOutAtEnd = true
+            return
+        }
+        // 当前位置淡出模式
         fadeJob?.cancel()
         fadeJob = scope.launch {
             val steps = 20

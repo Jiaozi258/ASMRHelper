@@ -8,6 +8,7 @@ import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.domain.repository.AudioRepository
 import com.asmrhelper.domain.repository.PlaylistRepository
 import com.asmrhelper.domain.repository.SettingsRepository
+import com.asmrhelper.player.EqualizerController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +25,7 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val audioRepository: AudioRepository,
     private val playlistRepository: PlaylistRepository,
+    private val equalizerController: EqualizerController,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -249,6 +251,42 @@ class SettingsViewModel @Inject constructor(
     fun setTriggerCooldownMs(cooldownMs: Int) {
         viewModelScope.launch { settingsRepository.setTriggerCooldownMs(cooldownMs) }
     }
+
+    // ── 环境音渐入渐出 ──────────────────────────────────
+
+    val ambientFadeEnabled: StateFlow<Boolean> = settingsRepository.getAmbientFadeEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setAmbientFadeEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAmbientFadeEnabled(enabled) }
+    }
+
+    // ── 淡出模式 ────────────────────────────────────────
+
+    val fadeOutMode: StateFlow<Int> = settingsRepository.getFadeOutMode()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun setFadeOutMode(mode: Int) {
+        viewModelScope.launch { settingsRepository.setFadeOutMode(mode) }
+    }
+
+    // ── 记忆播放 ────────────────────────────────────────
+
+    val rememberPlayback: StateFlow<Boolean> = settingsRepository.getRememberPlayback()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setRememberPlayback(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setRememberPlayback(enabled) }
+    }
+
+    // ── 均衡器 ──────────────────────────────────────────
+
+    val eqEnabled: StateFlow<Boolean> = equalizerController.isEnabled
+    val eqBandLevels: StateFlow<List<Float>> = equalizerController.bandLevels
+    val eqBandLabels: List<String> = equalizerController.bandLabels
+
+    fun setEqBand(band: Int, levelDb: Float) = equalizerController.setBandLevel(band, levelDb)
+    fun resetEq() = equalizerController.reset()
 
     // ── 遮罩工具 ──────────────────────────────────────────
 

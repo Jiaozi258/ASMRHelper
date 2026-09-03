@@ -75,6 +75,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -98,9 +99,10 @@ import com.asmrhelper.ui.theme.ThemePreset
 // ── 循环模式显示名 ────────────────────────────────────────
 
 private fun LoopMode.displayName(): String = when (this) {
-    LoopMode.NONE   -> "播完即止"
-    LoopMode.SINGLE -> "单曲循环"
-    LoopMode.LIST   -> "列表循环"
+    LoopMode.NONE    -> "播完即止"
+    LoopMode.SINGLE  -> "单曲循环"
+    LoopMode.LIST    -> "列表循环"
+    LoopMode.SHUFFLE -> "随机播放"
 }
 
 // ── 入口 ──────────────────────────────────────────────────
@@ -381,6 +383,190 @@ fun SettingsScreen(
                                     }
                                 )
                             }
+                        }
+                    }
+                }
+            }
+
+            // 淡出模式
+            val fadeOutMode by viewModel.fadeOutMode.collectAsStateWithLifecycle()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                var fadeOutMenuExpanded by remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { fadeOutMenuExpanded = true }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("淡出方式", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            if (fadeOutMode == 1) "歌曲/音频结尾时淡出" else "在当前位置淡出",
+                            color = LocalAccentColor.current,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    Box {
+                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = TextHint)
+                        DropdownMenu(
+                            expanded = fadeOutMenuExpanded,
+                            onDismissRequest = { fadeOutMenuExpanded = false }
+                        ) {
+                            listOf("在当前位置淡出", "歌曲/音频结尾时淡出").forEachIndexed { i, label ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(label, color = TextPrimary)
+                                            if (i == fadeOutMode) {
+                                                Spacer(Modifier.width(8.dp))
+                                                Icon(Icons.Filled.Check, null, tint = LocalAccentColor.current, modifier = Modifier.size(18.dp))
+                                            }
+                                        }
+                                    },
+                                    onClick = {
+                                        viewModel.setFadeOutMode(i)
+                                        fadeOutMenuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 记忆播放
+            val rememberPlayback by viewModel.rememberPlayback.collectAsStateWithLifecycle()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("记忆播放", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            "开启后，下次打开将保留上次歌曲并定位到播放位置；关闭则每次打开为空白",
+                            color = TextHint,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Switch(
+                        checked = rememberPlayback,
+                        onCheckedChange = { viewModel.setRememberPlayback(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = LocalAccentColor.current,
+                            checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f),
+                            uncheckedThumbColor = TextSecondary,
+                            uncheckedTrackColor = DarkSurfaceVariant
+                        )
+                    )
+                }
+            }
+
+            // 环境音渐入渐出
+            val ambientFade by viewModel.ambientFadeEnabled.collectAsStateWithLifecycle()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("环境音渐入渐出", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            "环境音开头 1 秒渐入、结尾 1 秒淡出，循环播放时过渡更平滑",
+                            color = TextHint,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Switch(
+                        checked = ambientFade,
+                        onCheckedChange = { viewModel.setAmbientFadeEnabled(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = LocalAccentColor.current,
+                            checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f),
+                            uncheckedThumbColor = TextSecondary,
+                            uncheckedTrackColor = DarkSurfaceVariant
+                        )
+                    )
+                }
+            }
+
+            SectionSpacer()
+
+            // ═══ 均衡器 ═══════════════════════════════════
+
+            SectionHeader(icon = Icons.Filled.GraphicEq, title = "均衡器")
+            val eqEnabled by viewModel.eqEnabled.collectAsStateWithLifecycle()
+            val eqLevels by viewModel.eqBandLevels.collectAsStateWithLifecycle()
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                    if (!eqEnabled) {
+                        Text("均衡器未就绪，请先播放一首音频", color = TextHint, fontSize = 13.sp)
+                    } else {
+                        val bandLabels = listOf("🔈 低音", "🎵 中音", "🔔 高音")
+                        eqLevels.forEachIndexed { i, level ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(bandLabels[i], color = TextSecondary, fontSize = 12.sp, modifier = Modifier.width(70.dp))
+                                Slider(
+                                    value = level,
+                                    onValueChange = { viewModel.setEqBand(i, it) },
+                                    valueRange = -10f..10f,
+                                    modifier = Modifier.weight(1f),
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = LocalAccentColor.current,
+                                        activeTrackColor = LocalAccentColor.current
+                                    )
+                                )
+                                Text(
+                                    "${if (level >= 0) "+" else ""}${"%.0f".format(level)}",
+                                    color = if (level != 0f) LocalAccentColor.current else TextHint,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.width(38.dp),
+                                    textAlign = TextAlign.End
+                                )
+                            }
+                        }
+                        TextButton(
+                            onClick = { viewModel.resetEq() },
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Text("重置", color = TextSecondary, fontSize = 12.sp)
                         }
                     }
                 }

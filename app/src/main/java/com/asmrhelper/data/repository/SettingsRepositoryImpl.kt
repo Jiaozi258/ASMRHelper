@@ -259,4 +259,31 @@ class SettingsRepositoryImpl @Inject constructor(
         list.forEach { arr.put(it) }
         prefs.edit().putString("ambient_audios", arr.toString()).apply()
     }
+
+    // ── 环境音渐入渐出 ─────────────────────────────────
+
+    private val _ambientFadeEnabled = MutableStateFlow(prefs.getBoolean("ambient_fade", false))
+    override fun getAmbientFadeEnabled(): Flow<Boolean> = _ambientFadeEnabled
+    override suspend fun setAmbientFadeEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("ambient_fade", enabled).apply()
+        _ambientFadeEnabled.value = enabled
+    }
+
+    // ── 淡出模式 ───────────────────────────────────────
+
+    private val _fadeOutMode = MutableStateFlow(prefs.getInt("fade_out_mode", 0))
+    override fun getFadeOutMode(): Flow<Int> = _fadeOutMode
+    override suspend fun setFadeOutMode(mode: Int) {
+        prefs.edit().putInt("fade_out_mode", mode).apply()
+        _fadeOutMode.value = mode
+    }
+
+    // ── 记忆播放 ───────────────────────────────────────
+
+    private val _rememberPlayback = MutableStateFlow(prefs.getBoolean("remember_playback", true))
+    override fun getRememberPlayback(): Flow<Boolean> = _rememberPlayback
+    override suspend fun setRememberPlayback(enabled: Boolean) {
+        prefs.edit().putBoolean("remember_playback", enabled).apply()
+        _rememberPlayback.value = enabled
+    }
 }

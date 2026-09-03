@@ -101,7 +101,9 @@ class AsmrMediaService : Service() {
 
         // ── Process-death recovery: resume playback if the service was
         //     recreated by START_STICKY after being killed by the OS. ──
-        if (intent == null && !state.isPlaying && state.currentAudio == null) {
+        // (记忆播放功能现在会在 init 时恢复 currentAudio，因此不能再依赖
+        //  currentAudio == null 来判断是否需要自动续播。)
+        if (intent == null && !state.isPlaying) {
             android.util.Log.i("AsmrMedia", "Restarting from process death — resuming playback")
             playerManager.resumeLastPlayback()
         }
@@ -161,6 +163,7 @@ class AsmrMediaService : Service() {
             LoopMode.NONE -> ""
             LoopMode.SINGLE -> " | 单曲循环"
             LoopMode.LIST -> " | 列表循环"
+            LoopMode.SHUFFLE -> " | 随机播放"
             else -> ""
         }
         val title = state.currentAudio?.title ?: "ASMRHelper"

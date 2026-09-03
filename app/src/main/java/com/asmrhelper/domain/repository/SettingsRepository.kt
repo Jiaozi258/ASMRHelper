@@ -60,4 +60,17 @@ interface SettingsRepository {
     fun getPlayEffectsEnabled(): Boolean
     fun getPlayEffectsEnabledFlow(): Flow<Boolean>
     suspend fun setPlayEffectsEnabled(enabled: Boolean)
+
+    // ── 环境音渐入渐出 ─────────────────────────────────
+    fun getAmbientFadeEnabled(): Flow<Boolean>
+    suspend fun setAmbientFadeEnabled(enabled: Boolean)
+
+    // ── 淡出模式 ───────────────────────────────────────
+    // 0 = 在当前位置淡出; 1 = 在歌曲/音频结尾时淡出
+    fun getFadeOutMode(): Flow<Int>
+    suspend fun setFadeOutMode(mode: Int)
+
+    // ── 记忆播放 ───────────────────────────────────────
+    fun getRememberPlayback(): Flow<Boolean>
+    suspend fun setRememberPlayback(enabled: Boolean)
 }

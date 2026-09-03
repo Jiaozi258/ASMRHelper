@@ -63,9 +63,9 @@ fun AudioFilePickerDialog(
                     )
                 } else {
                     LazyColumn(
-                        modifier = Modifier.height(300.dp)
+                        modifier = Modifier.height(420.dp)
                     ) {
-                        items(allAudio.take(30)) { audio ->
+                        items(allAudio) { audio ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()

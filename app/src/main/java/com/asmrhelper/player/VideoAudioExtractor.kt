@@ -489,9 +489,18 @@ class VideoAudioExtractor @Inject constructor(
             instanceFollowRedirects = true
             setRequestProperty("Referer", referer)
             setRequestProperty("User-Agent", CN_UA)
-            setRequestProperty("Range", "bytes=0-")
         }
         conn.connect()
+        // Check HTTP status BEFORE reading the stream — HttpURLConnection
+        // throws a raw FileNotFoundException for 403/404, which surfaced as
+        // an unhelpful "FileNotFoundException" to the user.
+        val code = conn.responseCode
+        if (code !in 200..299) {
+            conn.disconnect()
+            lastError = httpErrorMessage(code)
+            android.util.Log.e("Extractor", "下载HTTP错误: $code, $lastError")
+            throw IOException(lastError)
+        }
         val total = conn.contentLengthLong
         val input = conn.inputStream ?: throw IOException("下载流为空")
         input.use { s -> dest.outputStream().use { o ->
@@ -514,8 +523,16 @@ class VideoAudioExtractor @Inject constructor(
         val conn = (URL(urlString).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = READ_TIMEOUT
             instanceFollowRedirects = true
+            setRequestProperty("User-Agent", CN_UA)
         }
         conn.connect()
+        val code = conn.responseCode
+        if (code !in 200..299) {
+            conn.disconnect()
+            lastError = httpErrorMessage(code)
+            android.util.Log.e("Extractor", "下载HTTP错误: $code, $lastError")
+            throw IOException(lastError)
+        }
         val total = conn.contentLengthLong
         val input = conn.inputStream ?: throw IOException("下载流为空")
         input.use { s -> dest.outputStream().use { o ->
@@ -529,6 +546,15 @@ class VideoAudioExtractor @Inject constructor(
                 }
         } }
         conn.disconnect()
+    }
+
+    /** Translate an HTTP status code into a human-readable Chinese message. */
+    private fun httpErrorMessage(code: Int): String = when (code) {
+        403 -> "服务器拒绝访问 (HTTP 403)，音频链接可能已过期，请重新分享链接后重试"
+        404 -> "音频链接已失效 (HTTP 404)，请重新分享链接后重试"
+        429 -> "请求过于频繁 (HTTP 429)，请稍后重试"
+        in 500..599 -> "服务器错误 (HTTP $code)，请稍后重试"
+        else -> "下载失败 (HTTP $code)"
     }
 
     // ── General helpers ──────────────────────────────────
