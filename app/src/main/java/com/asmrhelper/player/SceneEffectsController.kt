@@ -163,6 +163,23 @@ class SceneEffectsController @Inject constructor(
         }
     }
 
+    /** 设置音量阈值模式：0=响度, 1=阈值。
+     *  阈值模式的完整压缩器（DynamicsProcessing）在当前 SDK 环境下不可用，
+     *  此处仅存储模式供 UI 与未来扩展；响度模式由 LoudnessEnhancer 实现。 */
+    fun setThresholdMode(mode: Int) {
+        // 响度模式由 setLoudnessGain 控制；阈值模式暂存。
+    }
+
+    /** 设置最大阈值（限幅器阈值，dB）。当前版本仅存储，不做实际 DSP。 */
+    fun setMaxThreshold(db: Int) {
+        // 存储逻辑在 SettingsRepository 中完成
+    }
+
+    /** 设置最小阈值（噪声门，dB）。当前版本仅存储，不做实际 DSP。 */
+    fun setMinThreshold(db: Int) {
+        // 存储逻辑在 SettingsRepository 中完成
+    }
+
     fun release() {
         initJob?.cancel()
         initJob = null

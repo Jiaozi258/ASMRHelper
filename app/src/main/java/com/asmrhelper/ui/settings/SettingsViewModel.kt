@@ -10,6 +10,7 @@ import com.asmrhelper.domain.repository.PlaylistRepository
 import com.asmrhelper.domain.repository.SettingsRepository
 import com.asmrhelper.player.EqualizerController
 import com.asmrhelper.player.EqPreset
+import com.asmrhelper.player.SceneEffectsController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +28,7 @@ class SettingsViewModel @Inject constructor(
     private val audioRepository: AudioRepository,
     private val playlistRepository: PlaylistRepository,
     private val equalizerController: EqualizerController,
+    private val sceneEffectsController: SceneEffectsController,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -336,6 +338,34 @@ class SettingsViewModel @Inject constructor(
     }
     fun setLyricsAlignment(alignment: Int) {
         viewModelScope.launch { settingsRepository.setLyricsAlignment(alignment) }
+    }
+
+    // ── 音量阈值 ──────────────────────────────────────
+
+    val volumeThresholdMode: StateFlow<Int> = settingsRepository.getVolumeThresholdMode()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val minThresholdDb: StateFlow<Int> = settingsRepository.getMinThresholdDb()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), -40)
+    val maxThresholdDb: StateFlow<Int> = settingsRepository.getMaxThresholdDb()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), -10)
+
+    fun setVolumeThresholdMode(mode: Int) {
+        viewModelScope.launch {
+            settingsRepository.setVolumeThresholdMode(mode)
+            sceneEffectsController.setThresholdMode(mode)
+        }
+    }
+    fun setMinThresholdDb(db: Int) {
+        viewModelScope.launch {
+            settingsRepository.setMinThresholdDb(db)
+            sceneEffectsController.setMinThreshold(db)
+        }
+    }
+    fun setMaxThresholdDb(db: Int) {
+        viewModelScope.launch {
+            settingsRepository.setMaxThresholdDb(db)
+            sceneEffectsController.setMaxThreshold(db)
+        }
     }
 
     // ── 均衡器 ──────────────────────────────────────────

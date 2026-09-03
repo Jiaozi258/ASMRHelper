@@ -360,4 +360,27 @@ class SettingsRepositoryImpl @Inject constructor(
         prefs.edit().putInt("lyrics_alignment", alignment).apply()
         _lyricsAlignment.value = alignment
     }
+
+    // ── 音量阈值 ───────────────────────────────────────
+
+    private val _volumeThresholdMode = MutableStateFlow(prefs.getInt("volume_threshold_mode", 0))
+    override fun getVolumeThresholdMode(): Flow<Int> = _volumeThresholdMode
+    override suspend fun setVolumeThresholdMode(mode: Int) {
+        prefs.edit().putInt("volume_threshold_mode", mode).apply()
+        _volumeThresholdMode.value = mode
+    }
+
+    private val _minThresholdDb = MutableStateFlow(prefs.getInt("min_threshold_db", -40))
+    override fun getMinThresholdDb(): Flow<Int> = _minThresholdDb
+    override suspend fun setMinThresholdDb(db: Int) {
+        prefs.edit().putInt("min_threshold_db", db.coerceIn(-60, 0)).apply()
+        _minThresholdDb.value = db.coerceIn(-60, 0)
+    }
+
+    private val _maxThresholdDb = MutableStateFlow(prefs.getInt("max_threshold_db", -10))
+    override fun getMaxThresholdDb(): Flow<Int> = _maxThresholdDb
+    override suspend fun setMaxThresholdDb(db: Int) {
+        prefs.edit().putInt("max_threshold_db", db.coerceIn(-40, 0)).apply()
+        _maxThresholdDb.value = db.coerceIn(-40, 0)
+    }
 }

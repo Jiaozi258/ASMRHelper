@@ -149,6 +149,10 @@ fun SettingsScreen(
                 .padding(bottom = 24.dp)
         ) {
 
+            // ═══ 个人偏好 ═══════════════════════════════════
+
+            CategoryHeader("个人偏好")
+
             // ═══ 隐私设置 ═══════════════════════════════════
 
             SectionHeader(icon = Icons.Filled.Lock, title = "隐私设置")
@@ -329,6 +333,8 @@ fun SettingsScreen(
             SectionSpacer()
 
             // ═══ 播放设置 ═══════════════════════════════════
+
+            CategoryHeader("播放设置")
 
             SectionHeader(icon = Icons.Filled.Loop, title = "播放设置")
 
@@ -791,6 +797,8 @@ fun SettingsScreen(
 
             // ═══ 外观设置 ═══════════════════════════════════
 
+            CategoryHeader("外观与主题")
+
             SectionHeader(icon = Icons.Filled.Palette, title = "外观设置")
 
             Card(
@@ -882,6 +890,8 @@ fun SettingsScreen(
 
             // ═══ 缓存管理 ═══════════════════════════════════
 
+            CategoryHeader("存储管理")
+
             SectionHeader(icon = Icons.Filled.Storage, title = "缓存管理")
 
             Card(
@@ -953,6 +963,8 @@ fun SettingsScreen(
             SectionSpacer()
 
             // ═══ 环境音管理 ═══════════════════════════════════════
+
+            CategoryHeader("环境音管理")
 
             SectionHeader(icon = Icons.Filled.MusicNote, title = "环境音管理")
             val ambientAudios by viewModel.ambientAudios.collectAsStateWithLifecycle()
@@ -1038,6 +1050,8 @@ fun SettingsScreen(
             SectionSpacer()
 
             // ═══ 歌词设置 ═══════════════════════════════════════
+
+            CategoryHeader("歌词设置")
 
             SectionHeader(icon = Icons.Filled.MusicNote, title = "歌词设置")
             val lyricsFontSize by viewModel.lyricsFontSize.collectAsStateWithLifecycle()
@@ -1153,6 +1167,8 @@ fun SettingsScreen(
             SectionSpacer()
 
             // ═══ 音频可视化 ═══════════════════════════════════
+
+            CategoryHeader("音频特效")
 
             SectionHeader(icon = Icons.Filled.GraphicEq, title = "音频可视化")
             val visualizerEnabled by viewModel.audioVisualizerEnabled.collectAsStateWithLifecycle()
@@ -1389,6 +1405,71 @@ fun SettingsScreen(
 
             SectionSpacer()
 
+            // ═══ 音量阈值 ═══════════════════════════════════════
+
+            SectionHeader(icon = Icons.Filled.GraphicEq, title = "音量阈值")
+            val thresholdMode by viewModel.volumeThresholdMode.collectAsStateWithLifecycle()
+            val minThresholdDb by viewModel.minThresholdDb.collectAsStateWithLifecycle()
+            val maxThresholdDb by viewModel.maxThresholdDb.collectAsStateWithLifecycle()
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                    // 模式选择
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("响度模式", "阈值模式").forEachIndexed { i, label ->
+                            val selected = thresholdMode == i
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (selected) LocalAccentColor.current.copy(alpha = 0.2f) else DarkSurfaceVariant)
+                                    .clickable { viewModel.setVolumeThresholdMode(i) }
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(label, color = if (selected) LocalAccentColor.current else TextSecondary, fontSize = 13.sp)
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    if (thresholdMode == 0) {
+                        Text("响度模式：通过 LoudnessEnhancer 调整目标响度（在音效器中调节）", color = TextHint, fontSize = 12.sp)
+                    } else {
+                        // 最大阈值
+                        Text("最大阈值：${maxThresholdDb} dB（限制过响部分）", color = TextPrimary, fontSize = 14.sp)
+                        Slider(
+                            value = maxThresholdDb.toFloat(),
+                            onValueChange = { viewModel.setMaxThresholdDb(it.toInt()) },
+                            valueRange = -40f..0f,
+                            steps = 39,
+                            colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                        )
+                        // 最小阈值
+                        Text("最小阈值：${minThresholdDb} dB（抑制过弱噪声）", color = TextPrimary, fontSize = 14.sp)
+                        Slider(
+                            value = minThresholdDb.toFloat(),
+                            onValueChange = { viewModel.setMinThresholdDb(it.toInt()) },
+                            valueRange = -60f..0f,
+                            steps = 59,
+                            colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                        )
+                    }
+                }
+            }
+
+            SectionSpacer()
+
             // ═══ 催眠模式 ═══════════════════════════════════════
 
             SectionHeader(icon = Icons.Filled.AutoAwesome, title = "催眠模式")
@@ -1516,6 +1597,35 @@ fun SettingsScreen(
 
             // ═══ 关于 ═══════════════════════════════════════
 
+            CategoryHeader("其他")
+
+            // 播放历史
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToHistory() }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Info, null, tint = LocalAccentColor.current)
+                        Spacer(Modifier.width(10.dp))
+                        Text("播放历史", color = TextPrimary, fontSize = 15.sp)
+                    }
+                    Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
+                }
+            }
+
+            SectionSpacer()
+
             SectionHeader(icon = Icons.Filled.Info, title = "关于")
 
             Card(
@@ -1603,6 +1713,20 @@ private fun SectionHeader(icon: ImageVector, title: String) {
         Spacer(Modifier.width(8.dp))
         Text(title, color = LocalAccentColor.current, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
+}
+
+/** 大类标题 —— 用于将多个 section 归到同一个分类下 */
+@Composable
+private fun CategoryHeader(title: String) {
+    Text(
+        text = title,
+        color = TextPrimary,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 16.dp, top = 28.dp, bottom = 4.dp)
+    )
 }
 
 @Composable
