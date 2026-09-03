@@ -15,6 +15,7 @@ import kotlin.math.sin
 
 enum class SpatialMode(val label: String) {
     OFF("关闭"),
+    D3("3D立体"),
     SWEEP("左右扫掠"),
     CIRCLE("环绕旋转"),
     WIDE("空间扩展")
@@ -55,6 +56,13 @@ class SpatialAudioController @Inject constructor() {
             SpatialMode.OFF -> {
                 virtualizer?.enabled = false
                 isActive = false
+            }
+            SpatialMode.D3 -> {
+                virtualizer?.apply {
+                    enabled = true
+                    setStrength(300.toShort())
+                }
+                isActive = true
             }
             SpatialMode.WIDE -> {
                 virtualizer?.apply {

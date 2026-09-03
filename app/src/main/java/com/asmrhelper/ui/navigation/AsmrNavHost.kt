@@ -23,6 +23,7 @@ import com.asmrhelper.ui.background.BackgroundGalleryScreen
 import com.asmrhelper.ui.components.MiniPlayer
 import com.asmrhelper.ui.library.LibraryScreen
 import com.asmrhelper.ui.play.PlayScreen
+import com.asmrhelper.ui.play.PlayScreenV2
 import com.asmrhelper.ui.play.PlayViewModel
 import com.asmrhelper.ui.playlist.PlaylistScreen
 import com.asmrhelper.ui.profile.ProfileScreen
@@ -46,6 +47,8 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
     var playSubScreen by remember { mutableStateOf<SubScreen?>(null) }
     var settingsSubScreen by remember { mutableStateOf<SubScreen?>(null) }
     var libraryInitialTab by remember { mutableStateOf(0) }
+    // 0 = 经典播放界面, 1 = 新版沉浸式播放界面
+    var playbackMode by remember { mutableStateOf(0) }
     val context = LocalContext.current
 
     // Observe share intents and auto-navigate to video audio tab
@@ -107,8 +110,13 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
                 BottomNavBar(
                     currentRoute = currentScreen.route,
                     onNavigate = { screen ->
-                        currentScreen = screen
-                        playSubScreen = null // 切换标签时重置子页面
+                        // 点击"播放"标签且已在播放页时，切换两种播放界面
+                        if (screen == Screen.Play && currentScreen == Screen.Play && playSubScreen == null) {
+                            playbackMode = if (playbackMode == 0) 1 else 0
+                        } else {
+                            currentScreen = screen
+                            playSubScreen = null // 切换标签时重置子页面
+                        }
                     }
                 )
             }
@@ -131,17 +139,33 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
             when (screen) {
                 Screen.Play -> {
                     when (playSubScreen) {
-                        null -> PlayScreen(
-                            onNavigateToPlaylist = { playSubScreen = SubScreen.Playlist },
-                            onNavigateToLibrary = { tabIndex ->
-                                libraryInitialTab = tabIndex
-                                playSubScreen = SubScreen.Library
-                            },
-                            onNavigateToBackground = { playSubScreen = SubScreen.BackgroundGallery },
-                            onNavigateToSettings = { currentScreen = Screen.Settings },
-                            onNavigateToTriggerPad = { playSubScreen = SubScreen.TriggerPad },
-                            onNavigateToSleepJournal = { playSubScreen = SubScreen.SleepJournal }
-                        )
+                        null -> {
+                            if (playbackMode == 0) {
+                                PlayScreen(
+                                    onNavigateToPlaylist = { playSubScreen = SubScreen.Playlist },
+                                    onNavigateToLibrary = { tabIndex ->
+                                        libraryInitialTab = tabIndex
+                                        playSubScreen = SubScreen.Library
+                                    },
+                                    onNavigateToBackground = { playSubScreen = SubScreen.BackgroundGallery },
+                                    onNavigateToSettings = { currentScreen = Screen.Settings },
+                                    onNavigateToTriggerPad = { playSubScreen = SubScreen.TriggerPad },
+                                    onNavigateToSleepJournal = { playSubScreen = SubScreen.SleepJournal }
+                                )
+                            } else {
+                                PlayScreenV2(
+                                    onNavigateToPlaylist = { playSubScreen = SubScreen.Playlist },
+                                    onNavigateToLibrary = { tabIndex ->
+                                        libraryInitialTab = tabIndex
+                                        playSubScreen = SubScreen.Library
+                                    },
+                                    onNavigateToBackground = { playSubScreen = SubScreen.BackgroundGallery },
+                                    onNavigateToSettings = { currentScreen = Screen.Settings },
+                                    onNavigateToTriggerPad = { playSubScreen = SubScreen.TriggerPad },
+                                    onNavigateToSleepJournal = { playSubScreen = SubScreen.SleepJournal }
+                                )
+                            }
+                        }
 
                         SubScreen.Playlist -> {
                             val audio = playUiState.playerState.currentAudio

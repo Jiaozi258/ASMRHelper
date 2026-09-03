@@ -435,7 +435,11 @@ fun PlayScreen(
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 val spatialLabel = when (state.spatialMode) {
-                    "SWEEP" -> "↔ 扫掠"; "CIRCLE" -> "🔄 环绕"; "WIDE" -> "🌐 扩展"; else -> "🎧 3D"
+                    "D3" -> "🎧 3D"
+                    "SWEEP" -> "↔ 扫掠"
+                    "CIRCLE" -> "🔄 环绕"
+                    "WIDE" -> "🌐 扩展"
+                    else -> "🎧 空间音效"
                 }
                 TextButton(onClick = { viewModel.cycleSpatialMode() }) {
                     Text(

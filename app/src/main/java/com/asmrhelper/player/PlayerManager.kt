@@ -166,6 +166,10 @@ class PlayerManager @Inject constructor(
                 val current = mainPlayer.currentPosition
                 val dur = mainPlayer.duration
                 if (current >= 0 || dur > 0) {
+                    // 切片循环：超过 B 点则跳回 A 点
+                    if (sliceStartMs >= 0 && sliceEndMs > sliceStartMs && current > sliceEndMs) {
+                        mainPlayer.seekTo(sliceStartMs)
+                    }
                     _state.update {
                         it.copy(
                             progressMs = current.coerceAtLeast(0),
@@ -289,6 +293,36 @@ class PlayerManager @Inject constructor(
     // 结尾淡出模式：歌曲结尾时淡出并停止
     private var pendingFadeOutAtEnd: Boolean = false
     private var fadeOutDurationMs: Long = 5000L
+
+    // 切片 (A-B 循环) 状态
+    private var sliceStartMs: Long = -1L
+    private var sliceEndMs: Long = -1L
+
+    /** 设置播放速度（保留当前音调） */
+    fun setPlaybackSpeed(speed: Float) {
+        val p = mainPlayer.playbackParameters
+        val pitch = p?.pitch ?: 1f
+        mainPlayer.playbackParameters = androidx.media3.common.PlaybackParameters(speed, pitch)
+    }
+
+    /** 设置音调（保留当前速度） */
+    fun setPlaybackPitch(pitch: Float) {
+        val p = mainPlayer.playbackParameters
+        val speed = p?.speed ?: 1f
+        mainPlayer.playbackParameters = androidx.media3.common.PlaybackParameters(speed, pitch)
+    }
+
+    /** 设置切片范围（A-B 循环），start/end 为 -1 表示清除 */
+    fun setSlice(startMs: Long, endMs: Long) {
+        sliceStartMs = startMs
+        sliceEndMs = endMs
+        if (startMs >= 0) mainPlayer.seekTo(startMs)
+    }
+
+    fun clearSlice() {
+        sliceStartMs = -1L
+        sliceEndMs = -1L
+    }
 
     /** Returns the audio session ID for attaching audio effects. */
     fun getAudioSessionId(): Int = mainPlayer.audioSessionId

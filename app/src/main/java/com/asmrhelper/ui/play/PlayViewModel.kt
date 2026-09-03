@@ -367,6 +367,13 @@ class PlayViewModel @Inject constructor(
                 _ambianceEffectsEnabled.value = enabled
             }
         }
+
+        // 监听当前音频变化，同步收藏状态
+        viewModelScope.launch {
+            playerManager.state.map { it.currentAudio }.collect { audio ->
+                _currentFavorite.value = audio?.isFavorite ?: false
+            }
+        }
     }
 
     fun setAmbianceEffectsEnabled(enabled: Boolean) {
@@ -407,6 +414,41 @@ class PlayViewModel @Inject constructor(
     fun next() = playerManager.handleEvent(PlayerEvent.Next)
     fun previous() = playerManager.handleEvent(PlayerEvent.Previous)
     fun setLoopMode(mode: LoopMode) = playerManager.handleEvent(PlayerEvent.SetLoopMode(mode))
+
+    /** 快进 15 秒 */
+    fun forward15s() {
+        val current = uiState.value.playerState.progressMs
+        val duration = uiState.value.playerState.durationMs
+        val target = (current + 15000L).coerceAtMost(if (duration > 0) duration else current + 15000L)
+        playerManager.handleEvent(PlayerEvent.SeekTo(target))
+    }
+
+    /** 快退 15 秒 */
+    fun rewind15s() {
+        val current = uiState.value.playerState.progressMs
+        playerManager.handleEvent(PlayerEvent.SeekTo((current - 15000L).coerceAtLeast(0L)))
+    }
+
+    // ── 收藏 ───────────────────────────────────────────
+    private val _currentFavorite = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val currentFavorite: StateFlow<Boolean> = _currentFavorite
+
+    fun toggleFavorite() {
+        val audio = uiState.value.playerState.currentAudio ?: return
+        val newFav = !_currentFavorite.value
+        _currentFavorite.value = newFav
+        viewModelScope.launch {
+            audioRepository.updateFavorite(audio.id, newFav)
+        }
+    }
+
+    // ── 变速变调 ───────────────────────────────────────
+    fun setPlaybackSpeed(speed: Float) = playerManager.setPlaybackSpeed(speed)
+    fun setPlaybackPitch(pitch: Float) = playerManager.setPlaybackPitch(pitch)
+
+    // ── 切片 ───────────────────────────────────────────
+    fun setSlice(startMs: Long, endMs: Long) = playerManager.setSlice(startMs, endMs)
+    fun clearSlice() = playerManager.clearSlice()
 
     fun cycleLoopMode() {
         val nextMode = when (uiState.value.playerState.loopMode) {
@@ -661,7 +703,8 @@ class PlayViewModel @Inject constructor(
 
     fun cycleSpatialMode() {
         val next = when (SpatialMode.valueOf(_uiState.value.spatialMode)) {
-            SpatialMode.OFF -> SpatialMode.SWEEP
+            SpatialMode.OFF -> SpatialMode.D3
+            SpatialMode.D3 -> SpatialMode.SWEEP
             SpatialMode.SWEEP -> SpatialMode.CIRCLE
             SpatialMode.CIRCLE -> SpatialMode.WIDE
             SpatialMode.WIDE -> SpatialMode.OFF
