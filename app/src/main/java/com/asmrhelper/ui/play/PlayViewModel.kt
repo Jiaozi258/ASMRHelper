@@ -425,6 +425,9 @@ class PlayViewModel @Inject constructor(
         playerManager.handleEvent(event)
     }
 
+    /** 彻底停止：停止播放、释放音频焦点、关闭前台服务与通知栏。 */
+    fun stopPlayback() = playerManager.stopPlaybackAndService()
+
     fun seekTo(positionMs: Long) = playerManager.handleEvent(PlayerEvent.SeekTo(positionMs))
 
     fun next() = playerManager.handleEvent(PlayerEvent.Next)

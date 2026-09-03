@@ -633,7 +633,8 @@ fun PlayScreenV2(
                         "🔇 噪音生成" to { viewModel.toggleNoise() },
                         "🎧 3D 空间音效" to { viewModel.cycleSpatialMode() },
                         "📳 触觉反馈" to { viewModel.toggleHaptic() },
-                        "🌙 淡出" to { viewModel.fadeOut(5000L) }
+                        "🌙 淡出" to { viewModel.fadeOut(5000L) },
+                        "⏹ 彻底停止" to { viewModel.stopPlayback() }
                     )
                     tools.forEach { (label, action) ->
                         Row(

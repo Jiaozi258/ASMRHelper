@@ -76,6 +76,12 @@ class AsmrMediaService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // 通知栏"关闭"按钮 → 彻底停止（停止播放 + 关闭前台服务与通知）
+        if (intent?.action == Constants.ACTION_STOP_SERVICE) {
+            stopAndDestroy()
+            return START_NOT_STICKY
+        }
+
         // Always start the foreground service. Android requires a notification
         // for ALL foreground services — there's no way to run without one.
         // The user's "show_notification" pref only controls lock-screen
@@ -125,6 +131,20 @@ class AsmrMediaService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    /** 彻底停止：停止播放、移除前台通知、关闭服务。 */
+    private fun stopAndDestroy() {
+        playerManager.stop()
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
+        } catch (_: Exception) { }
+        stopSelf()
+    }
 
     override fun onDestroy() {
         releaseWakeLock()
@@ -199,10 +219,19 @@ class AsmrMediaService : Service() {
                     this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT
                 )
             )
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                "关闭",
+                PendingIntent.getService(
+                    this, 0,
+                    Intent(this, AsmrMediaService::class.java).setAction(Constants.ACTION_STOP_SERVICE),
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+            )
             .setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
                     .setMediaSession(mediaSession.sessionToken)
-                    .setShowActionsInCompactView(0, 1)
+                    .setShowActionsInCompactView(0, 1, 2)
             )
             .setOngoing(true)
             .setVisibility(

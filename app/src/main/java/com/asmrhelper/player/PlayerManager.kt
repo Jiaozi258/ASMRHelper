@@ -603,6 +603,15 @@ class PlayerManager @Inject constructor(
         audioFocusManager.abandonFocus()
     }
 
+    /** 彻底停止：停止播放、释放音频焦点、关闭前台服务与通知栏。
+     *  不释放 ExoPlayer 实例，也不清除记忆播放，之后仍可按播放键续播。 */
+    fun stopPlaybackAndService() {
+        stop()
+        try {
+            context.stopService(Intent(context, AsmrMediaService::class.java))
+        } catch (_: Exception) { }
+    }
+
     fun release() {
         scope.cancel()
         mainPlayer.release()

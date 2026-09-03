@@ -7,4 +7,7 @@ object Constants {
 
     const val PLAYER_MAIN = "main_player"
     const val PLAYER_BACKGROUND = "background_player"
+
+    /** 通知栏"关闭"按钮 / 应用内"彻底停止"触发的动作：停止播放并关闭前台服务。 */
+    const val ACTION_STOP_SERVICE = "com.asmrhelper.action.STOP_SERVICE"
 }
