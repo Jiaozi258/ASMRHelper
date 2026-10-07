@@ -1,6 +1,7 @@
 package com.asmrhelper.data.repository
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.asmrhelper.data.local.db.dao.BackgroundImageDao
 import com.asmrhelper.data.local.db.entity.AudioBgBinding
 import com.asmrhelper.data.local.db.entity.BackgroundImageEntity
@@ -25,7 +26,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     private val prefs = context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
     private val _privacyMode = MutableStateFlow(prefs.getBoolean("privacy_mode", false))
-    private val _themePresetOrdinal = MutableStateFlow(prefs.getInt("theme_preset", 0))
+    private val _themePresetOrdinal = MutableStateFlow(migrateThemePreset(prefs))
     private val _darkTheme = MutableStateFlow(prefs.getBoolean("dark_theme", true))
     private val _bgColorIndex = MutableStateFlow(prefs.getInt("bg_color_index", 0))
     private val _visualizerEnabled = MutableStateFlow(prefs.getBoolean("audio_visualizer", false))
@@ -59,6 +60,24 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setPrivacyMode(enabled: Boolean) {
         prefs.edit().putBoolean("privacy_mode", enabled).apply()
         _privacyMode.value = enabled
+    }
+
+    /**
+     * 一次性迁移：v1 强调色预设序号里没有「苹果蓝」，本次在最前插入后，
+     * 已保存的旧序号会整体错位一位（暖橙→暗夜紫等）。这里把 >=1 的旧序号 +1，
+     * 旧默认 0（暗夜紫）保持 0，即新默认「苹果蓝」。用标志位保证只迁移一次。
+     */
+    private fun migrateThemePreset(prefs: SharedPreferences): Int {
+        if (prefs.getBoolean("theme_preset_migrated", false)) {
+            return prefs.getInt("theme_preset", 0)
+        }
+        val old = prefs.getInt("theme_preset", 0)
+        val migrated = if (old >= 1) old + 1 else old
+        prefs.edit()
+            .putInt("theme_preset", migrated)
+            .putBoolean("theme_preset_migrated", true)
+            .apply()
+        return migrated
     }
 
     override fun getThemePresetOrdinal(): Flow<Int> = _themePresetOrdinal

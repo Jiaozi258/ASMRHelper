@@ -1,6 +1,7 @@
 package com.asmrhelper
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -9,9 +10,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.asmrhelper.domain.repository.SettingsRepository
 import com.asmrhelper.ui.navigation.AsmrNavHost
 import com.asmrhelper.ui.theme.ASMRHelperTheme
@@ -61,6 +65,18 @@ class MainActivity : ComponentActivity() {
             val preset = ThemePreset.fromOrdinalOrDefault(ordinal)
             val darkTheme by settingsRepository.getDarkTheme()
                 .collectAsState(initial = darkThemeDefault)
+
+            // 浅色模式下系统状态栏/导航栏图标需切为深色，否则白图标压在浅灰背景上不可见
+            val view = LocalView.current
+            if (!view.isInEditMode) {
+                SideEffect {
+                    val window = (view.context as Activity).window
+                    WindowCompat.getInsetsController(window, view).apply {
+                        isAppearanceLightStatusBars = !darkTheme
+                        isAppearanceLightNavigationBars = !darkTheme
+                    }
+                }
+            }
 
             ASMRHelperTheme(preset = preset, darkTheme = darkTheme) {
                 AsmrNavHost()
