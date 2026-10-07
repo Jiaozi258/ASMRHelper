@@ -461,12 +461,17 @@ fun LibraryScreen(
                     TextButton(onClick = {
                         val path = lyricsAudio!!.filePath
                         val text = lyricsText
-                        scope.launch(Dispatchers.IO) {
-                            com.asmrhelper.util.LyricsStore.saveLyrics(context, path, text)
+                        // 校验：非空但解析不出任何时间标签时，提示格式错误而不是静默保存
+                        if (text.isNotBlank() && com.asmrhelper.util.LrcParser.parse(text).isEmpty()) {
+                            Toast.makeText(context, "未识别到有效时间标签，请按 [mm:ss.xx] 歌词 的格式填写", Toast.LENGTH_LONG).show()
+                        } else {
+                            scope.launch(Dispatchers.IO) {
+                                com.asmrhelper.util.LyricsStore.saveLyrics(context, path, text)
+                            }
+                            Toast.makeText(context, "歌词已保存", Toast.LENGTH_SHORT).show()
+                            showLyricsDialog = false
+                            lyricsAudio = null
                         }
-                        Toast.makeText(context, "歌词已保存", Toast.LENGTH_SHORT).show()
-                        showLyricsDialog = false
-                        lyricsAudio = null
                     }) {
                         Text("保存", color = LocalAccentColor.current)
                     }

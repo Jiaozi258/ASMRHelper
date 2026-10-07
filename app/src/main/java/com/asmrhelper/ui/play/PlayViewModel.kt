@@ -30,6 +30,9 @@ import com.asmrhelper.player.SpatialAudioController
 import com.asmrhelper.player.SpatialMode
 import com.asmrhelper.player.SceneEffectsController
 import com.asmrhelper.player.SceneEffect
+import com.asmrhelper.util.LrcLine
+import com.asmrhelper.util.LrcParser
+import com.asmrhelper.util.LyricsStore
 import com.asmrhelper.util.maskPrivacy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -164,6 +167,14 @@ class PlayViewModel @Inject constructor(
     val currentFavorite: StateFlow<Boolean> = _currentFavorite
     private val _seekTimeSeconds = MutableStateFlow(15)
     val seekTimeSeconds: StateFlow<Int> = _seekTimeSeconds
+
+    // ── 歌词：同样必须在 init 之前声明（init 的协程会立即写） ──
+    private val _lyrics = MutableStateFlow<List<LrcLine>>(emptyList())
+    val lyrics: StateFlow<List<LrcLine>> = _lyrics.asStateFlow()
+    private val _hasLyrics = MutableStateFlow(false)
+    val hasLyrics: StateFlow<Boolean> = _hasLyrics.asStateFlow()
+    private val _rawLyricsText = MutableStateFlow("")
+    val rawLyricsText: StateFlow<String> = _rawLyricsText.asStateFlow()
 
     init {
         // 合并播放器状态、音频列表和隐私模式
@@ -396,6 +407,42 @@ class PlayViewModel @Inject constructor(
                 .collect { audio ->
                     _currentFavorite.value = audio?.isFavorite ?: false
                 }
+        }
+
+        // 监听当前音频变化，加载并解析歌词
+        viewModelScope.launch {
+            playerManager.state
+                .map { it.currentAudio }
+                .distinctUntilChanged()
+                .collect { audio -> loadLyricsFor(audio) }
+        }
+    }
+
+    private fun loadLyricsFor(audio: Audio?) {
+        viewModelScope.launch {
+            if (audio == null) {
+                _lyrics.value = emptyList()
+                _hasLyrics.value = false
+                _rawLyricsText.value = ""
+                return@launch
+            }
+            val text = withContext(Dispatchers.IO) { LyricsStore.loadLyrics(context, audio.filePath) }
+            val lines = if (text.isNullOrBlank()) emptyList() else LrcParser.parse(text)
+            _lyrics.value = lines
+            _hasLyrics.value = lines.isNotEmpty()
+            _rawLyricsText.value = text ?: ""
+        }
+    }
+
+    /** 保存当前音频的歌词并立即刷新显示。 */
+    fun saveLyrics(text: String) {
+        val audio = uiState.value.playerState.currentAudio ?: return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { LyricsStore.saveLyrics(context, audio.filePath, text) }
+            val lines = LrcParser.parse(text)
+            _lyrics.value = lines
+            _hasLyrics.value = lines.isNotEmpty()
+            _rawLyricsText.value = text
         }
     }
 

@@ -88,6 +88,9 @@ class PlayerManager @Inject constructor(
         prefs.edit()
             .remove("last_file_path")
             .remove("last_position_ms")
+            .remove("playlist_json")
+            .remove("playlist_index")
+            .remove("loop_mode")
             .apply()
     }
 
@@ -107,13 +110,64 @@ class PlayerManager @Inject constructor(
         )
     }
 
+    /** 序列化当前播放队列（含元数据），供重启后恢复完整队列而非仅最后一首。 */
+    private fun savePlaylistState() {
+        if (!isRememberPlaybackEnabled()) return
+        if (currentPlaylist.isEmpty() || currentIndex < 0) return
+        val arr = org.json.JSONArray()
+        currentPlaylist.forEach { a ->
+            arr.put(org.json.JSONObject().apply {
+                put("id", a.id)
+                put("title", a.title)
+                put("artist", a.artist)
+                put("filePath", a.filePath)
+                put("durationMs", a.durationMs)
+                put("isFavorite", a.isFavorite)
+            })
+        }
+        prefs.edit()
+            .putString("playlist_json", arr.toString())
+            .putInt("playlist_index", currentIndex)
+            .putString("loop_mode", _state.value.loopMode.name)
+            .apply()
+    }
+
+    private fun loadPlaylistState(): List<Audio> {
+        val json = prefs.getString("playlist_json", null) ?: return emptyList()
+        return try {
+            val arr = org.json.JSONArray(json)
+            (0 until arr.length()).map { i ->
+                val o = arr.getJSONObject(i)
+                Audio(
+                    id = o.optLong("id", 0L),
+                    title = o.optString("title", "未知"),
+                    artist = o.optString("artist", ""),
+                    filePath = o.optString("filePath", ""),
+                    durationMs = o.optLong("durationMs", 0L),
+                    isFavorite = o.optBoolean("isFavorite", false)
+                )
+            }
+        } catch (_: Exception) { emptyList() }
+    }
+
+    /** 恢复保存的完整播放队列，返回应定位到的当前曲目；无队列则回退到单曲。 */
+    private fun restoreSavedQueue(): Audio? {
+        val playlist = loadPlaylistState()
+        if (playlist.isEmpty()) return loadLastPlayback()
+        currentPlaylist = playlist
+        currentIndex = prefs.getInt("playlist_index", 0).coerceIn(0, playlist.size - 1)
+        prefs.getString("loop_mode", null)?.let { name ->
+            runCatching { LoopMode.valueOf(name) }.getOrNull()?.let { mode ->
+                _state.update { it.copy(loopMode = mode) }
+            }
+        }
+        return playlist[currentIndex]
+    }
+
     /** Resume the last-played audio. Called by the service after process-death restart.
      *  Does NOT re-start the service (caller is already the service). */
     fun resumeLastPlayback() {
-        val audio = loadLastPlayback() ?: return
-        // Restore a minimal playlist so Next/Previous buttons work
-        currentPlaylist = listOf(audio)
-        currentIndex = 0
+        val audio = restoreSavedQueue() ?: return
         val mediaItem = MediaItem.fromUri(audio.filePath)
         mainPlayer.setMediaItem(mediaItem)
         mainPlayer.prepare()
@@ -149,14 +203,12 @@ class PlayerManager @Inject constructor(
             }
         }
 
-        // ── 记忆播放：恢复上次的歌曲和播放位置 ──
-        // 修复"假保留"问题：之前只把标题写进 UI，但没有 prepare 播放器，
-        // 导致点播放按钮无效。现在真正 prepare 播放器并 seek 到上次位置。
+        // ── 记忆播放：恢复上次的播放队列 + 位置 ──
+        // 修复"假保留"问题：之前只恢复单曲、丢弃了整个播放队列，导致重启后
+        // 上一首/下一首没反应。现在恢复完整队列 + 当前索引。
         if (isRememberPlaybackEnabled()) {
-            val saved = loadLastPlayback()
+            val saved = restoreSavedQueue()
             if (saved != null) {
-                currentPlaylist = listOf(saved)
-                currentIndex = 0
                 _state.update { it.copy(currentAudio = saved, durationMs = saved.durationMs) }
                 val mediaItem = MediaItem.fromUri(saved.filePath)
                 mainPlayer.setMediaItem(mediaItem)
@@ -331,7 +383,10 @@ class PlayerManager @Inject constructor(
             PlayerEvent.Next -> skipToNext()
             PlayerEvent.Previous -> skipToPrevious()
             is PlayerEvent.SeekTo -> mainPlayer.seekTo(event.positionMs)
-            is PlayerEvent.SetLoopMode -> _state.update { it.copy(loopMode = event.mode) }
+            is PlayerEvent.SetLoopMode -> {
+                _state.update { it.copy(loopMode = event.mode) }
+                savePlaylistState()
+            }
             PlayerEvent.ToggleBackground -> toggleBackground()
             is PlayerEvent.SetBackgroundAudio -> setBackgroundAudio(event.filePath)
             is PlayerEvent.SetAmbientLoop -> setAmbientLoop(event.enabled)
@@ -422,6 +477,7 @@ class PlayerManager @Inject constructor(
         }
         _state.update { it.copy(currentAudio = audio) }
         saveLastPlayback(audio) // survive process death
+        savePlaylistState()     // 持久化完整队列 + 索引 + 循环模式
         // Record playback history (fire-and-forget)
         scope.launch(Dispatchers.IO) {
             try {

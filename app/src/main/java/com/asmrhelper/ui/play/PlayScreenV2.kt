@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -44,6 +47,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,6 +103,9 @@ fun PlayScreenV2(
     val playlistViewModel: PlaylistViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val favorite by viewModel.currentFavorite.collectAsStateWithLifecycle()
+    val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
+    val hasLyrics by viewModel.hasLyrics.collectAsStateWithLifecycle()
+    val rawLyricsText by viewModel.rawLyricsText.collectAsStateWithLifecycle()
 
     var showTimerDialog by remember { mutableStateOf(false) }
     var showLyricsDialog by remember { mutableStateOf(false) }
@@ -171,19 +178,48 @@ fun PlayScreenV2(
                     .clickable { showLyricsDialog = true },
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "暂无歌词",
-                        color = TextHint,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        "点击添加歌词",
-                        color = TextHint.copy(alpha = 0.6f),
-                        fontSize = 12.sp
-                    )
+                if (hasLyrics && lyrics.isNotEmpty()) {
+                    val progressMs = state.playerState.progressMs
+                    val currentIndex = lyrics.indexOfLast { it.timeMs <= progressMs }
+                        .let { if (it < 0) 0 else it }
+                    val listState = rememberLazyListState()
+                    LaunchedEffect(currentIndex) {
+                        if (currentIndex > 0) listState.animateScrollToItem(currentIndex - 1)
+                    }
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        itemsIndexed(lyrics) { index, line ->
+                            val isCurrent = index == currentIndex
+                            Text(
+                                text = line.text,
+                                color = if (isCurrent) LocalAccentColor.current else TextHint,
+                                fontSize = if (isCurrent) 18.sp else 15.sp,
+                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 6.dp)
+                            )
+                        }
+                    }
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "暂无歌词",
+                            color = TextHint,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "点击添加歌词",
+                            color = TextHint.copy(alpha = 0.6f),
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
 
@@ -361,19 +397,32 @@ fun PlayScreenV2(
 
     // ── 歌词浮层 ───────────────────────────────────────
     if (showLyricsDialog) {
+        var lyricText by remember(showLyricsDialog) { mutableStateOf(rawLyricsText) }
         AlertDialog(
             onDismissRequest = { showLyricsDialog = false },
             title = { Text("歌词", color = TextPrimary) },
             text = {
                 Column {
-                    Text("当前音频暂无歌词", color = TextHint, fontSize = 14.sp)
+                    Text("每行格式：[mm:ss.xx] 歌词内容", color = TextHint, fontSize = 12.sp)
                     Spacer(Modifier.height(8.dp))
-                    Text("可在设置 → 歌词设置中调整字体大小、阴影、行间距等", color = TextHint.copy(alpha = 0.6f), fontSize = 12.sp)
+                    androidx.compose.material3.OutlinedTextField(
+                        value = lyricText,
+                        onValueChange = { lyricText = it },
+                        placeholder = { Text("例如：\n[00:00.00] 第一句歌词\n[00:12.34] 第二句歌词", color = TextHint) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(260.dp)
+                    )
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showLyricsDialog = false }) {
-                    Text("添加歌词", color = LocalAccentColor.current)
+                TextButton(
+                    onClick = {
+                        viewModel.saveLyrics(lyricText)
+                        showLyricsDialog = false
+                    }
+                ) {
+                    Text("保存歌词", color = LocalAccentColor.current)
                 }
             },
             dismissButton = {
@@ -627,24 +676,46 @@ fun PlayScreenV2(
                         .height(360.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
+                    // 动态 label + 选中态，与第一种播放界面保持一致
+                    val noiseLabel = if (state.noiseActive) {
+                        when (state.noiseType) { "PINK" -> "🌸 粉噪"; "BROWN" -> "🍂 棕噪"; else -> "🔊 白噪" }
+                    } else "🔇 噪音生成"
+                    val spatialLabel = when (state.spatialMode) {
+                        "D3" -> "🎧 3D"; "SWEEP" -> "↔ 扫掠"; "CIRCLE" -> "🔄 环绕"; "WIDE" -> "🌐 扩展"
+                        else -> "🎧 3D 空间音效"
+                    }
+                    val binauralLabel = state.binauralPreset?.name
+                        ?.let { "🧠 双耳节拍（$it）" } ?: "🧠 双耳节拍"
+
+                    // Triple(label, active, action)。可开关工具选中后不关闭对话框，
+                    // 让高亮原地刷新；一次性动作（淡出/彻底停止）仍关闭。
                     val tools = listOf(
-                        "🌧 环境音" to { viewModel.toggleBackground() },
-                        "🧠 双耳节拍" to { viewModel.toggleBinaural(com.asmrhelper.player.BinauralPreset.PRESETS.first()) },
-                        "🔇 噪音生成" to { viewModel.toggleNoise() },
-                        "🎧 3D 空间音效" to { viewModel.cycleSpatialMode() },
-                        "📳 触觉反馈" to { viewModel.toggleHaptic() },
-                        "🌙 淡出" to { viewModel.fadeOut(5000L) },
-                        "⏹ 彻底停止" to { viewModel.stopPlayback() }
+                        Triple("🌧 环境音", state.playerState.isBackgroundPlaying) { viewModel.toggleBackground() },
+                        Triple(binauralLabel, state.binauralActive) { viewModel.toggleBinaural(com.asmrhelper.player.BinauralPreset.PRESETS.first()) },
+                        Triple(noiseLabel, state.noiseActive) { viewModel.toggleNoise() },
+                        Triple(spatialLabel, state.spatialMode != "OFF") { viewModel.cycleSpatialMode() },
+                        Triple("📳 触觉反馈", state.hapticEnabled) { viewModel.toggleHaptic() },
+                        Triple("🌙 淡出", false) { showToolboxDialog = false; viewModel.fadeOut(5000L) },
+                        Triple("⏹ 彻底停止", false) { showToolboxDialog = false; viewModel.stopPlayback() }
                     )
-                    tools.forEach { (label, action) ->
+                    tools.forEach { (label, active, action) ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { showToolboxDialog = false; action() }
+                                .clickable { action() }
                                 .padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(label, color = TextPrimary, fontSize = 14.sp)
+                            Text(
+                                text = if (active) "▶ $label" else label,
+                                color = if (active) LocalAccentColor.current else TextPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (active) {
+                                Text("✓", color = LocalAccentColor.current, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                         HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
                     }

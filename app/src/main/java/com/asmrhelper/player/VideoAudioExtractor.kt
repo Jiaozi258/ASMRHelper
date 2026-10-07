@@ -40,6 +40,10 @@ class VideoAudioExtractor @Inject constructor(
     /** 当前进行中的下载连接，用于取消时主动断开以中断阻塞读取。 */
     @Volatile private var activeConnection: HttpURLConnection? = null
 
+    /** B站风控需要的 buvid3/buvid4 Cookie（进程内缓存，避免每次请求都调指纹接口）。 */
+    @Volatile private var cachedBuvid3: String? = null
+    @Volatile private var cachedBuvid4: String? = null
+
     /** 取消进行中的下载：断开底层 socket 使阻塞的 read() 抛出异常。 */
     fun cancelActiveDownload() {
         try { activeConnection?.disconnect() } catch (_: Exception) { }
@@ -182,6 +186,43 @@ class VideoAudioExtractor @Inject constructor(
         return finalizeResult(outputFile, title, platform, url, durSec)
     }
 
+    /** 组装 B站 buvid Cookie 字符串，首次调用会先走指纹接口拿 buvid3/buvid4。 */
+    private fun buvidCookie(): String {
+        var b3 = cachedBuvid3
+        var b4 = cachedBuvid4
+        if (b3.isNullOrEmpty()) {
+            val (nb3, nb4) = obtainBuvid()
+            b3 = nb3; b4 = nb4
+            cachedBuvid3 = b3; cachedBuvid4 = b4
+        }
+        if (b3.isNullOrEmpty()) return ""
+        return if (b4.isNullOrEmpty()) "buvid3=$b3" else "buvid3=$b3; buvid4=$b4"
+    }
+
+    /** 调 B站免费指纹接口获取 buvid3/buvid4，失败则返回 null 降级为无 Cookie。 */
+    private fun obtainBuvid(): Pair<String?, String?> {
+        return try {
+            val conn = (URL("https://api.bilibili.com/x/frontend/finger/spi")
+                .openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = 10_000
+                setRequestProperty("Referer", "https://www.bilibili.com")
+                setRequestProperty("User-Agent", CN_UA)
+            }
+            val code = conn.responseCode
+            val body = if (code in 200..299)
+                conn.inputStream?.bufferedReader()?.use { it.readText() } ?: ""
+            else
+                conn.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+            conn.disconnect()
+            val data = JSONObject(body).optJSONObject("data")
+            val b3 = data?.optString("b_3", "")?.takeIf { it.isNotEmpty() }
+            val b4 = data?.optString("b_4", "")?.takeIf { it.isNotEmpty() }
+            b3 to b4
+        } catch (_: Exception) {
+            null to null
+        }
+    }
+
     private fun bilibiliApi(path: String, query: String): JSONObject? {
         return try {
             val apiUrl = "https://api.bilibili.com/$path?$query"
@@ -190,6 +231,9 @@ class VideoAudioExtractor @Inject constructor(
                 requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = 30_000
                 setRequestProperty("Referer", "https://www.bilibili.com")
                 setRequestProperty("User-Agent", CN_UA)
+                // 缺 buvid3 Cookie 会被 B站风控直接拦成 HTTP 412
+                val cookie = buvidCookie()
+                if (cookie.isNotEmpty()) setRequestProperty("Cookie", cookie)
             }
             val code = conn.responseCode
             android.util.Log.d("Extractor", "B站API响应: HTTP $code")
@@ -571,6 +615,7 @@ class VideoAudioExtractor @Inject constructor(
     private fun httpErrorMessage(code: Int): String = when (code) {
         403 -> "服务器拒绝访问 (HTTP 403)，音频链接可能已过期，请重新分享链接后重试"
         404 -> "音频链接已失效 (HTTP 404)，请重新分享链接后重试"
+        412 -> "风控拦截 (HTTP 412)，请稍后重试"
         429 -> "请求过于频繁 (HTTP 429)，请稍后重试"
         in 500..599 -> "服务器错误 (HTTP $code)，请稍后重试"
         else -> "下载失败 (HTTP $code)"
@@ -583,12 +628,17 @@ class VideoAudioExtractor @Inject constructor(
             val conn = (URL(urlString).openConnection() as HttpURLConnection).apply {
                 requestMethod = "HEAD"; instanceFollowRedirects = false
                 connectTimeout = CONNECT_TIMEOUT; readTimeout = 10_000
+                // 短链解析也需要 UA/Referer，否则默认 Java UA 容易被风控拦成 403/412
+                setRequestProperty("User-Agent", CN_UA)
+                setRequestProperty("Referer", "https://www.bilibili.com")
             }
             val loc = conn.getHeaderField("Location"); conn.disconnect()
             if (conn.responseCode in 300..399 && loc != null) loc else {
                 val c2 = (URL(urlString).openConnection() as HttpURLConnection).apply {
                     requestMethod = "GET"; instanceFollowRedirects = true
                     connectTimeout = CONNECT_TIMEOUT; readTimeout = 10_000
+                    setRequestProperty("User-Agent", CN_UA)
+                    setRequestProperty("Referer", "https://www.bilibili.com")
                 }
                 val u = c2.url.toString(); c2.disconnect(); u
             }

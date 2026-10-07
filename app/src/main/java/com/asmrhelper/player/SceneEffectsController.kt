@@ -55,22 +55,28 @@ class SceneEffectsController @Inject constructor(
     val loudnessGain: StateFlow<Int> = _loudnessGain.asStateFlow() // dB * 100
 
     init {
-        // 用 Player.Listener 在播放器就绪（STATE_READY，audioSessionId 生效）时
-        // 挂载音效，而不是有界轮询：之前的 20×500ms 轮询会在用户 10 秒后才
-        // 开始播放时永久放弃，导致场景音效全程静默失效。
+        // 用 Player.Listener 监听 audioSessionId 变化作为挂载时机，而不是只在
+        // STATE_READY 挂一次：audioSessionId 由底层 AudioTrack 运行时产生，可能与
+        // STATE_READY 回调竞态（那一刻 sessionId 仍是 0），导致音效对象永久挂不上、
+        // 场景/响度全程静默失效。onAudioSessionIdChanged 在 sessionId 真正可用时必然触发。
         mainPlayer.addListener(object : Player.Listener {
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                if (audioSessionId > 0) attachEffects() else releaseEffects()
+            }
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY && !_isReady.value) {
                     attachEffects()
                 }
             }
         })
-        if (mainPlayer.playbackState == Player.STATE_READY) attachEffects()
+        if (mainPlayer.audioSessionId > 0) attachEffects()
     }
 
     private fun attachEffects() {
         val sessionId = mainPlayer.audioSessionId
-        if (sessionId <= 0 || _isReady.value) return
+        if (sessionId <= 0) return
+        // sessionId 变化时旧对象已失效，先释放再重建
+        releaseEffects()
         try {
             reverb = PresetReverb(0, sessionId).apply {
                 enabled = false
@@ -87,16 +93,17 @@ class SceneEffectsController @Inject constructor(
             }
         } catch (_: Exception) { loudness = null }
         _isReady.value = true
+        // 迟到挂载后必须把用户已选的场景/响度重新应用一次，否则选择会丢失
+        applyScene(_currentScene.value)
     }
 
-    /** 应用场景预设 */
+    /** 应用场景预设（只控制混响/低音；响度由 [setLoudnessGain] 独立控制） */
     fun applyScene(scene: SceneEffect) {
         _currentScene.value = scene
         when (scene) {
             SceneEffect.NONE -> {
                 reverb?.let { it.enabled = false }
                 bassBoost?.let { it.enabled = false }
-                loudness?.let { it.enabled = false }
             }
             SceneEffect.BLANKET -> {
                 // 被窝声：低音增强 + 小房间混响（闷声包裹感）
@@ -108,15 +115,9 @@ class SceneEffectsController @Inject constructor(
                     enabled = true
                     preset = PresetReverb.PRESET_SMALLROOM
                 }
-                loudness?.let { it.enabled = false }
             }
             SceneEffect.DISTORTED -> {
-                // 失真声：高响度增益 + 无混响（黑胶颗粒感）
-                loudness?.apply {
-                    enabled = true
-                    // 优先使用用户设置的响度增益；未设置时用默认 +8 dB
-                    setTargetGain(if (_loudnessGain.value > 0) _loudnessGain.value else 800)
-                }
+                // 失真声：低音增强 + 无混响（颗粒感）
                 bassBoost?.apply {
                     enabled = true
                     setStrength(500.toShort())
@@ -133,7 +134,6 @@ class SceneEffectsController @Inject constructor(
                     enabled = true
                     setStrength(300.toShort())
                 }
-                loudness?.let { it.enabled = false }
             }
             SceneEffect.BATHROOM -> {
                 // 浴室：小房间混响
@@ -142,7 +142,6 @@ class SceneEffectsController @Inject constructor(
                     preset = PresetReverb.PRESET_SMALLROOM
                 }
                 bassBoost?.let { it.enabled = false }
-                loudness?.let { it.enabled = false }
             }
             SceneEffect.THEATER -> {
                 // 影院：中型厅混响
@@ -151,22 +150,23 @@ class SceneEffectsController @Inject constructor(
                     preset = PresetReverb.PRESET_MEDIUMHALL
                 }
                 bassBoost?.let { it.enabled = false }
-                loudness?.let { it.enabled = false }
             }
         }
+        applyLoudness()
     }
 
-    /** 设置响度目标增益（音量阈值 - 响度模式）。dB * 100，范围 0~1000。 */
+    /** 响度作为独立功能：只要用户设过增益就作用于 LoudnessEnhancer，与场景无关。 */
     fun setLoudnessGain(gainDbX100: Int) {
         val clamped = gainDbX100.coerceIn(0, 1000)
         _loudnessGain.value = clamped
-        // 仅在"失真声"场景（使用响度增益）时直接应用；不要重放整个场景，
-        // 否则会把用户刚调的增益覆盖回硬编码的 +8dB。
-        if (_currentScene.value == SceneEffect.DISTORTED) {
-            loudness?.apply {
-                enabled = clamped > 0
-                setTargetGain(clamped)
-            }
+        applyLoudness()
+    }
+
+    private fun applyLoudness() {
+        val gain = _loudnessGain.value
+        loudness?.apply {
+            enabled = gain > 0
+            if (gain > 0) setTargetGain(gain)
         }
     }
 
@@ -187,10 +187,7 @@ class SceneEffectsController @Inject constructor(
         // 存储逻辑在 SettingsRepository 中完成
     }
 
-    fun release() {
-        initJob?.cancel()
-        initJob = null
-        scope.cancel()
+    private fun releaseEffects() {
         try { reverb?.release() } catch (_: Exception) { }
         try { bassBoost?.release() } catch (_: Exception) { }
         try { loudness?.release() } catch (_: Exception) { }
@@ -198,5 +195,12 @@ class SceneEffectsController @Inject constructor(
         bassBoost = null
         loudness = null
         _isReady.value = false
+    }
+
+    fun release() {
+        initJob?.cancel()
+        initJob = null
+        scope.cancel()
+        releaseEffects()
     }
 }

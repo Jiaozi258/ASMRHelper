@@ -68,22 +68,28 @@ class EqualizerController @Inject constructor(
     }
 
     init {
-        // 用 Player.Listener 在播放器就绪（STATE_READY，audioSessionId 生效）时
-        // 挂载均衡器，而不是有界轮询：之前的 20×500ms 轮询会在用户 10 秒后才
-        // 开始播放时永久放弃，导致 EQ 全程静默失效。
+        // 用 Player.Listener 监听 audioSessionId 变化作为挂载时机：audioSessionId 由
+        // 底层 AudioTrack 运行时产生，可能与 STATE_READY 竞态（那一刻仍是 0），
+        // 只在 STATE_READY 挂一次会导致 EQ 永久失效。onAudioSessionIdChanged 在
+        // sessionId 真正可用时必然触发。
         mainPlayer.addListener(object : Player.Listener {
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                if (audioSessionId > 0) attachEqualizer() else releaseEqualizer()
+            }
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY && equalizer == null) {
                     attachEqualizer()
                 }
             }
         })
-        if (mainPlayer.playbackState == Player.STATE_READY) attachEqualizer()
+        if (mainPlayer.audioSessionId > 0) attachEqualizer()
     }
 
     private fun attachEqualizer() {
         val sessionId = mainPlayer.audioSessionId
-        if (sessionId <= 0 || equalizer != null) return
+        if (sessionId <= 0) return
+        // sessionId 变化时旧对象已失效，先释放再重建
+        releaseEqualizer()
         try {
             val eq = Equalizer(0, sessionId).apply { enabled = true }
             val numBands = eq.numberOfBands.toInt()
@@ -105,6 +111,15 @@ class EqualizerController @Inject constructor(
         } catch (_: Exception) {
             _isEnabled.value = false
         }
+    }
+
+    private fun releaseEqualizer() {
+        try {
+            equalizer?.enabled = false
+            equalizer?.release()
+        } catch (_: Exception) { }
+        equalizer = null
+        _isEnabled.value = false
     }
 
     /** 设置某个 UI 频段的增益值 (dB) */
@@ -172,11 +187,6 @@ class EqualizerController @Inject constructor(
         initJob?.cancel()
         initJob = null
         scope.cancel()
-        try {
-            equalizer?.enabled = false
-            equalizer?.release()
-        } catch (_: Exception) { }
-        equalizer = null
-        _isEnabled.value = false
+        releaseEqualizer()
     }
 }
