@@ -51,15 +51,18 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val presetOrdinal = getSharedPreferences("asmr_settings", MODE_PRIVATE)
-            .getInt("theme_preset", 0)
+        val prefs = getSharedPreferences("asmr_settings", MODE_PRIVATE)
+        val presetOrdinal = prefs.getInt("theme_preset", 0)
+        val darkThemeDefault = prefs.getBoolean("dark_theme", true)
 
         setContent {
             val ordinal by settingsRepository.getThemePresetOrdinal()
                 .collectAsState(initial = presetOrdinal)
             val preset = ThemePreset.fromOrdinalOrDefault(ordinal)
+            val darkTheme by settingsRepository.getDarkTheme()
+                .collectAsState(initial = darkThemeDefault)
 
-            ASMRHelperTheme(preset = preset) {
+            ASMRHelperTheme(preset = preset, darkTheme = darkTheme) {
                 AsmrNavHost()
             }
         }

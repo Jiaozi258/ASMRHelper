@@ -26,6 +26,7 @@ class SettingsRepositoryImpl @Inject constructor(
     private val prefs = context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
     private val _privacyMode = MutableStateFlow(prefs.getBoolean("privacy_mode", false))
     private val _themePresetOrdinal = MutableStateFlow(prefs.getInt("theme_preset", 0))
+    private val _darkTheme = MutableStateFlow(prefs.getBoolean("dark_theme", true))
     private val _bgColorIndex = MutableStateFlow(prefs.getInt("bg_color_index", 0))
     private val _visualizerEnabled = MutableStateFlow(prefs.getBoolean("audio_visualizer", false))
     private val _triggerEnabled = MutableStateFlow(prefs.getBoolean("volume_trigger", false))
@@ -65,6 +66,13 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setThemePresetOrdinal(ordinal: Int) {
         prefs.edit().putInt("theme_preset", ordinal).apply()
         _themePresetOrdinal.value = ordinal
+    }
+
+    override fun getDarkTheme(): Flow<Boolean> = _darkTheme
+
+    override suspend fun setDarkTheme(enabled: Boolean) {
+        prefs.edit().putBoolean("dark_theme", enabled).apply()
+        _darkTheme.value = enabled
     }
 
     override fun getBgColorIndex(): Flow<Int> = _bgColorIndex

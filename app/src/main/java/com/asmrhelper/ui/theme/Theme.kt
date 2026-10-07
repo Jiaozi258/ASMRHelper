@@ -2,29 +2,52 @@ package com.asmrhelper.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 
 @Composable
 fun ASMRHelperTheme(
-    preset: ThemePreset = ThemePreset.PURPLE,
+    preset: ThemePreset = ThemePreset.APPLE_BLUE,
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = darkColorScheme(
-        primary = preset.accent,
-        secondary = preset.accentVariant,
-        background = DarkBackground,
-        surface = DarkSurface,
-        surfaceVariant = DarkSurfaceVariant,
-        onPrimary = ControlWhite,
-        onSecondary = ControlWhite,
-        onBackground = TextPrimary,
-        onSurface = TextPrimary,
-        onSurfaceVariant = TextSecondary,
-        error = ErrorRed
-    )
+    val appColors = if (darkTheme) DarkAppColors else LightAppColors
 
-    CompositionLocalProvider(LocalAccentColor provides preset.accent) {
+    val colorScheme = if (darkTheme) {
+        darkColorScheme(
+            primary = preset.accent,
+            secondary = preset.accentVariant,
+            background = appColors.background,
+            surface = appColors.surface,
+            surfaceVariant = appColors.surfaceVariant,
+            onPrimary = appColors.controlWhite,
+            onSecondary = appColors.controlWhite,
+            onBackground = appColors.textPrimary,
+            onSurface = appColors.textPrimary,
+            onSurfaceVariant = appColors.textSecondary,
+            error = appColors.errorRed
+        )
+    } else {
+        lightColorScheme(
+            primary = preset.accent,
+            secondary = preset.accentVariant,
+            background = appColors.background,
+            surface = appColors.surface,
+            surfaceVariant = appColors.surfaceVariant,
+            onPrimary = appColors.controlWhite,
+            onSecondary = appColors.controlWhite,
+            onBackground = appColors.textPrimary,
+            onSurface = appColors.textPrimary,
+            onSurfaceVariant = appColors.textSecondary,
+            error = appColors.errorRed
+        )
+    }
+
+    CompositionLocalProvider(
+        LocalAppColors provides appColors,
+        LocalAccentColor provides preset.accent
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = AppTypography,

@@ -94,6 +94,17 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // ── 浅色 / 深色模式 ────────────────────────────────
+
+    val darkTheme: StateFlow<Boolean> = settingsRepository.getDarkTheme()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setDarkTheme(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDarkTheme(enabled)
+        }
+    }
+
     // ── 缓存管理 ──────────────────────────────────────────
 
     fun clearImageCache(onResult: (Boolean) -> Unit = {}) {

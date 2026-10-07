@@ -888,9 +888,45 @@ private fun AppearanceSettingsScreen(
 ) {
     val bgColorIndex by viewModel.bgColorIndex.collectAsStateWithLifecycle()
     val themePresetOrdinal by viewModel.themePresetOrdinal.collectAsStateWithLifecycle()
+    val darkTheme by viewModel.darkTheme.collectAsStateWithLifecycle()
 
     SubScreenScaffold(title = "外观与主题", onBack = onBack) {
         SectionHeader(icon = Icons.Filled.Palette, title = "外观设置")
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("深色模式", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        if (darkTheme) "沉浸式深色（助眠推荐）" else "Apple 浅色",
+                        color = TextHint,
+                        fontSize = 12.sp
+                    )
+                }
+                Switch(
+                    checked = darkTheme,
+                    onCheckedChange = { viewModel.setDarkTheme(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = LocalAccentColor.current,
+                        checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f),
+                        uncheckedThumbColor = TextSecondary,
+                        uncheckedTrackColor = DarkSurfaceVariant
+                    )
+                )
+            }
+        }
 
         Card(
             modifier = Modifier

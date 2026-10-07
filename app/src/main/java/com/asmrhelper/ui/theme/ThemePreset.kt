@@ -3,6 +3,7 @@ package com.asmrhelper.ui.theme
 import androidx.compose.ui.graphics.Color
 
 enum class ThemePreset(val label: String, val accent: Color, val accentVariant: Color) {
+    APPLE_BLUE("苹果蓝", Color(0xFF0071E3), Color(0xFF0077ED)),
     PURPLE("暗夜紫", Color(0xFFBB86FC), Color(0xFF9C64E8)),
     WARM_ORANGE("暖橙", Color(0xFFFF8A65), Color(0xFFE67A5A)),
     FOREST_GREEN("森林绿", Color(0xFF81C784), Color(0xFF66BB6A)),
@@ -12,6 +13,6 @@ enum class ThemePreset(val label: String, val accent: Color, val accentVariant: 
 
     companion object {
         fun fromOrdinalOrDefault(ordinal: Int): ThemePreset =
-            entries.getOrElse(ordinal) { PURPLE }
+            entries.getOrElse(ordinal) { APPLE_BLUE }
     }
 }

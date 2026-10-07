@@ -14,6 +14,8 @@ interface SettingsRepository {
     suspend fun setPrivacyMode(enabled: Boolean)
     fun getThemePresetOrdinal(): Flow<Int>
     suspend fun setThemePresetOrdinal(ordinal: Int)
+    fun getDarkTheme(): Flow<Boolean>
+    suspend fun setDarkTheme(enabled: Boolean)
     fun getBgColorIndex(): Flow<Int>
     suspend fun setBgColorIndex(index: Int)
     fun getCurrentBgImagePath(): Flow<String?>

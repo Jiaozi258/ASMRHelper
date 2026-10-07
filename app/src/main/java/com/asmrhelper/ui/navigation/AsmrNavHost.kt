@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,7 +37,9 @@ import android.widget.Toast
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import com.asmrhelper.ui.components.BatteryOptimizationDialog
+import com.asmrhelper.ui.theme.DarkAppColors
 import com.asmrhelper.ui.theme.DarkBackground
+import com.asmrhelper.ui.theme.LocalAppColors
 import com.asmrhelper.util.BatteryOptimizationHelper
 import com.asmrhelper.util.ShareReceiver
 import com.asmrhelper.util.ShortcutReceiver
@@ -140,6 +143,8 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
                 Screen.Play -> {
                     when (playSubScreen) {
                         null -> {
+                            // 沉浸式播放页始终深色（暗色壁纸 + 浅色文字），不随全局浅色/深色主题切换
+                            CompositionLocalProvider(LocalAppColors provides DarkAppColors) {
                             if (playbackMode == 0) {
                                 PlayScreen(
                                     onNavigateToPlaylist = { playSubScreen = SubScreen.Playlist },
@@ -164,6 +169,7 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
                                     onNavigateToTriggerPad = { playSubScreen = SubScreen.TriggerPad },
                                     onNavigateToSleepJournal = { playSubScreen = SubScreen.SleepJournal }
                                 )
+                            }
                             }
                         }
 
