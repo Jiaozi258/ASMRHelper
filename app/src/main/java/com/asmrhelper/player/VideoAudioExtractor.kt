@@ -40,9 +40,10 @@ class VideoAudioExtractor @Inject constructor(
     /** 当前进行中的下载连接，用于取消时主动断开以中断阻塞读取。 */
     @Volatile private var activeConnection: HttpURLConnection? = null
 
-    /** B站风控需要的 buvid3/buvid4 Cookie（进程内缓存，避免每次请求都调指纹接口）。 */
-    @Volatile private var cachedBuvid3: String? = null
-    @Volatile private var cachedBuvid4: String? = null
+    /** B站风控需要的 buvid3/buvid4 Cookie（持久化复用，避免每次都换新指纹被风控标记）。 */
+    private val biliPrefs by lazy { context.getSharedPreferences("bili_anti_risk", Context.MODE_PRIVATE) }
+    @Volatile private var cachedBuvid3: String? = biliPrefs.getString("buvid3", null)
+    @Volatile private var cachedBuvid4: String? = biliPrefs.getString("buvid4", null)
 
     /** 取消进行中的下载：断开底层 socket 使阻塞的 read() 抛出异常。 */
     fun cancelActiveDownload() {
@@ -63,6 +64,9 @@ class VideoAudioExtractor @Inject constructor(
         private const val READ_TIMEOUT = 300_000
         private val CN_UA =
             "Mozilla/5.0 (Linux; Android 14; zh-CN) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+        // B站 Web API（x/web-interface/view 等）按 PC 网页校验 UA，移动 UA 更容易被风控拦截
+        private val PC_UA =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
         // Proxy instances for YouTube — Piped + Invidious.
         // In China, most are blocked by GFW. A VPN is needed.
@@ -194,9 +198,17 @@ class VideoAudioExtractor @Inject constructor(
             val (nb3, nb4) = obtainBuvid()
             b3 = nb3; b4 = nb4
             cachedBuvid3 = b3; cachedBuvid4 = b4
+            biliPrefs.edit().putString("buvid3", b3).putString("buvid4", b4).apply()
         }
         if (b3.isNullOrEmpty()) return ""
-        return if (b4.isNullOrEmpty()) "buvid3=$b3" else "buvid3=$b3; buvid4=$b4"
+        // b_nut：会话时间戳。B站校验 Cookie 时，若只带 buvid3 而无 b_nut，
+        // 会把 b_nut 记为可疑值 100，更容易触发 412。这里用当前秒级时间戳（与官网 Set-Cookie 行为一致）。
+        val nut = System.currentTimeMillis() / 1000
+        return buildString {
+            append("buvid3=").append(b3)
+            if (!b4.isNullOrEmpty()) append("; buvid4=").append(b4)
+            append("; b_nut=").append(nut)
+        }
     }
 
     /** 调 B站免费指纹接口获取 buvid3/buvid4，失败则返回 null 降级为无 Cookie。 */
@@ -206,7 +218,9 @@ class VideoAudioExtractor @Inject constructor(
                 .openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = 10_000
                 setRequestProperty("Referer", "https://www.bilibili.com")
-                setRequestProperty("User-Agent", CN_UA)
+                setRequestProperty("User-Agent", PC_UA)
+                setRequestProperty("X-Bili-Api-Source", "pc")
+                setRequestProperty("X-Requested-With", "XMLHttpRequest")
             }
             val code = conn.responseCode
             val body = if (code in 200..299)
@@ -227,10 +241,15 @@ class VideoAudioExtractor @Inject constructor(
         return try {
             val apiUrl = "https://api.bilibili.com/$path?$query"
             android.util.Log.d("Extractor", "B站API请求: $apiUrl")
+            // Referer 需指向对应视频页，否则会被风控拦成 412
+            val bvid = Regex("bvid=([a-zA-Z0-9]+)").find(query)?.groupValues?.get(1)
+            val referer = if (bvid != null) "https://www.bilibili.com/video/$bvid/" else "https://www.bilibili.com"
             val conn = (URL(apiUrl).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = 30_000
-                setRequestProperty("Referer", "https://www.bilibili.com")
-                setRequestProperty("User-Agent", CN_UA)
+                setRequestProperty("Referer", referer)
+                setRequestProperty("User-Agent", PC_UA)
+                setRequestProperty("X-Bili-Api-Source", "pc")
+                setRequestProperty("X-Requested-With", "XMLHttpRequest")
                 // 缺 buvid3 Cookie 会被 B站风控直接拦成 HTTP 412
                 val cookie = buvidCookie()
                 if (cookie.isNotEmpty()) setRequestProperty("Cookie", cookie)

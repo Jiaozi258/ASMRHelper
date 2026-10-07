@@ -44,6 +44,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -113,6 +115,9 @@ fun PlayScreenV2(
     var showEffectsDialog by remember { mutableStateOf(false) }
     var showSliceDialog by remember { mutableStateOf(false) }
     var showToolboxDialog by remember { mutableStateOf(false) }
+    var showBinauralDialog by remember { mutableStateOf(false) }
+    var showNoiseDialog by remember { mutableStateOf(false) }
+    var showAmbientDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -690,9 +695,9 @@ fun PlayScreenV2(
                     // Triple(label, active, action)。可开关工具选中后不关闭对话框，
                     // 让高亮原地刷新；一次性动作（淡出/彻底停止）仍关闭。
                     val tools = listOf(
-                        Triple("🌧 环境音", state.playerState.isBackgroundPlaying) { viewModel.toggleBackground() },
-                        Triple(binauralLabel, state.binauralActive) { viewModel.toggleBinaural(com.asmrhelper.player.BinauralPreset.PRESETS.first()) },
-                        Triple(noiseLabel, state.noiseActive) { viewModel.toggleNoise() },
+                        Triple("🌧 环境音", state.playerState.isBackgroundPlaying) { showAmbientDialog = true },
+                        Triple(binauralLabel, state.binauralActive) { showBinauralDialog = true },
+                        Triple(noiseLabel, state.noiseActive) { showNoiseDialog = true },
                         Triple(spatialLabel, state.spatialMode != "OFF") { viewModel.cycleSpatialMode() },
                         Triple("📳 触觉反馈", state.hapticEnabled) { viewModel.toggleHaptic() },
                         Triple("🌙 淡出", false) { showToolboxDialog = false; viewModel.fadeOut(5000L) },
@@ -725,6 +730,233 @@ fun PlayScreenV2(
             dismissButton = {
                 TextButton(onClick = { showToolboxDialog = false }) { Text("关闭", color = TextSecondary) }
             },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 双耳节拍选择对话框 ─────────────────────────────
+    if (showBinauralDialog) {
+        AlertDialog(
+            onDismissRequest = { showBinauralDialog = false },
+            title = { Text("双耳节拍", color = TextPrimary) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(340.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    com.asmrhelper.player.BinauralPreset.PRESETS.groupBy { it.category }.forEach { (category, presets) ->
+                        Text(category, color = TextHint, fontSize = 12.sp, modifier = Modifier.padding(vertical = 4.dp))
+                        presets.forEach { preset ->
+                            val isActive = state.binauralActive && state.binauralPreset == preset
+                            TextButton(
+                                onClick = { viewModel.toggleBinaural(preset) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = if (isActive) "▶ ${preset.name}" else "${preset.name}  (${preset.description})",
+                                    color = if (isActive) LocalAccentColor.current else TextSecondary,
+                                    fontSize = 14.sp,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                    if (state.binauralActive) {
+                        HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("音量", color = TextSecondary, fontSize = 12.sp)
+                            Slider(
+                                value = state.binauralVolume,
+                                onValueChange = { viewModel.setBinauralVolume(it) },
+                                modifier = Modifier.weight(1f),
+                                colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                            )
+                            Text("${(state.binauralVolume * 100).toInt()}%", color = TextHint, fontSize = 11.sp)
+                        }
+                        TextButton(
+                            onClick = { viewModel.stopBinaural(); showBinauralDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("■ 停止节拍", color = ErrorRed, fontSize = 14.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showBinauralDialog = false }) { Text("关闭", color = TextSecondary) } },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 噪音生成选择对话框 ─────────────────────────────
+    if (showNoiseDialog) {
+        AlertDialog(
+            onDismissRequest = { showNoiseDialog = false },
+            title = { Text("噪音生成", color = TextPrimary) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    listOf(
+                        "WHITE" to "白噪音 — 均匀频率，助专注",
+                        "PINK" to "粉红噪音 — 低频更强，助睡眠",
+                        "BROWN" to "棕色噪音 — 更深沉，助放松"
+                    ).forEach { (type, desc) ->
+                        val isActive = state.noiseActive && state.noiseType == type
+                        TextButton(
+                            onClick = { viewModel.toggleNoise(com.asmrhelper.player.NoiseType.valueOf(type)) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (isActive) "▶ $desc" else desc,
+                                color = if (isActive) LocalAccentColor.current else TextSecondary,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                    if (state.noiseActive) {
+                        HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("音量", color = TextSecondary, fontSize = 12.sp)
+                            Slider(
+                                value = state.noiseVolume,
+                                onValueChange = { viewModel.setNoiseVolume(it) },
+                                modifier = Modifier.weight(1f),
+                                colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                            )
+                            Text("${(state.noiseVolume * 100).toInt()}%", color = TextHint, fontSize = 11.sp)
+                        }
+                        TextButton(
+                            onClick = { viewModel.stopNoise(); showNoiseDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("■ 停止噪音", color = ErrorRed, fontSize = 14.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showNoiseDialog = false }) { Text("关闭", color = TextSecondary) } },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 环境音选择对话框 ───────────────────────────────
+    if (showAmbientDialog) {
+        AlertDialog(
+            onDismissRequest = { showAmbientDialog = false },
+            title = { Text("环境音选择", color = TextPrimary) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(360.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text("内置音效", color = TextHint, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 4.dp))
+                    com.asmrhelper.domain.model.AmbientSource.BUILT_IN.forEach { source ->
+                        val isBuiltInSelected = state.selectedAmbientPath == source.sourcePath
+                        val isBuiltInPlaying = state.playerState.isBackgroundPlaying && isBuiltInSelected
+                        TextButton(
+                            onClick = { viewModel.playBuiltInAmbient(source); showAmbientDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(source.label, color = if (isBuiltInSelected) LocalAccentColor.current else TextSecondary, fontSize = 14.sp)
+                                Text(
+                                    text = when { isBuiltInPlaying -> "▶ 播放中"; isBuiltInSelected -> "已选"; else -> "" },
+                                    color = if (isBuiltInPlaying) LocalAccentColor.current else TextHint,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+
+                    Text("导入的环境音", color = TextHint, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 4.dp))
+
+                    if (state.ambientAudios.isEmpty()) {
+                        Text("暂无环境音，请在设置中导入", color = TextHint, fontSize = 14.sp, modifier = Modifier.padding(vertical = 8.dp))
+                    }
+                    state.ambientAudios.forEach { path ->
+                        val name = path.substringAfterLast('/')
+                        val isSelected = state.selectedAmbientPath == path
+                        val isPlaying = state.playerState.isBackgroundPlaying && isSelected
+                        TextButton(
+                            onClick = {
+                                if (isSelected && isPlaying) {
+                                    viewModel.toggleBackground()
+                                } else {
+                                    viewModel.selectAmbientAudio(path)
+                                }
+                                showAmbientDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(name, color = if (isSelected) LocalAccentColor.current else TextSecondary, fontSize = 14.sp)
+                                Text(
+                                    text = when { isPlaying -> "▶ 播放中"; isSelected -> "已选"; else -> "" },
+                                    color = if (isPlaying) LocalAccentColor.current else TextHint,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("循环播放", color = TextSecondary, fontSize = 14.sp)
+                            Text("开启后环境音将反复播放", color = TextHint, fontSize = 11.sp)
+                        }
+                        Switch(
+                            checked = state.playerState.ambientLoopEnabled,
+                            onCheckedChange = { viewModel.toggleAmbientLoop() },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = LocalAccentColor.current,
+                                checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
+                            )
+                        )
+                    }
+
+                    if (state.playerState.isBackgroundPlaying) {
+                        HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+                        TextButton(
+                            onClick = { viewModel.toggleBackground(); showAmbientDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("■ 停止环境音", color = ErrorRed, fontSize = 14.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showAmbientDialog = false }) { Text("关闭", color = TextSecondary) } },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
         )
