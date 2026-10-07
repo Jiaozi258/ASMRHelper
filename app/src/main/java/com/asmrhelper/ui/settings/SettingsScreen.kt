@@ -71,6 +71,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,6 +92,11 @@ import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.ControlWhite
 import com.asmrhelper.util.BatteryOptimizationHelper
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -1746,6 +1752,8 @@ private fun AudioEffectsSettingsScreen(
 @Composable
 private fun AboutSettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var checking by remember { mutableStateOf(false) }
 
     SubScreenScaffold(title = "关于", onBack = onBack) {
         SectionHeader(icon = Icons.Filled.Info, title = "关于")
@@ -1764,8 +1772,13 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        Toast.makeText(context, "当前已是最新版本", Toast.LENGTH_SHORT).show()
+                    .clickable(enabled = !checking) {
+                        checking = true
+                        scope.launch {
+                            val msg = withContext(Dispatchers.IO) { checkForUpdate(context) }
+                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                            checking = false
+                        }
                     }
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1773,7 +1786,7 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
             ) {
                 Text("检查更新", color = TextPrimary, fontSize = 14.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("v1.0.0", color = TextSecondary, fontSize = 13.sp)
+                    Text(if (checking) "检查中…" else "v1.0.0", color = TextSecondary, fontSize = 13.sp)
                     Spacer(Modifier.width(4.dp))
                     Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
                 }
@@ -1784,6 +1797,45 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
             AboutRow(label = "开源许可", value = "Kotlin (Apache 2.0)\nAndroid (Apache 2.0)\nMaterial3 (Apache 2.0)")
         }
     }
+}
+
+/** 拉取 GitHub latest release 的 tag 与本地版本对比，返回展示给用户的提示文案。 */
+private fun checkForUpdate(context: android.content.Context): String {
+    return try {
+        val conn = (URL("https://api.github.com/repos/JiaoZi258/ASMRHelper/releases/latest")
+            .openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 10_000
+            readTimeout = 10_000
+            setRequestProperty("Accept", "application/vnd.github+json")
+            setRequestProperty("User-Agent", "ASMRHelper")
+        }
+        val code = conn.responseCode
+        if (code == 404) return "暂无已发布版本"
+        if (code !in 200..299) return "检查失败（HTTP $code）"
+        val body = conn.inputStream.bufferedReader().use { it.readText() }
+        val tag = Regex("\"tag_name\"\\s*:\\s*\"([^\"]+)\"")
+            .find(body)?.groupValues?.get(1)
+            ?: return "未找到版本信息"
+        val latest = tag.trim().removePrefix("v")
+        val current = (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.0.0")
+            .trim().removePrefix("v")
+        if (compareVersions(latest, current) > 0) "发现新版本 v$latest" else "当前已是最新版本"
+    } catch (e: Exception) {
+        "检查失败：${e.message ?: "网络错误"}"
+    }
+}
+
+/** 简单语义化版本比较：a > b 返回正数，a == b 返回 0，a < b 返回负数。 */
+private fun compareVersions(a: String, b: String): Int {
+    val pa = a.split(".").map { it.toIntOrNull() ?: 0 }
+    val pb = b.split(".").map { it.toIntOrNull() ?: 0 }
+    for (i in 0 until maxOf(pa.size, pb.size)) {
+        val x = pa.getOrElse(i) { 0 }
+        val y = pb.getOrElse(i) { 0 }
+        if (x != y) return x - y
+    }
+    return 0
 }
 
 // ── 辅助组件 ──────────────────────────────────────────────

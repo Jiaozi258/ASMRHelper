@@ -8,6 +8,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
@@ -128,7 +129,7 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
     ) { innerPadding ->
         AnimatedContent(
             targetState = currentScreen,
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.fillMaxSize(),
             transitionSpec = {
                 val screenOrder = listOf("play", "slideshow", "profile", "settings")
                 val fromIdx = screenOrder.indexOf(initialState.route)
@@ -139,6 +140,19 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
             },
             label = "screen_transition"
         ) { screen ->
+            // 沉浸式播放页全屏铺满（顶部延伸到状态栏后，消除顶部黑色长条），其余页面保留完整内边距
+            val isImmersivePlay = screen == Screen.Play && playSubScreen == null
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        if (isImmersivePlay) {
+                            PaddingValues(bottom = innerPadding.calculateBottomPadding())
+                        } else {
+                            innerPadding
+                        }
+                    )
+            ) {
             when (screen) {
                 Screen.Play -> {
                     when (playSubScreen) {
@@ -321,6 +335,7 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
                         )
                     }
                 }
+            }
             }
         }
     }

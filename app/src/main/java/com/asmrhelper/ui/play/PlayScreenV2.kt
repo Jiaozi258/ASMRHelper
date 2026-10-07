@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
@@ -79,6 +80,7 @@ import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
+import com.asmrhelper.ui.theme.appleClickable
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -133,6 +135,7 @@ fun PlayScreenV2(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -707,7 +710,7 @@ fun PlayScreenV2(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { action() }
+                                .appleClickable { action() }
                                 .padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {

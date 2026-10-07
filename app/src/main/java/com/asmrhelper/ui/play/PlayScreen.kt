@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -96,6 +97,7 @@ import com.asmrhelper.ui.components.PlayPauseButton
 import com.asmrhelper.ui.settings.SettingsViewModel
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
+import com.asmrhelper.ui.theme.DynamicIsland
 import com.asmrhelper.ui.theme.ErrorRed
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -199,6 +201,16 @@ fun PlayScreen(
             }
         }
 
+        // 灵动岛「正在播放」胶囊（切歌/恢复播放时展开）
+        DynamicIsland(
+            title = state.displayTitle.ifEmpty { null },
+            isPlaying = state.playerState.isPlaying,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 6.dp)
+        )
+
         // 右上角下拉菜单
         AsmrDropdownMenu(
             items = listOf(
@@ -223,7 +235,7 @@ fun PlayScreen(
                     "video_audio" -> onNavigateToLibrary(3)
                 }
             },
-            modifier = Modifier.align(Alignment.TopEnd)
+            modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding()
         )
 
         // 音频可视化（始终显示在播放界面的最上方）
