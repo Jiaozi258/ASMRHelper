@@ -2,6 +2,7 @@ package com.asmrhelper
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -23,6 +24,7 @@ import com.asmrhelper.ui.theme.ASMRHelperTheme
 import com.asmrhelper.ui.theme.ThemeMode
 import com.asmrhelper.ui.theme.resolveDark
 import com.asmrhelper.ui.theme.ThemePreset
+import com.asmrhelper.util.AppLocale
 import com.asmrhelper.util.ShareReceiver
 import com.asmrhelper.util.ShortcutReceiver
 import dagger.hilt.android.AndroidEntryPoint
@@ -39,6 +41,13 @@ class MainActivity : ComponentActivity() {
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { /* granted or denied — service will check pref on next start */ }
+
+    /** 应用内语言 override：按持久化的 `app_language` 包装 base context。 */
+    override fun attachBaseContext(newBase: Context) {
+        val lang = newBase.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
+            .getInt("app_language", 0)
+        super.attachBaseContext(AppLocale.wrap(newBase, lang))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
