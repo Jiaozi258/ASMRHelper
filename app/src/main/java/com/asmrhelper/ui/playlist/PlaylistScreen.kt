@@ -59,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import java.io.File
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.Playlist
 import com.asmrhelper.ui.theme.LocalAccentColor
@@ -111,7 +113,7 @@ fun PlaylistScreen(
                 inputStream?.close()
                 viewModel.importPlaylistFromJson(jsonStr)
             } catch (e: Exception) {
-                Toast.makeText(context, "导入失败: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.playlist_import_failed, e.message), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -144,12 +146,12 @@ fun PlaylistScreen(
                 IconButton(onClick = onBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回",
+                        contentDescription = stringResource(R.string.common_back),
                         tint = TextPrimary
                     )
                 }
                 Text(
-                    text = "播放列表",
+                    text = stringResource(R.string.playlist_title),
                     style = MaterialTheme.typography.titleLarge,
                     color = TextPrimary,
                     modifier = Modifier.weight(1f)
@@ -158,7 +160,7 @@ fun PlaylistScreen(
                 IconButton(onClick = { importLauncher.launch(arrayOf("application/json", "*/*")) }) {
                     Icon(
                         imageVector = Icons.Filled.FileOpen,
-                        contentDescription = "导入播放列表",
+                        contentDescription = stringResource(R.string.playlist_import),
                         tint = LocalAccentColor.current
                     )
                 }
@@ -210,7 +212,7 @@ fun PlaylistScreen(
                                         putExtra(Intent.EXTRA_STREAM, uri)
                                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                     }
-                                    context.startActivity(Intent.createChooser(shareIntent, "导出播放列表"))
+                                    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.playlist_export_chooser)))
                                 }
                             },
                             onPlayAll = {
@@ -239,7 +241,7 @@ fun PlaylistScreen(
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
-                contentDescription = "创建播放列表"
+                contentDescription = stringResource(R.string.playlist_create)
             )
         }
     }
@@ -251,7 +253,7 @@ fun PlaylistScreen(
     // ── Create playlist ──
     if (showCreateDialog) {
         RenameOrCreateDialog(
-            title = "新建播放列表",
+            title = stringResource(R.string.playlist_create_title),
             initialText = newPlaylistName,
             onTextChange = { newPlaylistName = it },
             onConfirm = {
@@ -263,14 +265,14 @@ fun PlaylistScreen(
                 }
             },
             onDismiss = { showCreateDialog = false },
-            confirmLabel = "创建"
+            confirmLabel = stringResource(R.string.common_create)
         )
     }
 
     // ── Rename playlist ──
     if (showRenameDialog) {
         RenameOrCreateDialog(
-            title = "重命名播放列表",
+            title = stringResource(R.string.playlist_rename_title),
             initialText = renameText,
             onTextChange = { renameText = it },
             onConfirm = {
@@ -287,7 +289,7 @@ fun PlaylistScreen(
                 renameText = ""
                 targetPlaylistId = null
             },
-            confirmLabel = "重命名"
+            confirmLabel = stringResource(R.string.common_rename)
         )
     }
 
@@ -300,14 +302,14 @@ fun PlaylistScreen(
             },
             title = {
                 Text(
-                    text = "确认删除",
+                    text = stringResource(R.string.playlist_delete_title),
                     color = TextPrimary,
                     style = MaterialTheme.typography.titleMedium
                 )
             },
             text = {
                 Text(
-                    text = "删除后将无法恢复，确定要删除此播放列表吗？",
+                    text = stringResource(R.string.playlist_delete_confirm),
                     color = TextSecondary,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -318,7 +320,7 @@ fun PlaylistScreen(
                     showDeleteDialog = false
                     targetPlaylistId = null
                 }) {
-                    Text("删除", color = ErrorRed)
+                    Text(stringResource(R.string.common_delete), color = ErrorRed)
                 }
             },
             dismissButton = {
@@ -326,7 +328,7 @@ fun PlaylistScreen(
                     showDeleteDialog = false
                     targetPlaylistId = null
                 }) {
-                    Text("取消", color = TextSecondary)
+                    Text(stringResource(R.string.common_cancel), color = TextSecondary)
                 }
             },
             containerColor = DarkSurface,
@@ -343,7 +345,7 @@ fun PlaylistScreen(
             },
             title = {
                 Text(
-                    text = "添加音频",
+                    text = stringResource(R.string.playlist_add_audio),
                     color = TextPrimary,
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -351,7 +353,7 @@ fun PlaylistScreen(
             text = {
                 if (allAudio.isEmpty()) {
                     Text(
-                        text = "暂无可用音频",
+                        text = stringResource(R.string.playlist_no_audio),
                         color = TextHint,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -366,7 +368,7 @@ fun PlaylistScreen(
                                     .clickable {
                                         targetPlaylistForAdd?.let { pid ->
                                             viewModel.addAudioToPlaylist(pid, audio.id)
-                                            Toast.makeText(context, "已添加: ${audio.title}", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, context.getString(R.string.playlist_added, audio.title), Toast.LENGTH_SHORT).show()
                                         }
                                         showAddAudioDialog = false
                                         targetPlaylistForAdd = null
@@ -410,7 +412,7 @@ fun PlaylistScreen(
                     showAddAudioDialog = false
                     targetPlaylistForAdd = null
                 }) {
-                    Text("取消", color = TextSecondary)
+                    Text(stringResource(R.string.common_cancel), color = TextSecondary)
                 }
             },
             containerColor = DarkSurface,
@@ -430,7 +432,7 @@ private fun EmptyPlaylistMessage() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "暂无播放列表",
+            text = stringResource(R.string.playlist_empty),
             style = MaterialTheme.typography.bodyLarge,
             color = TextHint
         )
@@ -476,7 +478,7 @@ private fun PlaylistCard(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "${playlist.audioCount} 首音频",
+                        text = stringResource(R.string.playlist_audio_count, playlist.audioCount),
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
                     )
@@ -485,7 +487,7 @@ private fun PlaylistCard(
                 IconButton(onClick = onRenameRequest) {
                     Icon(
                         imageVector = Icons.Filled.Edit,
-                        contentDescription = "重命名",
+                        contentDescription = stringResource(R.string.common_rename),
                         tint = TextSecondary,
                         modifier = Modifier.size(20.dp)
                     )
@@ -494,7 +496,7 @@ private fun PlaylistCard(
                 IconButton(onClick = onExport) {
                     Icon(
                         imageVector = Icons.Filled.Share,
-                        contentDescription = "导出",
+                        contentDescription = stringResource(R.string.common_export),
                         tint = LocalAccentColor.current,
                         modifier = Modifier.size(20.dp)
                     )
@@ -503,7 +505,7 @@ private fun PlaylistCard(
                 IconButton(onClick = onDeleteRequest) {
                     Icon(
                         imageVector = Icons.Filled.Delete,
-                        contentDescription = "删除",
+                        contentDescription = stringResource(R.string.common_delete),
                         tint = ErrorRed,
                         modifier = Modifier.size(20.dp)
                     )
@@ -536,7 +538,7 @@ private fun PlaylistCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "▶ 播放全部",
+                                text = stringResource(R.string.playlist_play_all),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = ControlWhite
                             )
@@ -553,13 +555,13 @@ private fun PlaylistCard(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Add,
-                            contentDescription = "添加音频",
+                            contentDescription = stringResource(R.string.playlist_add_audio),
                             tint = LocalAccentColor.current,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "添加音频",
+                            text = stringResource(R.string.playlist_add_audio),
                             style = MaterialTheme.typography.labelLarge,
                             color = LocalAccentColor.current
                         )
@@ -567,7 +569,7 @@ private fun PlaylistCard(
 
                     if (audios.isEmpty()) {
                         Text(
-                            text = "播放列表为空",
+                            text = stringResource(R.string.playlist_list_empty),
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextHint,
                             modifier = Modifier.padding(vertical = 8.dp)
@@ -621,7 +623,7 @@ private fun AudioItemRow(
         ) {
             Icon(
                 imageVector = Icons.Filled.Close,
-                contentDescription = "移除",
+                contentDescription = stringResource(R.string.common_remove),
                 tint = ErrorRed,
                 modifier = Modifier.size(18.dp)
             )
@@ -653,7 +655,7 @@ private fun RenameOrCreateDialog(
                     value = initialText,
                     onValueChange = onTextChange,
                     label = {
-                        Text("名称", color = TextHint)
+                        Text(stringResource(R.string.common_name), color = TextHint)
                     },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -677,7 +679,7 @@ private fun RenameOrCreateDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消", color = TextSecondary)
+                Text(stringResource(R.string.common_cancel), color = TextSecondary)
             }
         },
         containerColor = DarkSurface,

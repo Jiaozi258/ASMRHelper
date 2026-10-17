@@ -246,6 +246,11 @@
     <string name="common_unknown">Unknown</string>
     <string name="common_back">Back</string>
     <string name="common_retry">Retry</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_rename">Rename</string>
+    <string name="common_export">Export</string>
+    <string name="common_name">Name</string>
+    <string name="common_create">Create</string>
 
     <!-- Library -->
     <string name="library_title">Audio Library</string>
@@ -306,4 +311,45 @@
     <string name="download_status_saving">Saving...</string>
     <string name="download_status_success">Extraction complete</string>
     <string name="download_status_failed">Extraction failed: %s</string>
+
+    <!-- Playlist -->
+    <string name="playlist_title">Playlists</string>
+    <string name="playlist_import">Import playlist</string>
+    <string name="playlist_export_chooser">Export playlist</string>
+    <string name="playlist_create">Create playlist</string>
+    <string name="playlist_create_title">New playlist</string>
+    <string name="playlist_rename_title">Rename playlist</string>
+    <string name="playlist_delete_title">Confirm delete</string>
+    <string name="playlist_delete_confirm">This cannot be undone. Delete this playlist?</string>
+    <string name="playlist_add_audio">Add audio</string>
+    <string name="playlist_no_audio">No audio available</string>
+    <string name="playlist_added">Added: %s</string>
+    <string name="playlist_empty">No playlists</string>
+    <string name="playlist_audio_count">%d tracks</string>
+    <string name="playlist_play_all">▶ Play all</string>
+    <string name="playlist_list_empty">Playlist is empty</string>
+    <string name="playlist_import_success">Imported: %s</string>
+    <string name="playlist_import_failed">Import failed: %s</string>
+
+    <!-- Sleep journal -->
+    <string name="sleep_title">Sleep journal</string>
+    <string name="sleep_stats">Statistics</string>
+    <string name="sleep_total_sessions">Sessions</string>
+    <string name="sleep_avg_duration">Avg duration</string>
+    <string name="sleep_avg_quality">Avg quality</string>
+    <string name="sleep_minutes">%d min</string>
+    <string name="sleep_recording">💤 Recording: %1$02d:%2$02d:%3$02d</string>
+    <string name="sleep_stop">Stop</string>
+    <string name="sleep_start">🌙 Start sleep tracking</string>
+    <string name="sleep_history">History</string>
+    <string name="sleep_empty">No sleep records</string>
+    <string name="sleep_quality">Quality: %s</string>
+    <string name="sleep_rate">Rate your sleep</string>
+    <string name="sleep_skip">Skip</string>
+
+    <!-- Trigger pad -->
+    <string name="trigger_title">Trigger pad</string>
+    <string name="trigger_independent">Independent</string>
+    <string name="trigger_parallel">Parallel</string>
+    <string name="trigger_add">Add</string>
 </resources>

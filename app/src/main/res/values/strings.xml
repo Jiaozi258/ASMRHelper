@@ -246,6 +246,11 @@
     <string name="common_unknown">未知</string>
     <string name="common_back">返回</string>
     <string name="common_retry">重试</string>
+    <string name="common_delete">删除</string>
+    <string name="common_rename">重命名</string>
+    <string name="common_export">导出</string>
+    <string name="common_name">名称</string>
+    <string name="common_create">创建</string>
 
     <!-- 音频库 -->
     <string name="library_title">音频库</string>
@@ -306,4 +311,45 @@
     <string name="download_status_saving">正在保存...</string>
     <string name="download_status_success">提取完成</string>
     <string name="download_status_failed">提取失败: %s</string>
+
+    <!-- 播放列表 -->
+    <string name="playlist_title">播放列表</string>
+    <string name="playlist_import">导入播放列表</string>
+    <string name="playlist_export_chooser">导出播放列表</string>
+    <string name="playlist_create">创建播放列表</string>
+    <string name="playlist_create_title">新建播放列表</string>
+    <string name="playlist_rename_title">重命名播放列表</string>
+    <string name="playlist_delete_title">确认删除</string>
+    <string name="playlist_delete_confirm">删除后将无法恢复，确定要删除此播放列表吗？</string>
+    <string name="playlist_add_audio">添加音频</string>
+    <string name="playlist_no_audio">暂无可用音频</string>
+    <string name="playlist_added">已添加: %s</string>
+    <string name="playlist_empty">暂无播放列表</string>
+    <string name="playlist_audio_count">%d 首音频</string>
+    <string name="playlist_play_all">▶ 播放全部</string>
+    <string name="playlist_list_empty">播放列表为空</string>
+    <string name="playlist_import_success">导入成功: %s</string>
+    <string name="playlist_import_failed">导入失败: %s</string>
+
+    <!-- 睡眠记录 -->
+    <string name="sleep_title">睡眠记录</string>
+    <string name="sleep_stats">统计</string>
+    <string name="sleep_total_sessions">记录次数</string>
+    <string name="sleep_avg_duration">平均时长</string>
+    <string name="sleep_avg_quality">平均质量</string>
+    <string name="sleep_minutes">%d分钟</string>
+    <string name="sleep_recording">💤 正在记录: %1$02d:%2$02d:%3$02d</string>
+    <string name="sleep_stop">停止记录</string>
+    <string name="sleep_start">🌙 开始记录睡眠</string>
+    <string name="sleep_history">历史记录</string>
+    <string name="sleep_empty">暂无睡眠记录</string>
+    <string name="sleep_quality">质量: %s</string>
+    <string name="sleep_rate">评价睡眠</string>
+    <string name="sleep_skip">跳过</string>
+
+    <!-- 触发器面板 -->
+    <string name="trigger_title">触发器面板</string>
+    <string name="trigger_independent">独立模式</string>
+    <string name="trigger_parallel">并行模式</string>
+    <string name="trigger_add">添加</string>
 </resources>

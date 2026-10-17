@@ -37,11 +37,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.asmrhelper.R
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
@@ -50,6 +52,7 @@ import com.asmrhelper.ui.theme.ErrorRed
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
+import kotlin.math.roundToInt
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -78,12 +81,12 @@ fun SleepJournalScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.common_back),
                     tint = TextPrimary
                 )
             }
             Text(
-                text = "睡眠记录",
+                text = stringResource(R.string.sleep_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = TextPrimary,
                 modifier = Modifier.weight(1f)
@@ -100,12 +103,12 @@ fun SleepJournalScreen(
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("统计", color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.sleep_stats), color = TextPrimary, style = MaterialTheme.typography.titleSmall)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    StatItem("记录次数", "${stats.totalSessions}")
-                    StatItem("平均时长", "%.0f分钟".format(stats.avgDurationMinutes))
-                    StatItem("平均质量", if (stats.avgQuality > 0) "%.1f/5".format(stats.avgQuality) else "--")
+                    StatItem(stringResource(R.string.sleep_total_sessions), "${stats.totalSessions}")
+                    StatItem(stringResource(R.string.sleep_avg_duration), stringResource(R.string.sleep_minutes, stats.avgDurationMinutes.roundToInt()))
+                    StatItem(stringResource(R.string.sleep_avg_quality), if (stats.avgQuality > 0) "%.1f/5".format(stats.avgQuality) else "--")
                 }
             }
         }
@@ -123,7 +126,7 @@ fun SleepJournalScreen(
                     val mins = (state.elapsedMs % 3600000) / 60000
                     val secs = (state.elapsedMs % 60000) / 1000
                     Text(
-                        text = "💤 正在记录: %02d:%02d:%02d".format(hours, mins, secs),
+                        text = stringResource(R.string.sleep_recording, hours, mins, secs),
                         style = MaterialTheme.typography.titleMedium,
                         color = LocalAccentColor.current
                     )
@@ -132,12 +135,12 @@ fun SleepJournalScreen(
                         Button(
                             onClick = { viewModel.stopTracking() },
                             colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current)
-                        ) { Text("停止记录") }
+                        ) { Text(stringResource(R.string.sleep_stop)) }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = { viewModel.cancelTracking() },
                             colors = ButtonDefaults.buttonColors(containerColor = DarkSurfaceVariant)
-                        ) { Text("取消", color = TextSecondary) }
+                        ) { Text(stringResource(R.string.common_cancel), color = TextSecondary) }
                     }
                 }
             } else {
@@ -146,14 +149,14 @@ fun SleepJournalScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("🌙 开始记录睡眠")
+                    Text(stringResource(R.string.sleep_start))
                 }
             }
         }
 
         // Entries list
         Text(
-            text = "历史记录",
+            text = stringResource(R.string.sleep_history),
             color = TextSecondary,
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
@@ -161,7 +164,7 @@ fun SleepJournalScreen(
 
         if (state.entries.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("暂无睡眠记录", color = TextHint, style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.sleep_empty), color = TextHint, style = MaterialTheme.typography.bodyLarge)
             }
         } else {
             LazyColumn(
@@ -221,13 +224,13 @@ private fun SleepEntryCard(
                     color = TextPrimary
                 )
                 Text(
-                    text = "${entry.durationMinutes}分钟",
+                    text = stringResource(R.string.sleep_minutes, entry.durationMinutes),
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary
                 )
                 if (entry.quality > 0) {
                     Text(
-                        text = "质量: ${"★".repeat(entry.quality)}${"☆".repeat(5 - entry.quality)}",
+                        text = stringResource(R.string.sleep_quality, "★".repeat(entry.quality) + "☆".repeat(5 - entry.quality)),
                         style = MaterialTheme.typography.labelSmall,
                         color = LocalAccentColor.current
                     )
@@ -243,7 +246,7 @@ private fun SleepEntryCard(
             IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                 Icon(
                     Icons.Filled.Delete,
-                    contentDescription = "删除",
+                    contentDescription = stringResource(R.string.common_delete),
                     tint = ErrorRed,
                     modifier = Modifier.size(20.dp)
                 )
@@ -269,7 +272,7 @@ private fun QualityDialog(
             colors = CardDefaults.cardColors(containerColor = DarkSurface)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("评价睡眠", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.sleep_rate), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Star rating
@@ -294,11 +297,11 @@ private fun QualityDialog(
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) {
-                        Text("跳过", color = TextHint)
+                        Text(stringResource(R.string.sleep_skip), color = TextHint)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     TextButton(onClick = { onConfirm(quality, "") }) {
-                        Text("保存", color = LocalAccentColor.current, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.common_save), color = LocalAccentColor.current, fontWeight = FontWeight.Bold)
                     }
                 }
             }

@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.asmrhelper.R
 import com.asmrhelper.data.local.db.entity.TriggerPadEntity
 import com.asmrhelper.ui.library.AudioFilePickerDialog
 import com.asmrhelper.ui.theme.LocalAccentColor
@@ -79,12 +81,12 @@ fun TriggerPadScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.common_back),
                     tint = TextPrimary
                 )
             }
             Text(
-                text = "触发器面板",
+                text = stringResource(R.string.trigger_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = TextPrimary,
                 modifier = Modifier.weight(1f)
@@ -99,7 +101,7 @@ fun TriggerPadScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             ModeChip(
-                text = "独立模式",
+                text = stringResource(R.string.trigger_independent),
                 selected = state.mode == TriggerPadMode.Independent,
                 onClick = {
                     if (state.mode != TriggerPadMode.Independent) viewModel.toggleMode()
@@ -107,7 +109,7 @@ fun TriggerPadScreen(
                 modifier = Modifier.weight(1f)
             )
             ModeChip(
-                text = "并行模式",
+                text = stringResource(R.string.trigger_parallel),
                 selected = state.mode == TriggerPadMode.Parallel,
                 onClick = {
                     if (state.mode != TriggerPadMode.Parallel) viewModel.toggleMode()
@@ -282,13 +284,13 @@ private fun PadButton(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Add,
-                        contentDescription = "添加",
+                        contentDescription = stringResource(R.string.trigger_add),
                         tint = TextHint,
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "添加",
+                        text = stringResource(R.string.trigger_add),
                         style = MaterialTheme.typography.labelSmall,
                         color = TextHint
                     )

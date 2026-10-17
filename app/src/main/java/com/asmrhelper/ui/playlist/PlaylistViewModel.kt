@@ -1,12 +1,15 @@
 package com.asmrhelper.ui.playlist
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.Playlist
 import com.asmrhelper.domain.repository.AudioRepository
 import com.asmrhelper.domain.repository.PlaylistRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -26,7 +29,8 @@ import javax.inject.Inject
 @HiltViewModel
 class PlaylistViewModel @Inject constructor(
     private val playlistRepository: PlaylistRepository,
-    private val audioRepository: AudioRepository
+    private val audioRepository: AudioRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     val playlists: StateFlow<List<Playlist>> = playlistRepository.getAllPlaylists()
@@ -124,9 +128,9 @@ class PlaylistViewModel @Inject constructor(
                     )
                     playlistRepository.addAudioToPlaylist(newId, audioId)
                 }
-                _exportResult.emit("导入成功: $name")
+                _exportResult.emit(context.getString(R.string.playlist_import_success, name))
             } catch (e: Exception) {
-                _exportResult.emit("导入失败: ${e.message}")
+                _exportResult.emit(context.getString(R.string.playlist_import_failed, e.message))
             }
         }
     }
