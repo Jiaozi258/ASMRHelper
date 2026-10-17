@@ -83,6 +83,7 @@ import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.ui.theme.appleClickable
+import com.asmrhelper.ui.theme.pressScale
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -149,7 +150,7 @@ fun PlayScreenV2(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
                         .background(DarkSurfaceVariant)
-                        .clickable {
+                        .pressScale {
                             val next = (mode.ordinal + 1) % PlaybackMode.entries.size
                             viewModel.setPlaybackMode(next)
                         }

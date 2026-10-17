@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.asmrhelper.ui.theme.LocalAccentColor
+import com.asmrhelper.ui.theme.pressScale
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.TextPrimary
@@ -64,9 +64,11 @@ fun MiniPlayer(
                 modifier = Modifier.weight(1f),
                 style = androidx.compose.material3.MaterialTheme.typography.labelLarge
             )
-            IconButton(
-                onClick = onPlayPause,
-                modifier = Modifier.size(36.dp)
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .pressScale { onPlayPause() },
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,

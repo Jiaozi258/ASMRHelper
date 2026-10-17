@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -22,11 +23,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,6 +62,39 @@ fun Modifier.appleClickable(
             indication = null,
             onClick = onClick
         )
+}
+
+/**
+ * Apple 风格弹性按压：按下缩放到 `scale`，松手用 spring 回弹，抬起时触发 `onPress`。
+ * 用法：`Modifier.pressScale { onClick() }` 直接替换 `Modifier.clickable { onClick() }`。
+ */
+@Composable
+fun Modifier.pressScale(
+    scale: Float = 0.94f,
+    onPress: () -> Unit = {}
+): Modifier {
+    var pressed by remember { mutableStateOf(false) }
+    val currentOnPress by rememberUpdatedState(onPress)
+    val animatedScale by animateFloatAsState(
+        targetValue = if (pressed) scale else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "pressScale"
+    )
+    return this
+        .graphicsLayer { scaleX = animatedScale; scaleY = animatedScale }
+        .pointerInput(Unit) {
+            detectTapGestures(
+                onPress = {
+                    pressed = true
+                    tryAwaitRelease()
+                    pressed = false
+                },
+                onTap = { currentOnPress() }
+            )
+        }
 }
 
 /**
