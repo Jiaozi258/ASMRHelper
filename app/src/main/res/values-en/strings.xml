@@ -393,4 +393,61 @@
     <string name="gallery_no_audio">No audio available</string>
     <string name="gallery_bound">Bound</string>
     <string name="gallery_bind">Bind</string>
+
+    <!-- Common -->
+    <string name="common_clear">Clear</string>
+    <string name="common_login">Sign in</string>
+    <string name="common_password">Password</string>
+
+    <!-- Profile -->
+    <string name="profile_avatar">Avatar</string>
+    <string name="profile_default_user">User</string>
+    <string name="profile_not_logged_in">Not signed in</string>
+    <string name="profile_logged_in">Signed in</string>
+    <string name="profile_login_hint">Sign in to unlock more features</string>
+    <string name="profile_welcome">Welcome back, %s</string>
+    <string name="profile_cloud_sync">Cloud sync</string>
+    <string name="profile_coming_soon">Coming soon</string>
+    <string name="profile_logged_out">Signed out</string>
+    <string name="profile_logout">Log out</string>
+    <string name="profile_logout_action">Log out</string>
+    <string name="profile_logout_confirm">Log out of "%s"?</string>
+    <string name="profile_register">Sign up</string>
+    <string name="profile_username">Username</string>
+    <string name="profile_enter_username">Please enter username</string>
+    <string name="profile_register_success">Registered successfully</string>
+    <string name="profile_login_success">Signed in successfully</string>
+    <string name="profile_has_account">Have an account? Switch to sign in</string>
+    <string name="profile_no_account">No account? Switch to sign up</string>
+    <string name="profile_online_music">Online music platforms</string>
+    <string name="profile_statistics">Statistics</string>
+    <string name="profile_stat_favorites">Favorite audio</string>
+    <string name="profile_stat_playlists">Playlists</string>
+    <string name="profile_stat_backgrounds">Backgrounds</string>
+    <string name="profile_version">Version</string>
+    <string name="profile_github">GitHub repository</string>
+
+    <!-- Music platform login -->
+    <string name="login_account_password">Account &amp; password</string>
+    <string name="login_qr">Scan to sign in</string>
+    <string name="login_web">Web sign in</string>
+    <string name="login_unsupported">This source doesn\'t support sign in</string>
+    <string name="login_account_hint">Phone or email</string>
+    <string name="login_enter_account">Please enter account</string>
+    <string name="login_enter_password">Please enter password</string>
+    <string name="login_success">Signed in</string>
+    <string name="login_failed">Sign in failed</string>
+    <string name="login_in_progress">Signing in…</string>
+    <string name="login_loading">Loading sign-in page…</string>
+    <string name="login_qr_hint">Scan the code or use web sign in</string>
+
+    <!-- Playback history -->
+    <string name="history_clear_all">Clear all</string>
+    <string name="history_empty">No playback history</string>
+    <string name="history_unknown_artist">Unknown artist</string>
+    <string name="history_clear_title">Clear all history</string>
+    <string name="history_clear_confirm">Clear all playback history?</string>
+
+    <!-- Music source settings -->
+    <string name="source_hint">Choose a platform as the source for online music.</string>
 </resources>

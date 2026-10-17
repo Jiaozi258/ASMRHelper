@@ -32,10 +32,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.asmrhelper.R
 import com.asmrhelper.domain.music.MusicSource
 import com.asmrhelper.domain.music.WebLoginConfig
 import com.asmrhelper.ui.theme.DarkSurface
@@ -68,24 +70,24 @@ fun MusicLoginDialog(source: MusicSource, onDismiss: () -> Unit) {
                         containerColor = Color.Transparent,
                         contentColor = LocalAccentColor.current
                     ) {
-                        Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("账号密码") })
-                        Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("扫码登录") })
+                        Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.login_account_password)) })
+                        Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.login_qr)) })
                     }
                 } else {
                     Spacer(Modifier.height(4.dp))
-                    Text("网页登录", color = TextSecondary, fontSize = 13.sp)
+                    Text(stringResource(R.string.login_web), color = TextSecondary, fontSize = 13.sp)
                 }
             }
         },
         text = {
             when {
-                web == null -> Text("该音源暂不支持登录", color = TextSecondary)
+                web == null -> Text(stringResource(R.string.login_unsupported), color = TextSecondary)
                 hasTabs && tab == 0 -> AccountLoginPanel(source, onDismiss)
                 else -> QrWebLoginPanel(source, web, onDismiss)
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("取消", color = TextSecondary) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel), color = TextSecondary) }
         },
         dismissButton = {}
     )
@@ -115,7 +117,7 @@ private fun AccountLoginPanel(source: MusicSource, onDone: () -> Unit) {
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
-            label = { Text("手机号/邮箱") },
+            label = { Text(stringResource(R.string.login_account_hint)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             colors = fieldColors,
@@ -125,7 +127,7 @@ private fun AccountLoginPanel(source: MusicSource, onDone: () -> Unit) {
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("密码") },
+            label = { Text(stringResource(R.string.common_password)) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
@@ -136,11 +138,11 @@ private fun AccountLoginPanel(source: MusicSource, onDone: () -> Unit) {
         Button(
             onClick = {
                 if (username.isBlank()) {
-                    Toast.makeText(context, "请输入账号", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.login_enter_account), Toast.LENGTH_SHORT).show()
                     return@Button
                 }
                 if (password.isBlank()) {
-                    Toast.makeText(context, "请输入密码", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.login_enter_password), Toast.LENGTH_SHORT).show()
                     return@Button
                 }
                 scope.launch {
@@ -148,10 +150,10 @@ private fun AccountLoginPanel(source: MusicSource, onDone: () -> Unit) {
                     source.loginAccount(username, password).collect { result ->
                         loading = false
                         result.onSuccess {
-                            Toast.makeText(context, "登录成功", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.login_success), Toast.LENGTH_SHORT).show()
                             onDone()
                         }.onFailure {
-                            Toast.makeText(context, "登录失败", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.login_failed), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -161,7 +163,7 @@ private fun AccountLoginPanel(source: MusicSource, onDone: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current),
             shape = RoundedCornerShape(10.dp)
         ) {
-            Text(if (loading) "登录中…" else "登录")
+            Text(if (loading) stringResource(R.string.login_in_progress) else stringResource(R.string.common_login))
         }
     }
 }
@@ -169,7 +171,7 @@ private fun AccountLoginPanel(source: MusicSource, onDone: () -> Unit) {
 @Composable
 private fun QrWebLoginPanel(source: MusicSource, config: WebLoginConfig, onDone: () -> Unit) {
     val context = LocalContext.current
-    var status by remember { mutableStateOf("正在加载登录页…") }
+    var status by remember { mutableStateOf(context.getString(R.string.login_loading)) }
 
     // 轮询 WebView cookie，检测到任一鉴权键即完成登录。
     LaunchedEffect(config) {
@@ -177,7 +179,7 @@ private fun QrWebLoginPanel(source: MusicSource, config: WebLoginConfig, onDone:
             val all = CookieManager.getInstance().getCookie(config.cookieDomain) ?: ""
             if (config.cookieKeys.any { all.contains(it) }) {
                 source.importLogin(Cookies.select(all, config.cookieKeys), "")
-                Toast.makeText(context, "登录成功", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.login_success), Toast.LENGTH_SHORT).show()
                 onDone()
                 break
             }
@@ -199,7 +201,7 @@ private fun QrWebLoginPanel(source: MusicSource, config: WebLoginConfig, onDone:
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
-                            status = "请扫码或使用网页登录"
+                            status = context.getString(R.string.login_qr_hint)
                         }
                     }
                     loadUrl(config.url)

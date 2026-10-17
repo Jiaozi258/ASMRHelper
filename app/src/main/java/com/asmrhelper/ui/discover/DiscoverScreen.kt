@@ -138,7 +138,7 @@ private fun SearchBar(
             trailingIcon = {
                 if (query.isNotEmpty()) {
                     IconButton(onClick = { onQueryChange("") }) {
-                        Icon(Icons.Filled.Close, "清除", tint = TextSecondary)
+                        Icon(Icons.Filled.Close, stringResource(R.string.common_clear), tint = TextSecondary)
                     }
                 } else if (searching) {
                     CircularProgressIndicator(

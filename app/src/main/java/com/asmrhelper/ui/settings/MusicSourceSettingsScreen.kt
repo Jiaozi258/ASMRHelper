@@ -33,11 +33,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.asmrhelper.R
 import com.asmrhelper.domain.music.SourceConfig
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
@@ -59,10 +61,10 @@ fun MusicSourceSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("音源设置") },
+                title = { Text(stringResource(R.string.music_source_settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, "返回", tint = TextPrimary)
+                        Icon(Icons.Filled.ArrowBack, stringResource(R.string.common_back), tint = TextPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -81,7 +83,7 @@ fun MusicSourceSettingsScreen(
                 .padding(bottom = 24.dp)
         ) {
             Text(
-                "选择一个平台作为在线音乐的来源。",
+                stringResource(R.string.source_hint),
                 color = TextHint,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)

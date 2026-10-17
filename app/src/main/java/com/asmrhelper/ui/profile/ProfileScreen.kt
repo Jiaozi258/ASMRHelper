@@ -105,7 +105,7 @@ fun ProfileScreen(
                 title = { Text(stringResource(R.string.profile_title)) },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Filled.Settings, "设置", tint = TextPrimary)
+                        Icon(Icons.Filled.Settings, stringResource(R.string.settings_title), tint = TextPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -143,7 +143,7 @@ fun ProfileScreen(
                     ) {
                         Icon(
                             Icons.Filled.Person,
-                            contentDescription = "头像",
+                            contentDescription = stringResource(R.string.profile_avatar),
                             tint = LocalAccentColor.current,
                             modifier = Modifier.size(42.dp)
                         )
@@ -153,7 +153,7 @@ fun ProfileScreen(
 
                     if (isLoggedIn) {
                         Text(
-                            username.ifEmpty { "用户" },
+                            username.ifEmpty { stringResource(R.string.profile_default_user) },
                             color = TextPrimary,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
@@ -165,13 +165,13 @@ fun ProfileScreen(
                         )
                     } else {
                         Text(
-                            "未登录",
+                            stringResource(R.string.profile_not_logged_in),
                             color = TextSecondary,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            "登录以解锁更多功能",
+                            stringResource(R.string.profile_login_hint),
                             color = TextHint,
                             fontSize = 13.sp
                         )
@@ -195,7 +195,7 @@ fun ProfileScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            "欢迎回来, ${username.ifEmpty { "用户" }}",
+                            stringResource(R.string.profile_welcome, username.ifEmpty { stringResource(R.string.profile_default_user) }),
                             color = TextPrimary,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold
@@ -219,14 +219,14 @@ fun ProfileScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Filled.Cloud, null, tint = LocalAccentColor.current, modifier = Modifier.size(20.dp))
                                     Spacer(Modifier.width(10.dp))
-                                    Text("云端同步", color = TextPrimary, fontSize = 14.sp)
+                                    Text(stringResource(R.string.profile_cloud_sync), color = TextPrimary, fontSize = 14.sp)
                                 }
                                 Box(
                                     modifier = Modifier
                                         .background(LocalAccentColor.current.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
                                         .padding(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
-                                    Text("即将推出", color = LocalAccentColor.current, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.profile_coming_soon), color = LocalAccentColor.current, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -237,7 +237,7 @@ fun ProfileScreen(
                         OutlinedButton(
                             onClick = {
                                 viewModel.logout()
-                                Toast.makeText(context, "已退出登录", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.profile_logged_out), Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorRed),
@@ -245,7 +245,7 @@ fun ProfileScreen(
                         ) {
                             Icon(Icons.AutoMirrored.Filled.Logout, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("退出登录")
+                            Text(stringResource(R.string.profile_logout))
                         }
                     }
                 }
@@ -265,7 +265,7 @@ fun ProfileScreen(
                         var isRegisterMode by remember { mutableStateOf(false) }
 
                         Text(
-                            if (isRegisterMode) "注册" else "登录",
+                            if (isRegisterMode) stringResource(R.string.profile_register) else stringResource(R.string.common_login),
                             color = TextPrimary,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -288,7 +288,7 @@ fun ProfileScreen(
                         OutlinedTextField(
                             value = inputUsername,
                             onValueChange = { inputUsername = it },
-                            label = { Text("用户名") },
+                            label = { Text(stringResource(R.string.profile_username)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             colors = fieldColors,
@@ -300,7 +300,7 @@ fun ProfileScreen(
                         OutlinedTextField(
                             value = inputPassword,
                             onValueChange = { inputPassword = it },
-                            label = { Text("密码") },
+                            label = { Text(stringResource(R.string.common_password)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             colors = fieldColors,
@@ -312,22 +312,22 @@ fun ProfileScreen(
                         Button(
                             onClick = {
                                 if (inputUsername.isBlank()) {
-                                    Toast.makeText(context, "请输入用户名", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.profile_enter_username), Toast.LENGTH_SHORT).show()
                                     return@Button
                                 }
                                 if (isRegisterMode) {
                                     viewModel.register(inputUsername, inputPassword)
-                                    Toast.makeText(context, "注册成功", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.profile_register_success), Toast.LENGTH_SHORT).show()
                                 } else {
                                     viewModel.login(inputUsername, inputPassword)
-                                    Toast.makeText(context, "登录成功", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.profile_login_success), Toast.LENGTH_SHORT).show()
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text(if (isRegisterMode) "注册" else "登录")
+                            Text(if (isRegisterMode) stringResource(R.string.profile_register) else stringResource(R.string.common_login))
                         }
 
                         Spacer(Modifier.height(8.dp))
@@ -337,7 +337,7 @@ fun ProfileScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                if (isRegisterMode) "已有账号？切换为登录" else "没有账号？切换为注册",
+                                if (isRegisterMode) stringResource(R.string.profile_has_account) else stringResource(R.string.profile_no_account),
                                 color = LocalAccentColor.current,
                                 fontSize = 13.sp
                             )
@@ -351,7 +351,7 @@ fun ProfileScreen(
             // ═══ 在线音乐平台 ═══════════════════════════════
 
             Text(
-                "在线音乐平台",
+                stringResource(R.string.profile_online_music),
                 color = LocalAccentColor.current,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
@@ -389,7 +389,7 @@ fun ProfileScreen(
             // ═══ 统计卡片 ═══════════════════════════════════
 
             Text(
-                "数据统计",
+                stringResource(R.string.profile_statistics),
                 color = LocalAccentColor.current,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
@@ -405,14 +405,14 @@ fun ProfileScreen(
                 StatCard(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Filled.Favorite,
-                    label = "收藏音频",
+                    label = stringResource(R.string.profile_stat_favorites),
                     count = audioCount,
                     color = LocalAccentColor.current
                 )
                 StatCard(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Filled.QueueMusic,
-                    label = "播放列表",
+                    label = stringResource(R.string.profile_stat_playlists),
                     count = playlistCount,
                     color = LocalAccentColor.current
                 )
@@ -429,7 +429,7 @@ fun ProfileScreen(
                 StatCard(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Filled.Image,
-                    label = "背景图",
+                    label = stringResource(R.string.profile_stat_backgrounds),
                     count = bgImageCount,
                     color = LocalAccentColor.current
                 )
@@ -463,7 +463,7 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("版本", color = TextPrimary, fontSize = 14.sp)
+                        Text(stringResource(R.string.profile_version), color = TextPrimary, fontSize = 14.sp)
                         Text("ASMRHelper v$versionName", color = TextSecondary, fontSize = 13.sp)
                     }
 
@@ -479,7 +479,7 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("GitHub 仓库", color = TextPrimary, fontSize = 14.sp)
+                        Text(stringResource(R.string.profile_github), color = TextPrimary, fontSize = 14.sp)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("JiaoZi258/ASMRHelper", color = TextSecondary, fontSize = 13.sp)
                             Spacer(Modifier.width(4.dp))
@@ -506,16 +506,16 @@ fun ProfileScreen(
         AlertDialog(
             onDismissRequest = { logoutConfig = null },
             containerColor = DarkSurface,
-            title = { Text("退出登录", color = TextPrimary) },
-            text = { Text("确定退出「${config.displayName}」登录？", color = TextSecondary) },
+            title = { Text(stringResource(R.string.profile_logout), color = TextPrimary) },
+            text = { Text(stringResource(R.string.profile_logout_confirm, config.displayName), color = TextSecondary) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.musicSourceFor(config).logout()
                     logoutConfig = null
-                }) { Text("退出", color = ErrorRed) }
+                }) { Text(stringResource(R.string.profile_logout_action), color = ErrorRed) }
             },
             dismissButton = {
-                TextButton(onClick = { logoutConfig = null }) { Text("取消", color = TextSecondary) }
+                TextButton(onClick = { logoutConfig = null }) { Text(stringResource(R.string.common_cancel), color = TextSecondary) }
             }
         )
     }
@@ -580,7 +580,7 @@ private fun MusicPlatformRow(
         Text(config.displayName, color = TextPrimary, fontSize = 14.sp)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (loggedIn) "已登录" else "未登录",
+                if (loggedIn) stringResource(R.string.profile_logged_in) else stringResource(R.string.profile_not_logged_in),
                 color = if (loggedIn) LocalAccentColor.current else TextHint,
                 fontSize = 12.sp
             )

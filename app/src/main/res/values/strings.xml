@@ -393,4 +393,61 @@
     <string name="gallery_no_audio">暂无可用音频</string>
     <string name="gallery_bound">已绑定</string>
     <string name="gallery_bind">绑定</string>
+
+    <!-- 通用 -->
+    <string name="common_clear">清除</string>
+    <string name="common_login">登录</string>
+    <string name="common_password">密码</string>
+
+    <!-- 个人主页 -->
+    <string name="profile_avatar">头像</string>
+    <string name="profile_default_user">用户</string>
+    <string name="profile_not_logged_in">未登录</string>
+    <string name="profile_logged_in">已登录</string>
+    <string name="profile_login_hint">登录以解锁更多功能</string>
+    <string name="profile_welcome">欢迎回来, %s</string>
+    <string name="profile_cloud_sync">云端同步</string>
+    <string name="profile_coming_soon">即将推出</string>
+    <string name="profile_logged_out">已退出登录</string>
+    <string name="profile_logout">退出登录</string>
+    <string name="profile_logout_action">退出</string>
+    <string name="profile_logout_confirm">确定退出「%s」登录？</string>
+    <string name="profile_register">注册</string>
+    <string name="profile_username">用户名</string>
+    <string name="profile_enter_username">请输入用户名</string>
+    <string name="profile_register_success">注册成功</string>
+    <string name="profile_login_success">登录成功</string>
+    <string name="profile_has_account">已有账号？切换为登录</string>
+    <string name="profile_no_account">没有账号？切换为注册</string>
+    <string name="profile_online_music">在线音乐平台</string>
+    <string name="profile_statistics">数据统计</string>
+    <string name="profile_stat_favorites">收藏音频</string>
+    <string name="profile_stat_playlists">播放列表</string>
+    <string name="profile_stat_backgrounds">背景图</string>
+    <string name="profile_version">版本</string>
+    <string name="profile_github">GitHub 仓库</string>
+
+    <!-- 音乐平台登录 -->
+    <string name="login_account_password">账号密码</string>
+    <string name="login_qr">扫码登录</string>
+    <string name="login_web">网页登录</string>
+    <string name="login_unsupported">该音源暂不支持登录</string>
+    <string name="login_account_hint">手机号/邮箱</string>
+    <string name="login_enter_account">请输入账号</string>
+    <string name="login_enter_password">请输入密码</string>
+    <string name="login_success">登录成功</string>
+    <string name="login_failed">登录失败</string>
+    <string name="login_in_progress">登录中…</string>
+    <string name="login_loading">正在加载登录页…</string>
+    <string name="login_qr_hint">请扫码或使用网页登录</string>
+
+    <!-- 播放历史 -->
+    <string name="history_clear_all">清除全部</string>
+    <string name="history_empty">暂无播放记录</string>
+    <string name="history_unknown_artist">未知艺术家</string>
+    <string name="history_clear_title">清除全部历史</string>
+    <string name="history_clear_confirm">确定要清除所有播放记录吗？</string>
+
+    <!-- 音源设置 -->
+    <string name="source_hint">选择一个平台作为在线音乐的来源。</string>
 </resources>
