@@ -1,5 +1,6 @@
 package com.asmrhelper.ui.play
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -146,19 +147,18 @@ fun MusicPlayScreen(
             // 顶部留白给灵动岛 + 模式按钮
             Spacer(Modifier.height(40.dp))
 
-            // 音频可视化（点击切换柱状/波形）
-            MusicVisualizer(
-                waveform = waveform,
-                fft = fft,
-                style = visualizerStyle,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(96.dp)
-                    .appleClickable {
-                        visualizerStyle = if (visualizerStyle == VisualizerStyle.BAR)
-                            VisualizerStyle.WAVE else VisualizerStyle.BAR
-                    }
-            )
+            // 音频可视化（点击循环切换 6 种风格，切换交叉淡入）
+            Crossfade(targetState = visualizerStyle, label = "visualizer_crossfade") { style ->
+                MusicVisualizer(
+                    waveform = waveform,
+                    fft = fft,
+                    style = style,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(96.dp)
+                        .appleClickable { visualizerStyle = visualizerStyle.next() }
+                )
+            }
 
             Spacer(Modifier.height(12.dp))
 
@@ -287,13 +287,8 @@ fun MusicPlayScreen(
                 ) {
                     MoreRow(
                         label = stringResource(R.string.visualizer_style),
-                        value = if (visualizerStyle == VisualizerStyle.BAR)
-                            stringResource(R.string.visualizer_bar)
-                        else stringResource(R.string.visualizer_wave),
-                        onClick = {
-                            visualizerStyle = if (visualizerStyle == VisualizerStyle.BAR)
-                                VisualizerStyle.WAVE else VisualizerStyle.BAR
-                        }
+                        value = visualizerStyleLabel(visualizerStyle),
+                        onClick = { visualizerStyle = visualizerStyle.next() }
                     )
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
                     MoreRow(
@@ -976,4 +971,18 @@ private fun formatTime(ms: Long): String {
     val min = totalSec / 60
     val sec = totalSec % 60
     return "%02d:%02d".format(min, sec)
+}
+
+/** 可视化风格循环到下一个。 */
+private fun VisualizerStyle.next(): VisualizerStyle =
+    VisualizerStyle.entries[(ordinal + 1) % VisualizerStyle.entries.size]
+
+@Composable
+private fun visualizerStyleLabel(style: VisualizerStyle): String = when (style) {
+    VisualizerStyle.BAR -> stringResource(R.string.visualizer_bar)
+    VisualizerStyle.WAVE -> stringResource(R.string.visualizer_wave)
+    VisualizerStyle.DOTS -> stringResource(R.string.visualizer_dots)
+    VisualizerStyle.RADIAL -> stringResource(R.string.visualizer_radial)
+    VisualizerStyle.MIRROR -> stringResource(R.string.visualizer_mirror)
+    VisualizerStyle.GLOW -> stringResource(R.string.visualizer_glow)
 }
