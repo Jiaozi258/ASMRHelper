@@ -63,4 +63,12 @@
     <!-- Discover -->
     <string name="discover_title">Discover</string>
     <string name="discover_placeholder">Search / Recommendations / Charts (coming soon)</string>
+    <string name="discover_search_hint">Search songs</string>
+    <string name="discover_search_action">Search</string>
+    <string name="discover_recommendations">Recommendations</string>
+    <string name="discover_charts">Charts</string>
+    <string name="discover_recent">Recently played</string>
+    <string name="discover_empty_source">Configure a music source in Settings first</string>
+    <string name="discover_no_results">No results found</string>
+    <string name="discover_play_failed">Cannot get stream URL</string>
 </resources>

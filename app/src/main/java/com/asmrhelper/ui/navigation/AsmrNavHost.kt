@@ -142,7 +142,10 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
             )
 
             // ── 发现页 ──────────────────────────────────
-            1 -> DiscoverScreen(modifier = Modifier.fillMaxSize())
+            1 -> DiscoverScreen(
+                modifier = Modifier.fillMaxSize(),
+                onPlayRequested = { scope.launch { pagerState.scrollToPage(0) } }
+            )
 
             // ── 主页 ────────────────────────────────────
             2 -> ProfileScreen(onNavigateToSettings = { openSettingsFromProfile() })

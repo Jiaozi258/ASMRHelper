@@ -63,4 +63,12 @@
     <!-- 发现 -->
     <string name="discover_title">发现</string>
     <string name="discover_placeholder">搜索 / 推荐 / 榜单（即将上线）</string>
+    <string name="discover_search_hint">搜索歌曲</string>
+    <string name="discover_search_action">搜索</string>
+    <string name="discover_recommendations">热门推荐</string>
+    <string name="discover_charts">排行榜</string>
+    <string name="discover_recent">最近播放</string>
+    <string name="discover_empty_source">请先在设置中配置音源</string>
+    <string name="discover_no_results">未找到相关歌曲</string>
+    <string name="discover_play_failed">无法获取播放地址</string>
 </resources>

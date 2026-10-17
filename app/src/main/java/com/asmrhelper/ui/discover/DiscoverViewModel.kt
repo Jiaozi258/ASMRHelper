@@ -1,0 +1,149 @@
+package com.asmrhelper.ui.discover
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.asmrhelper.R
+import com.asmrhelper.data.local.db.entity.PlayHistoryEntity
+import com.asmrhelper.data.music.MusicSourceManager
+import com.asmrhelper.data.repository.PlayHistoryRepositoryImpl
+import com.asmrhelper.domain.model.Audio
+import com.asmrhelper.domain.model.music.RemoteChart
+import com.asmrhelper.domain.model.music.RemoteSong
+import com.asmrhelper.domain.music.MusicSource
+import com.asmrhelper.player.PlayerEvent
+import com.asmrhelper.player.PlayerManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * 发现页状态机：搜索 / 推荐 / 排行榜 / 最近播放，以及在线流播放。
+ * 活动音源未配置 baseUrl 时 [activeSource] 为 null，UI 据此显示友好空态。
+ */
+@HiltViewModel
+class DiscoverViewModel @Inject constructor(
+    private val musicSourceManager: MusicSourceManager,
+    private val playHistoryRepository: PlayHistoryRepositoryImpl,
+    private val playerManager: PlayerManager
+) : ViewModel() {
+
+    /** 活动音源；未配置地址时为 null（Review Focus #1）。 */
+    val activeSource: StateFlow<MusicSource?> = musicSourceManager.activeSource
+
+    private val _query = MutableStateFlow("")
+    val query: StateFlow<String> = _query.asStateFlow()
+
+    private val _searching = MutableStateFlow(false)
+    val searching: StateFlow<Boolean> = _searching.asStateFlow()
+
+    private val _searchResults = MutableStateFlow<List<RemoteSong>>(emptyList())
+    val searchResults: StateFlow<List<RemoteSong>> = _searchResults.asStateFlow()
+
+    private val _recommendations = MutableStateFlow<List<RemoteSong>>(emptyList())
+    val recommendations: StateFlow<List<RemoteSong>> = _recommendations.asStateFlow()
+
+    private val _charts = MutableStateFlow<List<RemoteChart>>(emptyList())
+    val charts: StateFlow<List<RemoteChart>> = _charts.asStateFlow()
+
+    /** 最近播放：复用本地播放历史（这些是本地文件，播放时直接用 filePath）。 */
+    val recent: StateFlow<List<PlayHistoryEntity>> = playHistoryRepository.getAll()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** 一次性消息（如「无法获取播放地址」），UI 消费后清空。 */
+    private val _messageRes = MutableStateFlow<Int?>(null)
+    val messageRes: StateFlow<Int?> = _messageRes.asStateFlow()
+
+    init {
+        refresh()
+    }
+
+    /** 重新拉取推荐 + 排行榜（音源切换后可调用）。 */
+    fun refresh() {
+        loadRecommendations()
+        loadCharts()
+    }
+
+    fun onQueryChange(value: String) {
+        _query.value = value
+        if (value.isBlank()) {
+            _searchResults.value = emptyList()
+            _searching.value = false
+            return
+        }
+        search(value)
+    }
+
+    fun search(query: String) {
+        val source = activeSource.value ?: return
+        _searching.value = true
+        viewModelScope.launch {
+            source.search(query, 1).collect { list ->
+                _searchResults.value = list
+                _searching.value = false
+            }
+        }
+    }
+
+    fun loadRecommendations() {
+        val source = activeSource.value ?: return
+        viewModelScope.launch {
+            source.getRecommendations().collect { list ->
+                _recommendations.value = list
+            }
+        }
+    }
+
+    fun loadCharts() {
+        val source = activeSource.value ?: return
+        viewModelScope.launch {
+            source.getCharts().collect { list ->
+                _charts.value = list
+            }
+        }
+    }
+
+    /** 播放在线歌曲：拿不到流地址则提示，不把空串塞给 ExoPlayer（Review Focus #3）。 */
+    fun play(song: RemoteSong) {
+        val source = activeSource.value ?: return
+        viewModelScope.launch {
+            source.getSongUrl(song.id).collect { url ->
+                if (url.isBlank()) {
+                    _messageRes.value = R.string.discover_play_failed
+                } else {
+                    val audio = song.toAudio(url)
+                    playerManager.handleEvent(PlayerEvent.Play(audio, listOf(audio)))
+                }
+            }
+        }
+    }
+
+    /** 播放最近播放里的本地文件。 */
+    fun playRecent(entry: PlayHistoryEntity) {
+        val audio = Audio(
+            id = entry.id,
+            title = entry.audioTitle,
+            artist = entry.audioArtist,
+            filePath = entry.filePath,
+            durationMs = entry.durationMs
+        )
+        playerManager.handleEvent(PlayerEvent.Play(audio, listOf(audio)))
+    }
+
+    fun consumeMessage() {
+        _messageRes.value = null
+    }
+}
+
+/** 在线歌曲 → 本地播放模型；流 URL 作为 filePath 交给 ExoPlayer 的 MediaItem.fromUri。 */
+fun RemoteSong.toAudio(streamUrl: String): Audio = Audio(
+    id = id.toLongOrNull() ?: 0L,
+    title = title,
+    artist = artist,
+    filePath = streamUrl,
+    durationMs = durationMs
+)
