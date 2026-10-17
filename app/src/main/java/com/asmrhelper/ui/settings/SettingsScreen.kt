@@ -139,13 +139,15 @@ private enum class SettingsCategory(
 fun SettingsScreen(
     onNavigateToHistory: () -> Unit = {},
     modifier: Modifier = Modifier,
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    onBack: () -> Unit = {}
 ) {
     var category by remember { mutableStateOf<SettingsCategory?>(null) }
     when (category) {
         null -> SettingsHub(
             onOpen = { category = it },
-            onNavigateToHistory = onNavigateToHistory
+            onNavigateToHistory = onNavigateToHistory,
+            onBack = onBack
         )
         SettingsCategory.PERSONAL -> PersonalPreferenceScreen(onBack = { category = null }, viewModel = viewModel)
         SettingsCategory.PLAYBACK -> PlaybackSettingsScreen(onBack = { category = null }, viewModel = viewModel)
@@ -165,12 +167,18 @@ fun SettingsScreen(
 @Composable
 private fun SettingsHub(
     onOpen: (SettingsCategory) -> Unit,
-    onNavigateToHistory: () -> Unit
+    onNavigateToHistory: () -> Unit,
+    onBack: () -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("设置") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Filled.ArrowBack, "返回", tint = TextPrimary)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = DarkBackground,
                     titleContentColor = TextPrimary

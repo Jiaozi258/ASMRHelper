@@ -163,6 +163,14 @@ class PlayViewModel @Inject constructor(
     val triggerParticleCount: StateFlow<Int> = _triggerParticleCount
     val triggerCooldownMs: StateFlow<Int> = _triggerCooldownMs
 
+    // ── 播放模式（ASMR / MUSIC）─────────────────────────
+    val playbackMode: StateFlow<Int> = settingsRepository.getPlaybackMode()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun setPlaybackMode(mode: Int) {
+        viewModelScope.launch { settingsRepository.setPlaybackMode(mode) }
+    }
+
     // ── 收藏 / 快进时间：必须在 init 之前声明 ──
     // init 里的协程会立即运行并写这些 StateFlow，声明在 init 之后会导致 NPE
     private val _currentFavorite = MutableStateFlow(false)

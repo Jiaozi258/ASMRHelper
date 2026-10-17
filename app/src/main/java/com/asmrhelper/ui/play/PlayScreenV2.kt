@@ -67,6 +67,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.asmrhelper.domain.model.LoopMode
+import com.asmrhelper.domain.model.PlaybackMode
+import com.asmrhelper.domain.model.isMenuItemVisible
 import com.asmrhelper.ui.components.AsmrDropdownMenu
 import com.asmrhelper.ui.components.MenuItem
 import com.asmrhelper.ui.components.PlayPauseButton
@@ -100,6 +102,7 @@ fun PlayScreenV2(
     onNavigateToLibrary: (Int) -> Unit = {},
     onNavigateToBackground: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToSlideshow: () -> Unit = {},
     onNavigateToTriggerPad: () -> Unit = {},
     onNavigateToSleepJournal: () -> Unit = {}
 ) {
@@ -110,6 +113,8 @@ fun PlayScreenV2(
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
     val hasLyrics by viewModel.hasLyrics.collectAsStateWithLifecycle()
     val rawLyricsText by viewModel.rawLyricsText.collectAsStateWithLifecycle()
+    val playbackMode by viewModel.playbackMode.collectAsStateWithLifecycle()
+    val mode = PlaybackMode.entries.getOrElse(playbackMode) { PlaybackMode.ASMR }
 
     var showTimerDialog by remember { mutableStateOf(false) }
     var showLyricsDialog by remember { mutableStateOf(false) }
@@ -139,6 +144,26 @@ fun PlayScreenV2(
                     .padding(top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // 左上角模式切换按钮：ASMR ↔ MUSIC
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(DarkSurfaceVariant)
+                        .clickable {
+                            val next = (mode.ordinal + 1) % PlaybackMode.entries.size
+                            viewModel.setPlaybackMode(next)
+                        }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = if (mode == PlaybackMode.ASMR) "ASMR" else "MUSIC",
+                        color = LocalAccentColor.current,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+
                 val timerActive = state.timerActive
                 val timerLabel = if (timerActive) {
                     val min = state.timerRemainingMs / 60000
@@ -155,16 +180,19 @@ fun PlayScreenV2(
                 Box {
                     AsmrDropdownMenu(
                         items = listOf(
+                            MenuItem("slideshow", "图片"),
                             MenuItem("favorites", "我的收藏"),
                             MenuItem("scan", "本地文件扫描"),
                             MenuItem("file_manager", "文件管理器"),
                             MenuItem("background", "背景图库"),
                             MenuItem("trigger_pad", "触发器面板"),
                             MenuItem("sleep_journal", "睡眠记录"),
-                            MenuItem("video_audio", "视频音频")
-                        ),
+                            MenuItem("video_audio", "视频音频"),
+                            MenuItem("settings", "设置")
+                        ).filter { item -> mode.isMenuItemVisible(item.id) },
                         onItemClick = { item ->
                             when (item.id) {
+                                "slideshow" -> onNavigateToSlideshow()
                                 "favorites" -> onNavigateToLibrary(1)
                                 "scan" -> onNavigateToLibrary(0)
                                 "file_manager" -> onNavigateToLibrary(2)
@@ -172,6 +200,7 @@ fun PlayScreenV2(
                                 "background" -> onNavigateToBackground()
                                 "sleep_journal" -> onNavigateToSleepJournal()
                                 "video_audio" -> onNavigateToLibrary(3)
+                                "settings" -> onNavigateToSettings()
                             }
                         }
                     )

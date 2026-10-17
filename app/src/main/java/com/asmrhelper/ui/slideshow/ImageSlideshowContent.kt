@@ -34,7 +34,8 @@ import java.util.Locale
 @Composable
 fun ImageSlideshowContent(
     viewModel: ImageSlideshowViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBack: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val currentProgressMs by viewModel.progressMs.collectAsStateWithLifecycle()
@@ -73,9 +74,14 @@ fun ImageSlideshowContent(
 
         // ── Album selector bar ───────────────────────────
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Back to play page
+            IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
+                Icon(Icons.Filled.ArrowBack, "返回", tint = TextPrimary, modifier = Modifier.size(20.dp))
+            }
+
             // Album dropdown
             Box {
                 val currentAlbum = state.albums.find { it.id == state.selectedAlbumId }
