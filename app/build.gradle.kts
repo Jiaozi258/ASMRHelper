@@ -84,4 +84,7 @@ dependencies {
     // Core
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
+
+    // Test
+    testImplementation("junit:junit:4.13.2")
 }

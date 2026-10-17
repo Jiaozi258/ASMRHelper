@@ -94,6 +94,15 @@ class SettingsRepositoryImpl @Inject constructor(
         _darkTheme.value = enabled
     }
 
+    // ── 播放模式 ───────────────────────────────────────
+
+    private val _playbackMode = MutableStateFlow(prefs.getInt("playback_mode", 0))
+    override fun getPlaybackMode(): Flow<Int> = _playbackMode
+    override suspend fun setPlaybackMode(mode: Int) {
+        prefs.edit().putInt("playback_mode", mode).apply()
+        _playbackMode.value = mode
+    }
+
     override fun getBgColorIndex(): Flow<Int> = _bgColorIndex
 
     override suspend fun setBgColorIndex(index: Int) {

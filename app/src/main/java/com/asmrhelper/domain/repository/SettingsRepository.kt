@@ -16,6 +16,9 @@ interface SettingsRepository {
     suspend fun setThemePresetOrdinal(ordinal: Int)
     fun getDarkTheme(): Flow<Boolean>
     suspend fun setDarkTheme(enabled: Boolean)
+    // 播放模式：0 = ASMR（默认），1 = MUSIC
+    fun getPlaybackMode(): Flow<Int>
+    suspend fun setPlaybackMode(mode: Int)
     fun getBgColorIndex(): Flow<Int>
     suspend fun setBgColorIndex(index: Int)
     fun getCurrentBgImagePath(): Flow<String?>
