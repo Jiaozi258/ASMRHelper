@@ -411,21 +411,21 @@ fun FloatingControls(
                 )
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     IconButton(onClick = onPrevious) {
-                        Icon(Icons.Filled.SkipPrevious, contentDescription = "上一曲", tint = TextPrimary)
+                        Icon(Icons.Filled.SkipPrevious, contentDescription = stringResource(R.string.play_prev_track), tint = TextPrimary)
                     }
                     IconButton(onClick = onPlayPause, modifier = Modifier.weight(1f)) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            contentDescription = if (isPlaying) "暂停" else "播放",
+                            contentDescription = if (isPlaying) stringResource(R.string.play_pause) else stringResource(R.string.play_play),
                             tint = TextPrimary,
                             modifier = Modifier.size(40.dp)
                         )
                     }
                     IconButton(onClick = onNext) {
-                        Icon(Icons.Filled.SkipNext, contentDescription = "下一曲", tint = TextPrimary)
+                        Icon(Icons.Filled.SkipNext, contentDescription = stringResource(R.string.play_next_track), tint = TextPrimary)
                     }
                     IconButton(onClick = onMore) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = "更多", tint = TextSecondary)
+                        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more), tint = TextSecondary)
                     }
                 }
             }

@@ -69,6 +69,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -86,6 +87,7 @@ import kotlinx.coroutines.delay
 import kotlin.math.pow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlin.random.Random
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.player.BinauralPreset
 import com.asmrhelper.ui.components.AsmrDropdownMenu
@@ -197,16 +199,16 @@ fun PlayScreen(
         // 右上角下拉菜单
         AsmrDropdownMenu(
             items = listOf(
-                MenuItem("playlist", "播放列表"),
-                MenuItem("favorites", "我的收藏"),
-                MenuItem("scan", "本地文件扫描"),
-                MenuItem("file_manager", "文件管理器"),
-                MenuItem("background", "背景图库"),
-                MenuItem("slideshow", "图片"),
-                MenuItem("trigger_pad", "触发器面板"),
-                MenuItem("sleep_journal", "睡眠记录"),
-                MenuItem("video_audio", "视频音频"),
-                MenuItem("settings", "设置")
+                MenuItem("playlist", stringResource(R.string.play_menu_playlist)),
+                MenuItem("favorites", stringResource(R.string.play_menu_favorites)),
+                MenuItem("scan", stringResource(R.string.play_menu_scan)),
+                MenuItem("file_manager", stringResource(R.string.play_menu_file_manager)),
+                MenuItem("background", stringResource(R.string.play_menu_background)),
+                MenuItem("slideshow", stringResource(R.string.play_menu_images)),
+                MenuItem("trigger_pad", stringResource(R.string.play_menu_trigger_pad)),
+                MenuItem("sleep_journal", stringResource(R.string.play_menu_sleep_journal)),
+                MenuItem("video_audio", stringResource(R.string.play_menu_video_audio)),
+                MenuItem("settings", stringResource(R.string.play_menu_settings))
             ),
             onItemClick = { item ->
                 when (item.id) {
@@ -274,7 +276,7 @@ fun PlayScreen(
                 exit = fadeOut()
             ) {
                 Text(
-                    text = state.displayTitle.ifEmpty { "未在播放" },
+                    text = state.displayTitle.ifEmpty { stringResource(R.string.play_not_playing) },
                     style = MaterialTheme.typography.headlineMedium,
                     color = TextPrimary,
                     maxLines = 1,
@@ -303,10 +305,10 @@ fun PlayScreen(
             ) {
                 // 循环模式按钮
                 val loopLabel = when (state.playerState.loopMode) {
-                    LoopMode.NONE -> "→ 播完即止"
-                    LoopMode.SINGLE -> "🔁 单曲循环"
-                    LoopMode.LIST -> "🔁 列表循环"
-                    LoopMode.SHUFFLE -> "🔀 随机播放"
+                    LoopMode.NONE -> stringResource(R.string.play_loop_none)
+                    LoopMode.SINGLE -> stringResource(R.string.play_loop_single)
+                    LoopMode.LIST -> stringResource(R.string.play_loop_list)
+                    LoopMode.SHUFFLE -> stringResource(R.string.play_loop_shuffle)
                 }
                 TextButton(onClick = { viewModel.cycleLoopMode() }) {
                     Text(
@@ -342,7 +344,7 @@ fun PlayScreen(
                         val sec = (state.timerRemainingMs % 60000) / 1000
                         "⏱ %02d:%02d".format(min, sec)
                     } else {
-                        "⏱ 定时"
+                        stringResource(R.string.play_timer)
                     }
                     Text(
                         text = label,
@@ -363,7 +365,7 @@ fun PlayScreen(
                 IconButton(onClick = { viewModel.previous() }) {
                     Icon(
                         Icons.Filled.SkipPrevious,
-                        contentDescription = "上一首",
+                        contentDescription = stringResource(R.string.play_previous),
                         modifier = Modifier.size(40.dp),
                         tint = TextPrimary
                     )
@@ -381,7 +383,7 @@ fun PlayScreen(
                 IconButton(onClick = { viewModel.next() }) {
                     Icon(
                         Icons.Filled.SkipNext,
-                        contentDescription = "下一首",
+                        contentDescription = stringResource(R.string.play_next),
                         modifier = Modifier.size(40.dp),
                         tint = TextPrimary
                     )
@@ -397,7 +399,7 @@ fun PlayScreen(
             ) {
                 TextButton(onClick = { showAmbientDialog = true }) {
                     Text(
-                        text = "🌧 环境音",
+                        text = stringResource(R.string.play_ambient),
                         color = if (state.playerState.isBackgroundPlaying) LocalAccentColor.current else TextHint,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -405,7 +407,7 @@ fun PlayScreen(
                 Spacer(modifier = Modifier.width(4.dp))
                 TextButton(onClick = { breathingGuide = !breathingGuide }) {
                     Text(
-                        text = "🫁 呼吸",
+                        text = stringResource(R.string.play_breathing),
                         color = if (breathingGuide) LocalAccentColor.current else TextHint,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -413,7 +415,7 @@ fun PlayScreen(
                 Spacer(modifier = Modifier.width(4.dp))
                 TextButton(onClick = { showBinauralDialog = true }) {
                     Text(
-                        text = "🧠 双耳",
+                        text = stringResource(R.string.play_binaural),
                         color = if (state.binauralActive) LocalAccentColor.current else TextHint,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -426,8 +428,12 @@ fun PlayScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 val noiseLabel = if (state.noiseActive) {
-                    when (state.noiseType) { "PINK" -> "🌸 粉噪"; "BROWN" -> "🍂 棕噪"; else -> "🔊 白噪" }
-                } else "🔇 噪音"
+                    when (state.noiseType) {
+                        "PINK" -> stringResource(R.string.play_noise_pink)
+                        "BROWN" -> stringResource(R.string.play_noise_brown)
+                        else -> stringResource(R.string.play_noise_white)
+                    }
+                } else stringResource(R.string.play_noise_off)
                 TextButton(onClick = { showNoiseDialog = true }) {
                     Text(
                         text = noiseLabel,
@@ -437,11 +443,11 @@ fun PlayScreen(
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 val spatialLabel = when (state.spatialMode) {
-                    "D3" -> "🎧 3D"
-                    "SWEEP" -> "↔ 扫掠"
-                    "CIRCLE" -> "🔄 环绕"
-                    "WIDE" -> "🌐 扩展"
-                    else -> "🎧 空间音效"
+                    "D3" -> stringResource(R.string.play_spatial_3d)
+                    "SWEEP" -> stringResource(R.string.play_spatial_sweep)
+                    "CIRCLE" -> stringResource(R.string.play_spatial_circle)
+                    "WIDE" -> stringResource(R.string.play_spatial_wide)
+                    else -> stringResource(R.string.play_spatial_off)
                 }
                 TextButton(onClick = { viewModel.cycleSpatialMode() }) {
                     Text(
@@ -453,7 +459,7 @@ fun PlayScreen(
                 Spacer(modifier = Modifier.width(4.dp))
                 TextButton(onClick = { viewModel.toggleHaptic() }) {
                     Text(
-                        text = "📳 触觉",
+                        text = stringResource(R.string.play_haptic),
                         color = if (state.hapticEnabled) LocalAccentColor.current else TextHint,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -466,18 +472,18 @@ fun PlayScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 TextButton(onClick = { showSceneDialog = true }) {
-                    Text("🎬 场景", color = TextHint, style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.play_scene), color = TextHint, style = MaterialTheme.typography.labelSmall)
                 }
                 TextButton(onClick = { showBookmarkDialog = true }) {
                     val bmCount = state.bookmarks.size
                     Text(
-                        text = if (bmCount > 0) "🔖 书签($bmCount)" else "🔖 书签",
+                        text = if (bmCount > 0) stringResource(R.string.play_bookmark_count, bmCount) else stringResource(R.string.play_bookmark),
                         color = TextHint,
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
                 TextButton(onClick = { viewModel.fadeOut(5000L) }) {
-                    Text("🌙 淡出", color = TextHint, style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.play_fade_out), color = TextHint, style = MaterialTheme.typography.labelSmall)
                 }
             }
 
@@ -511,7 +517,7 @@ fun PlayScreen(
             if (isDragging) {
                 val dragMs = (dragFraction * state.playerState.durationMs).toLong()
                 Text(
-                    text = "拖拽至 ${formatDuration(dragMs)}",
+                    text = stringResource(R.string.play_drag_to, formatDuration(dragMs)),
                     color = LocalAccentColor.current,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.fillMaxWidth(),
@@ -585,7 +591,7 @@ fun PlayScreen(
         AlertDialog(
             onDismissRequest = { showTimerDialog = false },
             title = {
-                Text("定时器", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.play_timer_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
             },
             text = {
                 Column(
@@ -593,7 +599,7 @@ fun PlayScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // ── Sleep Timer ──
-                    Text("睡眠定时", color = TextHint, style = MaterialTheme.typography.labelMedium,
+                    Text(stringResource(R.string.play_sleep_timer), color = TextHint, style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(4.dp))
 
@@ -603,7 +609,7 @@ fun PlayScreen(
                         var customMinutes by remember { mutableIntStateOf(15) }
                         Column(modifier = Modifier.padding(vertical = 8.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("小时", color = TextSecondary, fontSize = 13.sp)
+                                Text(stringResource(R.string.play_hours), color = TextSecondary, fontSize = 13.sp)
                                 Slider(value = customHours.toFloat(), onValueChange = { customHours = it.toInt() },
                                     valueRange = 0f..3f, steps = 2,
                                     modifier = Modifier.weight(1f),
@@ -611,7 +617,7 @@ fun PlayScreen(
                                 Text("${customHours}h", color = TextPrimary, fontSize = 14.sp, modifier = Modifier.width(36.dp))
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("分钟", color = TextSecondary, fontSize = 13.sp)
+                                Text(stringResource(R.string.play_minutes), color = TextSecondary, fontSize = 13.sp)
                                 Slider(value = customMinutes.toFloat(), onValueChange = { customMinutes = it.toInt() },
                                     valueRange = 0f..59f, steps = 58,
                                     modifier = Modifier.weight(1f),
@@ -621,7 +627,7 @@ fun PlayScreen(
                             Spacer(Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 TextButton(onClick = { showCustomPicker = false }) {
-                                    Text("取消", color = TextSecondary)
+                                    Text(stringResource(R.string.common_cancel), color = TextSecondary)
                                 }
                                 Button(onClick = {
                                     val total = customHours * 3600 + customMinutes * 60
@@ -631,24 +637,24 @@ fun PlayScreen(
                                     }
                                 }, enabled = (customHours * 60 + customMinutes) > 0,
                                     colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current)) {
-                                    Text("开始")
+                                    Text(stringResource(R.string.common_start))
                                 }
                             }
                         }
                     } else {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            QuickTimerChip("15分") { viewModel.setTimerSeconds(15 * 60); showTimerDialog = false }
-                            QuickTimerChip("30分") { viewModel.setTimerSeconds(30 * 60); showTimerDialog = false }
-                            QuickTimerChip("45分") { viewModel.setTimerSeconds(45 * 60); showTimerDialog = false }
-                            QuickTimerChip("60分") { viewModel.setTimerSeconds(60 * 60); showTimerDialog = false }
+                            QuickTimerChip(stringResource(R.string.play_timer_15)) { viewModel.setTimerSeconds(15 * 60); showTimerDialog = false }
+                            QuickTimerChip(stringResource(R.string.play_timer_30)) { viewModel.setTimerSeconds(30 * 60); showTimerDialog = false }
+                            QuickTimerChip(stringResource(R.string.play_timer_45)) { viewModel.setTimerSeconds(45 * 60); showTimerDialog = false }
+                            QuickTimerChip(stringResource(R.string.play_timer_60)) { viewModel.setTimerSeconds(60 * 60); showTimerDialog = false }
                         }
                         Spacer(Modifier.height(6.dp))
                         TextButton(onClick = { showCustomPicker = true }) {
-                            Text("⏱ 自定义...", color = LocalAccentColor.current, fontSize = 14.sp)
+                            Text(stringResource(R.string.play_timer_custom), color = LocalAccentColor.current, fontSize = 14.sp)
                         }
                         Spacer(Modifier.height(2.dp))
                         TimerOption(
-                            text = if (state.stopAfterCurrent) "✓ 播完当前停止" else "播完当前停止",
+                            text = if (state.stopAfterCurrent) stringResource(R.string.play_stop_after_current_checked) else stringResource(R.string.play_stop_after_current),
                             color = if (state.stopAfterCurrent) LocalAccentColor.current else TextSecondary
                         ) {
                             viewModel.toggleStopAfterCurrent(); showTimerDialog = false
@@ -658,7 +664,7 @@ fun PlayScreen(
                     Spacer(Modifier.height(12.dp))
 
                     // ── Pomodoro ──
-                    Text("番茄钟", color = TextHint, style = MaterialTheme.typography.labelMedium,
+                    Text(stringResource(R.string.play_pomodoro), color = TextHint, style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(4.dp))
 
@@ -666,19 +672,19 @@ fun PlayScreen(
                         var focusMin by remember { mutableIntStateOf(state.pomodoroCustomFocusMin) }
                         var breakMin by remember { mutableIntStateOf(state.pomodoroCustomBreakMin) }
                         Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                            Text("专注时长: ${focusMin}分钟", color = TextSecondary, fontSize = 13.sp)
+                            Text(stringResource(R.string.play_focus_duration, focusMin), color = TextSecondary, fontSize = 13.sp)
                             Slider(value = focusMin.toFloat(), onValueChange = { focusMin = it.toInt() },
                                 valueRange = 1f..120f, steps = 118,
                                 colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current))
                             Spacer(Modifier.height(8.dp))
-                            Text("休息时长: ${breakMin}分钟", color = TextSecondary, fontSize = 13.sp)
+                            Text(stringResource(R.string.play_break_duration, breakMin), color = TextSecondary, fontSize = 13.sp)
                             Slider(value = breakMin.toFloat(), onValueChange = { breakMin = it.toInt() },
                                 valueRange = 1f..30f, steps = 28,
                                 colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current))
                             Spacer(Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 TextButton(onClick = { showPomodoroCustom = false }) {
-                                    Text("取消", color = TextSecondary)
+                                    Text(stringResource(R.string.common_cancel), color = TextSecondary)
                                 }
                                 Button(onClick = {
                                     viewModel.updatePomodoroCustomFocus(focusMin)
@@ -686,17 +692,17 @@ fun PlayScreen(
                                     viewModel.startPomodoro(focusMin, breakMin)
                                     showTimerDialog = false
                                 }, colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current)) {
-                                    Text("🍅 开始")
+                                    Text(stringResource(R.string.play_pomodoro_start))
                                 }
                             }
                         }
                     } else {
-                        TimerOption("🍅 ${state.pomodoroCustomFocusMin}分钟专注 + ${state.pomodoroCustomBreakMin}分钟休息") {
+                        TimerOption(stringResource(R.string.play_pomodoro_option, state.pomodoroCustomFocusMin, state.pomodoroCustomBreakMin)) {
                             viewModel.startPomodoro(state.pomodoroCustomFocusMin, state.pomodoroCustomBreakMin)
                             showTimerDialog = false
                         }
                         TextButton(onClick = { showPomodoroCustom = true }) {
-                            Text("⚙ 自定义番茄钟...", color = LocalAccentColor.current, fontSize = 14.sp)
+                            Text(stringResource(R.string.play_pomodoro_custom), color = LocalAccentColor.current, fontSize = 14.sp)
                         }
                     }
                 }
@@ -704,7 +710,7 @@ fun PlayScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showTimerDialog = false }) {
-                    Text("取消", color = TextSecondary)
+                    Text(stringResource(R.string.common_cancel), color = TextSecondary)
                 }
             },
             containerColor = DarkSurface,
@@ -718,7 +724,7 @@ fun PlayScreen(
             onDismissRequest = { showBinauralDialog = false },
             title = {
                 Text(
-                    text = "双耳节拍",
+                    text = stringResource(R.string.play_binaural_title),
                     color = TextPrimary,
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -761,7 +767,7 @@ fun PlayScreen(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("音量", color = TextSecondary, fontSize = 12.sp)
+                            Text(stringResource(R.string.common_volume), color = TextSecondary, fontSize = 12.sp)
                             Slider(
                                 value = state.binauralVolume,
                                 onValueChange = { viewModel.setBinauralVolume(it) },
@@ -785,7 +791,7 @@ fun PlayScreen(
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("■ 停止节拍", color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.play_stop_binaural), color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -793,7 +799,7 @@ fun PlayScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showBinauralDialog = false }) {
-                    Text("关闭", color = TextSecondary)
+                    Text(stringResource(R.string.common_close), color = TextSecondary)
                 }
             },
             containerColor = DarkSurface,
@@ -805,14 +811,15 @@ fun PlayScreen(
     if (showNoiseDialog) {
         AlertDialog(
             onDismissRequest = { showNoiseDialog = false },
-            title = { Text("噪音生成", color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
+            title = { Text(stringResource(R.string.play_noise_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     listOf(
-                        "WHITE" to "白噪音 — 均匀频率，助专注",
-                        "PINK" to "粉红噪音 — 低频更强，助睡眠",
-                        "BROWN" to "棕色噪音 — 更深沉，助放松"
-                    ).forEach { (type, desc) ->
+                        "WHITE" to R.string.play_noise_white_desc,
+                        "PINK" to R.string.play_noise_pink_desc,
+                        "BROWN" to R.string.play_noise_brown_desc
+                    ).forEach { (type, descRes) ->
+                        val desc = stringResource(descRes)
                         val isActive = state.noiseActive && state.noiseType == type
                         TextButton(
                             onClick = {
@@ -833,7 +840,7 @@ fun PlayScreen(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("音量", color = TextSecondary, fontSize = 12.sp)
+                            Text(stringResource(R.string.common_volume), color = TextSecondary, fontSize = 12.sp)
                             Slider(
                                 value = state.noiseVolume,
                                 onValueChange = { viewModel.setNoiseVolume(it) },
@@ -854,13 +861,13 @@ fun PlayScreen(
                             onClick = { viewModel.stopNoise(); showNoiseDialog = false },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("■ 停止噪音", color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.play_stop_noise), color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showNoiseDialog = false }) { Text("关闭", color = TextSecondary) } },
+            dismissButton = { TextButton(onClick = { showNoiseDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
         )
@@ -870,7 +877,7 @@ fun PlayScreen(
     if (showAmbientDialog) {
         AlertDialog(
             onDismissRequest = { showAmbientDialog = false },
-            title = { Text("环境音选择", color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
+            title = { Text(stringResource(R.string.play_ambient_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
             text = {
                 Column(
                     modifier = Modifier
@@ -879,7 +886,7 @@ fun PlayScreen(
                 ) {
                     // ── Built-in nature sounds ──
                     Text(
-                        "内置音效",
+                        stringResource(R.string.play_builtin_sounds),
                         color = TextHint,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
@@ -907,8 +914,8 @@ fun PlayScreen(
                                 )
                                 Text(
                                     text = when {
-                                        isBuiltInPlaying -> "▶ 播放中"
-                                        isBuiltInSelected -> "已选"
+                                        isBuiltInPlaying -> stringResource(R.string.play_playing)
+                                        isBuiltInSelected -> stringResource(R.string.play_selected)
                                         else -> ""
                                     },
                                     color = if (isBuiltInPlaying) LocalAccentColor.current else TextHint,
@@ -924,7 +931,7 @@ fun PlayScreen(
                     )
 
                     Text(
-                        "导入的环境音",
+                        stringResource(R.string.play_imported_ambient),
                         color = TextHint,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
@@ -933,7 +940,7 @@ fun PlayScreen(
 
                     if (state.ambientAudios.isEmpty()) {
                         Text(
-                            "暂无环境音，请在设置中导入",
+                            stringResource(R.string.play_no_ambient),
                             color = TextHint,
                             fontSize = 14.sp,
                             modifier = Modifier.padding(vertical = 8.dp)
@@ -966,8 +973,8 @@ fun PlayScreen(
                                 )
                                 Text(
                                     text = when {
-                                        isPlaying -> "▶ 播放中"
-                                        isSelected -> "已选"
+                                        isPlaying -> stringResource(R.string.play_playing)
+                                        isSelected -> stringResource(R.string.play_selected)
                                         else -> ""
                                     },
                                     color = if (isPlaying) LocalAccentColor.current else TextHint,
@@ -990,12 +997,12 @@ fun PlayScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "循环播放",
+                                stringResource(R.string.play_ambient_loop),
                                 color = TextSecondary,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                "开启后环境音将反复播放",
+                                stringResource(R.string.play_ambient_loop_desc),
                                 color = TextHint,
                                 fontSize = 11.sp
                             )
@@ -1022,13 +1029,13 @@ fun PlayScreen(
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("■ 停止环境音", color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.play_stop_ambient), color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showAmbientDialog = false }) { Text("关闭", color = TextSecondary) } },
+            dismissButton = { TextButton(onClick = { showAmbientDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
         )
@@ -1040,7 +1047,7 @@ fun PlayScreen(
         var sceneTab by remember { mutableIntStateOf(0) } // 0=save, 1=load
         AlertDialog(
             onDismissRequest = { showSceneDialog = false },
-            title = { Text("场景管理", color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
+            title = { Text(stringResource(R.string.play_scene_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
             text = {
                 Column(
                     modifier = Modifier
@@ -1056,7 +1063,7 @@ fun PlayScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                "保存场景",
+                                stringResource(R.string.play_save_scene),
                                 color = if (sceneTab == 0) LocalAccentColor.current else TextSecondary,
                                 fontWeight = if (sceneTab == 0) FontWeight.Bold else FontWeight.Normal
                             )
@@ -1066,7 +1073,7 @@ fun PlayScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                "加载场景",
+                                stringResource(R.string.play_load_scene),
                                 color = if (sceneTab == 1) LocalAccentColor.current else TextSecondary,
                                 fontWeight = if (sceneTab == 1) FontWeight.Bold else FontWeight.Normal
                             )
@@ -1082,7 +1089,7 @@ fun PlayScreen(
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                         ) {
                             if (sceneName.isEmpty()) {
-                                Text("场景名称", color = TextHint, fontSize = 14.sp)
+                                Text(stringResource(R.string.play_scene_name), color = TextHint, fontSize = 14.sp)
                             }
                             androidx.compose.foundation.text.BasicTextField(
                                 value = sceneName,
@@ -1102,12 +1109,12 @@ fun PlayScreen(
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current)
                         ) {
-                            Text("保存当前状态")
+                            Text(stringResource(R.string.play_save_current_state))
                         }
                     } else {
                         // Load tab
                         if (state.scenes.isEmpty()) {
-                            Text("暂无保存的场景", color = TextHint, fontSize = 14.sp)
+                            Text(stringResource(R.string.play_no_scenes), color = TextHint, fontSize = 14.sp)
                         }
                         state.scenes.forEach { scene ->
                             Row(
@@ -1121,10 +1128,10 @@ fun PlayScreen(
                                     Text(scene.name, color = TextPrimary, fontSize = 14.sp)
                                     Text(
                                         text = listOfNotNull(
-                                            if (scene.timerMinutes > 0) "${scene.timerMinutes}分" else null,
+                                            if (scene.timerMinutes > 0) stringResource(R.string.play_scene_minutes, scene.timerMinutes) else null,
                                             if (scene.noiseType.isNotEmpty() && scene.noiseType != "WHITE") scene.noiseType else null,
-                                            if (scene.visualizerEnabled) "可视化" else null
-                                        ).joinToString(" · ").ifEmpty { "无额外设置" },
+                                            if (scene.visualizerEnabled) stringResource(R.string.play_visualizer_on) else null
+                                        ).joinToString(" · ").ifEmpty { stringResource(R.string.play_no_extra) },
                                         color = TextHint,
                                         fontSize = 11.sp
                                     )
@@ -1143,7 +1150,7 @@ fun PlayScreen(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showSceneDialog = false }) { Text("关闭", color = TextSecondary) } },
+            dismissButton = { TextButton(onClick = { showSceneDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
         )
@@ -1154,7 +1161,7 @@ fun PlayScreen(
         var newBookmarkName by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showBookmarkDialog = false },
-            title = { Text("音频书签", color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
+            title = { Text(stringResource(R.string.play_bookmark_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
             text = {
                 Column(
                     modifier = Modifier
@@ -1173,7 +1180,7 @@ fun PlayScreen(
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                         ) {
                             if (newBookmarkName.isEmpty()) {
-                                Text("书签名", color = TextHint, fontSize = 14.sp)
+                                Text(stringResource(R.string.play_bookmark_name), color = TextHint, fontSize = 14.sp)
                             }
                             androidx.compose.foundation.text.BasicTextField(
                                 value = newBookmarkName,
@@ -1189,13 +1196,13 @@ fun PlayScreen(
                                 newBookmarkName = ""
                             }
                         }) {
-                            Text("添加", color = LocalAccentColor.current)
+                            Text(stringResource(R.string.play_add), color = LocalAccentColor.current)
                         }
                     }
                     Spacer(Modifier.height(12.dp))
 
                     if (state.bookmarks.isEmpty()) {
-                        Text("暂无书签", color = TextHint, fontSize = 14.sp)
+                        Text(stringResource(R.string.play_no_bookmarks), color = TextHint, fontSize = 14.sp)
                     }
                     state.bookmarks.forEach { bm ->
                         Row(
@@ -1225,7 +1232,7 @@ fun PlayScreen(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showBookmarkDialog = false }) { Text("关闭", color = TextSecondary) } },
+            dismissButton = { TextButton(onClick = { showBookmarkDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
         )
@@ -1469,9 +1476,9 @@ private fun BreathingOverlay() {
 
         // Phase label
         val phaseText = when {
-            currentRadius > 0.8f -> "吸气"
-            currentRadius < 0.4f -> "呼气"
-            else -> "屏息"
+            currentRadius > 0.8f -> stringResource(R.string.play_inhale)
+            currentRadius < 0.4f -> stringResource(R.string.play_exhale)
+            else -> stringResource(R.string.play_hold)
         }
         Text(
             text = phaseText,

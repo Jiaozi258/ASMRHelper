@@ -167,7 +167,7 @@ fun MusicPlayScreen(
 
             // 歌名 / 艺术家
             Text(
-                text = state.displayTitle.ifEmpty { "未在播放" },
+                text = state.displayTitle.ifEmpty { stringResource(R.string.play_not_playing) },
                 color = TextPrimary,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -252,15 +252,15 @@ fun MusicPlayScreen(
         ) {
             AsmrDropdownMenu(
                 items = listOf(
-                    MenuItem("slideshow", "图片"),
-                    MenuItem("favorites", "我的收藏"),
-                    MenuItem("scan", "本地文件扫描"),
-                    MenuItem("file_manager", "文件管理器"),
-                    MenuItem("background", "背景图库"),
-                    MenuItem("trigger_pad", "触发器面板"),
-                    MenuItem("sleep_journal", "睡眠记录"),
-                    MenuItem("video_audio", "视频音频"),
-                    MenuItem("settings", "设置")
+                    MenuItem("slideshow", stringResource(R.string.play_menu_images)),
+                    MenuItem("favorites", stringResource(R.string.play_menu_favorites)),
+                    MenuItem("scan", stringResource(R.string.play_menu_scan)),
+                    MenuItem("file_manager", stringResource(R.string.play_menu_file_manager)),
+                    MenuItem("background", stringResource(R.string.play_menu_background)),
+                    MenuItem("trigger_pad", stringResource(R.string.play_menu_trigger_pad)),
+                    MenuItem("sleep_journal", stringResource(R.string.play_menu_sleep_journal)),
+                    MenuItem("video_audio", stringResource(R.string.play_menu_video_audio)),
+                    MenuItem("settings", stringResource(R.string.play_menu_settings))
                 ).filter { item -> PlaybackMode.MUSIC.isMenuItemVisible(item.id) },
                 onItemClick = { item ->
                     when (item.id) {
@@ -321,7 +321,7 @@ fun MusicPlayScreen(
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showMoreDialog = false }) { Text("关闭", color = TextSecondary) }
+                TextButton(onClick = { showMoreDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
@@ -333,10 +333,10 @@ fun MusicPlayScreen(
         var minutes by remember { mutableStateOf(30) }
         AlertDialog(
             onDismissRequest = { showTimerDialog = false },
-            title = { Text("睡眠定时", color = TextPrimary) },
+            title = { Text(stringResource(R.string.play_sleep_timer), color = TextPrimary) },
             text = {
                 Column {
-                    Text("定时 ${minutes} 分钟后停止播放", color = TextSecondary, fontSize = 14.sp)
+                    Text(stringResource(R.string.play_timer_stop_after, minutes), color = TextSecondary, fontSize = 14.sp)
                     Slider(
                         value = minutes.toFloat(),
                         onValueChange = { minutes = it.toInt() },
@@ -348,12 +348,12 @@ fun MusicPlayScreen(
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.setTimerSeconds(minutes * 60); showTimerDialog = false }) {
-                    Text("开始", color = LocalAccentColor.current)
+                    Text(stringResource(R.string.common_start), color = LocalAccentColor.current)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.cancelTimer(); showTimerDialog = false }) {
-                    Text("取消定时", color = TextSecondary)
+                    Text(stringResource(R.string.play_cancel_timer), color = TextSecondary)
                 }
             },
             containerColor = DarkSurface,
@@ -366,15 +366,15 @@ fun MusicPlayScreen(
         var lyricText by remember(showLyricsDialog) { mutableStateOf(rawLyricsText) }
         AlertDialog(
             onDismissRequest = { showLyricsDialog = false },
-            title = { Text("歌词", color = TextPrimary) },
+            title = { Text(stringResource(R.string.play_lyrics_title), color = TextPrimary) },
             text = {
                 Column {
-                    Text("每行格式：[mm:ss.xx] 歌词内容", color = TextHint, fontSize = 12.sp)
+                    Text(stringResource(R.string.play_lyrics_format_hint), color = TextHint, fontSize = 12.sp)
                     Spacer(Modifier.height(8.dp))
                     androidx.compose.material3.OutlinedTextField(
                         value = lyricText,
                         onValueChange = { lyricText = it },
-                        placeholder = { Text("例如：\n[00:00.00] 第一句歌词\n[00:12.34] 第二句歌词", color = TextHint) },
+                        placeholder = { Text(stringResource(R.string.play_lyrics_example), color = TextHint) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(260.dp)
@@ -388,12 +388,12 @@ fun MusicPlayScreen(
                         showLyricsDialog = false
                     }
                 ) {
-                    Text("保存歌词", color = LocalAccentColor.current)
+                    Text(stringResource(R.string.play_save_lyrics), color = LocalAccentColor.current)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLyricsDialog = false }) {
-                    Text("关闭", color = TextSecondary)
+                    Text(stringResource(R.string.common_close), color = TextSecondary)
                 }
             },
             containerColor = DarkSurface,
@@ -409,7 +409,7 @@ fun MusicPlayScreen(
 
         AlertDialog(
             onDismissRequest = { showPlaylistDialog = false },
-            title = { Text("添加到播放列表", color = TextPrimary) },
+            title = { Text(stringResource(R.string.play_add_to_playlist), color = TextPrimary) },
             text = {
                 Column(
                     modifier = Modifier
@@ -420,11 +420,11 @@ fun MusicPlayScreen(
                         onClick = { showCreateDialog = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("➕ 新建播放列表", color = LocalAccentColor.current, fontSize = 14.sp)
+                        Text(stringResource(R.string.play_new_playlist), color = LocalAccentColor.current, fontSize = 14.sp)
                     }
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f))
                     if (playlists.isEmpty()) {
-                        Text("暂无播放列表", color = TextHint, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp))
+                        Text(stringResource(R.string.play_no_playlists), color = TextHint, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp))
                     }
                     playlists.forEach { pl ->
                         Row(
@@ -445,7 +445,7 @@ fun MusicPlayScreen(
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showPlaylistDialog = false }) { Text("关闭", color = TextSecondary) }
+                TextButton(onClick = { showPlaylistDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
@@ -455,12 +455,12 @@ fun MusicPlayScreen(
             var name by remember { mutableStateOf("") }
             AlertDialog(
                 onDismissRequest = { showCreateDialog = false },
-                title = { Text("新建播放列表", color = TextPrimary) },
+                title = { Text(stringResource(R.string.play_create_playlist_title), color = TextPrimary) },
                 text = {
                     androidx.compose.material3.OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        placeholder = { Text("播放列表名称", color = TextHint) },
+                        placeholder = { Text(stringResource(R.string.play_playlist_name), color = TextHint) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -474,9 +474,9 @@ fun MusicPlayScreen(
                             }
                         },
                         enabled = name.isNotBlank()
-                    ) { Text("创建", color = LocalAccentColor.current) }
+                    ) { Text(stringResource(R.string.play_create), color = LocalAccentColor.current) }
                 },
-                dismissButton = { TextButton(onClick = { showCreateDialog = false }) { Text("取消", color = TextSecondary) } },
+                dismissButton = { TextButton(onClick = { showCreateDialog = false }) { Text(stringResource(R.string.common_cancel), color = TextSecondary) } },
                 containerColor = DarkSurface,
                 shape = RoundedCornerShape(16.dp)
             )
@@ -497,14 +497,14 @@ fun MusicPlayScreen(
 
         AlertDialog(
             onDismissRequest = { showEffectsDialog = false },
-            title = { Text("音效器", color = TextPrimary) },
+            title = { Text(stringResource(R.string.play_effects_title), color = TextPrimary) },
             text = {
                 Column(
                     modifier = Modifier
                         .height(420.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Text("场景效果", color = TextSecondary, fontSize = 13.sp)
+                    Text(stringResource(R.string.play_scene_effects), color = TextSecondary, fontSize = 13.sp)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -526,14 +526,14 @@ fun MusicPlayScreen(
                     }
 
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
-                    Text("音量阈值", color = TextSecondary, fontSize = 13.sp)
+                    Text(stringResource(R.string.play_volume_threshold), color = TextSecondary, fontSize = 13.sp)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 6.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        listOf("响度模式", "阈值模式").forEachIndexed { i, label ->
+                        listOf(stringResource(R.string.play_loudness_mode), stringResource(R.string.play_threshold_mode)).forEachIndexed { i, label ->
                             val selected = thresholdMode == i
                             Box(
                                 modifier = Modifier
@@ -549,7 +549,7 @@ fun MusicPlayScreen(
                         }
                     }
                     if (thresholdMode == 0) {
-                        Text("响度 ${if (loudness == 0) "关闭" else "+${loudness / 100}.${(loudness % 100) / 10}dB"}", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+                        Text(stringResource(R.string.play_loudness_value, if (loudness == 0) stringResource(R.string.play_off) else "+${loudness / 100}.${(loudness % 100) / 10}dB"), color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
                         Slider(
                             value = loudness.toFloat(),
                             onValueChange = { viewModel.setLoudnessGain(it.toInt()) },
@@ -558,7 +558,7 @@ fun MusicPlayScreen(
                             colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                         )
                     } else {
-                        Text("最大阈值：${maxThresholdDb} dB（限制过响部分）", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+                        Text(stringResource(R.string.play_max_threshold, maxThresholdDb), color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
                         Slider(
                             value = maxThresholdDb.toFloat(),
                             onValueChange = { viewModel.setMaxThresholdDb(it.toInt()) },
@@ -566,7 +566,7 @@ fun MusicPlayScreen(
                             steps = 39,
                             colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                         )
-                        Text("最小阈值：${minThresholdDb} dB（抑制过弱噪声）", color = TextSecondary, fontSize = 13.sp)
+                        Text(stringResource(R.string.play_min_threshold, minThresholdDb), color = TextSecondary, fontSize = 13.sp)
                         Slider(
                             value = minThresholdDb.toFloat(),
                             onValueChange = { viewModel.setMinThresholdDb(it.toInt()) },
@@ -577,14 +577,14 @@ fun MusicPlayScreen(
                     }
 
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
-                    Text("变速 ${"%.2f".format(playbackSpeed)}x", color = TextSecondary, fontSize = 13.sp)
+                    Text(stringResource(R.string.play_speed, "%.2f".format(playbackSpeed)), color = TextSecondary, fontSize = 13.sp)
                     Slider(
                         value = playbackSpeed,
                         onValueChange = { viewModel.setPlaybackSpeed(it) },
                         valueRange = 0.5f..2f,
                         colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                     )
-                    Text("变调 ${"%.2f".format(playbackPitch)}x", color = TextSecondary, fontSize = 13.sp)
+                    Text(stringResource(R.string.play_pitch, "%.2f".format(playbackPitch)), color = TextSecondary, fontSize = 13.sp)
                     Slider(
                         value = playbackPitch,
                         onValueChange = { viewModel.setPlaybackPitch(it) },
@@ -593,7 +593,7 @@ fun MusicPlayScreen(
                     )
 
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
-                    Text("左右平衡 ${when { balance < -0.05f -> "偏左"; balance > 0.05f -> "偏右"; else -> "居中" }}", color = TextSecondary, fontSize = 13.sp)
+                    Text(stringResource(R.string.play_balance, when { balance < -0.05f -> stringResource(R.string.play_balance_left); balance > 0.05f -> stringResource(R.string.play_balance_right); else -> stringResource(R.string.play_balance_center) }), color = TextSecondary, fontSize = 13.sp)
                     Slider(
                         value = balance,
                         onValueChange = { viewModel.setStereoBalance(it) },
@@ -602,11 +602,11 @@ fun MusicPlayScreen(
                     )
 
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
-                    Text("均衡器（更多频段可在设置中调节）", color = TextHint, fontSize = 12.sp)
-                    val bandLabels = listOf("低音", "中音", "高音")
+                    Text(stringResource(R.string.play_eq_hint), color = TextHint, fontSize = 12.sp)
+                    val bandLabels = listOf(stringResource(R.string.play_eq_low), stringResource(R.string.play_eq_mid), stringResource(R.string.play_eq_high))
                     eqLevels.take(3).forEachIndexed { i, level ->
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
-                            Text(bandLabels.getOrElse(i) { "频段$i" }, color = TextSecondary, fontSize = 12.sp, modifier = Modifier.width(44.dp))
+                            Text(bandLabels.getOrElse(i) { stringResource(R.string.play_band, i) }, color = TextSecondary, fontSize = 12.sp, modifier = Modifier.width(44.dp))
                             Slider(
                                 value = level,
                                 onValueChange = { viewModel.setEqBand(i, it) },
@@ -619,7 +619,7 @@ fun MusicPlayScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showEffectsDialog = false }) { Text("完成", color = LocalAccentColor.current) }
+                TextButton(onClick = { showEffectsDialog = false }) { Text(stringResource(R.string.common_done), color = LocalAccentColor.current) }
             },
             dismissButton = {},
             containerColor = DarkSurface,
@@ -634,17 +634,17 @@ fun MusicPlayScreen(
         var endMs by remember(duration) { mutableStateOf(duration.toFloat()) }
         AlertDialog(
             onDismissRequest = { showSliceDialog = false },
-            title = { Text("切片播放（A-B 循环）", color = TextPrimary) },
+            title = { Text(stringResource(R.string.play_slice_title), color = TextPrimary) },
             text = {
                 Column {
-                    Text("起点 A: ${formatTime(startMs.toLong())}", color = TextSecondary, fontSize = 13.sp)
+                    Text(stringResource(R.string.play_slice_start, formatTime(startMs.toLong())), color = TextSecondary, fontSize = 13.sp)
                     Slider(
                         value = startMs,
                         onValueChange = { startMs = it.coerceAtMost(endMs) },
                         valueRange = 0f..(duration.takeIf { it > 0 } ?: 1L).toFloat(),
                         colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                     )
-                    Text("终点 B: ${formatTime(endMs.toLong())}", color = TextSecondary, fontSize = 13.sp)
+                    Text(stringResource(R.string.play_slice_end, formatTime(endMs.toLong())), color = TextSecondary, fontSize = 13.sp)
                     Slider(
                         value = endMs,
                         onValueChange = { endMs = it.coerceAtLeast(startMs) },
@@ -655,12 +655,12 @@ fun MusicPlayScreen(
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.setSlice(startMs.toLong(), endMs.toLong()); showSliceDialog = false }) {
-                    Text("开始切片", color = LocalAccentColor.current)
+                    Text(stringResource(R.string.play_slice_start_action), color = LocalAccentColor.current)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.clearSlice(); showSliceDialog = false }) {
-                    Text("清除", color = TextSecondary)
+                    Text(stringResource(R.string.play_clear), color = TextSecondary)
                 }
             },
             containerColor = DarkSurface,
@@ -672,7 +672,7 @@ fun MusicPlayScreen(
     if (showToolboxDialog) {
         AlertDialog(
             onDismissRequest = { showToolboxDialog = false },
-            title = { Text("工具箱", color = TextPrimary) },
+            title = { Text(stringResource(R.string.play_toolbox_title), color = TextPrimary) },
             text = {
                 Column(
                     modifier = Modifier
@@ -680,23 +680,23 @@ fun MusicPlayScreen(
                         .verticalScroll(rememberScrollState())
                 ) {
                     val noiseLabel = if (state.noiseActive) {
-                        when (state.noiseType) { "PINK" -> "🌸 粉噪"; "BROWN" -> "🍂 棕噪"; else -> "🔊 白噪" }
-                    } else "🔇 噪音生成"
+                        when (state.noiseType) { "PINK" -> stringResource(R.string.play_noise_pink); "BROWN" -> stringResource(R.string.play_noise_brown); else -> stringResource(R.string.play_noise_white) }
+                    } else stringResource(R.string.play_noise_generate)
                     val spatialLabel = when (state.spatialMode) {
-                        "D3" -> "🎧 3D"; "SWEEP" -> "↔ 扫掠"; "CIRCLE" -> "🔄 环绕"; "WIDE" -> "🌐 扩展"
-                        else -> "🎧 3D 空间音效"
+                        "D3" -> stringResource(R.string.play_spatial_3d); "SWEEP" -> stringResource(R.string.play_spatial_sweep); "CIRCLE" -> stringResource(R.string.play_spatial_circle); "WIDE" -> stringResource(R.string.play_spatial_wide)
+                        else -> stringResource(R.string.play_spatial_3d_off)
                     }
                     val binauralLabel = state.binauralPreset?.name
-                        ?.let { "🧠 双耳节拍（$it）" } ?: "🧠 双耳节拍"
+                        ?.let { stringResource(R.string.play_binaural_preset, it) } ?: stringResource(R.string.play_binaural_full)
 
                     val tools = listOf(
-                        Triple("🌧 环境音", state.playerState.isBackgroundPlaying) { showAmbientDialog = true },
+                        Triple(stringResource(R.string.play_ambient), state.playerState.isBackgroundPlaying) { showAmbientDialog = true },
                         Triple(binauralLabel, state.binauralActive) { showBinauralDialog = true },
                         Triple(noiseLabel, state.noiseActive) { showNoiseDialog = true },
                         Triple(spatialLabel, state.spatialMode != "OFF") { viewModel.cycleSpatialMode() },
-                        Triple("📳 触觉反馈", state.hapticEnabled) { viewModel.toggleHaptic() },
-                        Triple("🌙 淡出", false) { showToolboxDialog = false; viewModel.fadeOut(5000L) },
-                        Triple("⏹ 彻底停止", false) { showToolboxDialog = false; viewModel.stopPlayback() }
+                        Triple(stringResource(R.string.play_haptic_feedback), state.hapticEnabled) { viewModel.toggleHaptic() },
+                        Triple(stringResource(R.string.play_fade_out), false) { showToolboxDialog = false; viewModel.fadeOut(5000L) },
+                        Triple(stringResource(R.string.play_stop_fully), false) { showToolboxDialog = false; viewModel.stopPlayback() }
                     )
                     tools.forEach { (label, active, action) ->
                         Row(
@@ -723,7 +723,7 @@ fun MusicPlayScreen(
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showToolboxDialog = false }) { Text("关闭", color = TextSecondary) }
+                TextButton(onClick = { showToolboxDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
@@ -734,7 +734,7 @@ fun MusicPlayScreen(
     if (showBinauralDialog) {
         AlertDialog(
             onDismissRequest = { showBinauralDialog = false },
-            title = { Text("双耳节拍", color = TextPrimary) },
+            title = { Text(stringResource(R.string.play_binaural_title), color = TextPrimary) },
             text = {
                 Column(
                     modifier = Modifier
@@ -765,7 +765,7 @@ fun MusicPlayScreen(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("音量", color = TextSecondary, fontSize = 12.sp)
+                            Text(stringResource(R.string.common_volume), color = TextSecondary, fontSize = 12.sp)
                             Slider(
                                 value = state.binauralVolume,
                                 onValueChange = { viewModel.setBinauralVolume(it) },
@@ -778,13 +778,13 @@ fun MusicPlayScreen(
                             onClick = { viewModel.stopBinaural(); showBinauralDialog = false },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("■ 停止节拍", color = ErrorRed, fontSize = 14.sp)
+                            Text(stringResource(R.string.play_stop_binaural), color = ErrorRed, fontSize = 14.sp)
                         }
                     }
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showBinauralDialog = false }) { Text("关闭", color = TextSecondary) } },
+            dismissButton = { TextButton(onClick = { showBinauralDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
         )
@@ -794,14 +794,15 @@ fun MusicPlayScreen(
     if (showNoiseDialog) {
         AlertDialog(
             onDismissRequest = { showNoiseDialog = false },
-            title = { Text("噪音生成", color = TextPrimary) },
+            title = { Text(stringResource(R.string.play_noise_title), color = TextPrimary) },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     listOf(
-                        "WHITE" to "白噪音 — 均匀频率，助专注",
-                        "PINK" to "粉红噪音 — 低频更强，助睡眠",
-                        "BROWN" to "棕色噪音 — 更深沉，助放松"
-                    ).forEach { (type, desc) ->
+                        "WHITE" to R.string.play_noise_white_desc,
+                        "PINK" to R.string.play_noise_pink_desc,
+                        "BROWN" to R.string.play_noise_brown_desc
+                    ).forEach { (type, descRes) ->
+                        val desc = stringResource(descRes)
                         val isActive = state.noiseActive && state.noiseType == type
                         TextButton(
                             onClick = { viewModel.toggleNoise(com.asmrhelper.player.NoiseType.valueOf(type)) },
@@ -820,7 +821,7 @@ fun MusicPlayScreen(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("音量", color = TextSecondary, fontSize = 12.sp)
+                            Text(stringResource(R.string.common_volume), color = TextSecondary, fontSize = 12.sp)
                             Slider(
                                 value = state.noiseVolume,
                                 onValueChange = { viewModel.setNoiseVolume(it) },
@@ -833,13 +834,13 @@ fun MusicPlayScreen(
                             onClick = { viewModel.stopNoise(); showNoiseDialog = false },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("■ 停止噪音", color = ErrorRed, fontSize = 14.sp)
+                            Text(stringResource(R.string.play_stop_noise), color = ErrorRed, fontSize = 14.sp)
                         }
                     }
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showNoiseDialog = false }) { Text("关闭", color = TextSecondary) } },
+            dismissButton = { TextButton(onClick = { showNoiseDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
         )
@@ -849,7 +850,7 @@ fun MusicPlayScreen(
     if (showAmbientDialog) {
         AlertDialog(
             onDismissRequest = { showAmbientDialog = false },
-            title = { Text("环境音选择", color = TextPrimary) },
+            title = { Text(stringResource(R.string.play_ambient_title), color = TextPrimary) },
             text = {
                 Column(
                     modifier = Modifier
@@ -857,7 +858,7 @@ fun MusicPlayScreen(
                         .height(360.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Text("内置音效", color = TextHint, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 4.dp))
+                    Text(stringResource(R.string.play_builtin_sounds), color = TextHint, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 4.dp))
                     com.asmrhelper.domain.model.AmbientSource.BUILT_IN.forEach { source ->
                         val isBuiltInSelected = state.selectedAmbientPath == source.sourcePath
                         val isBuiltInPlaying = state.playerState.isBackgroundPlaying && isBuiltInSelected
@@ -872,7 +873,7 @@ fun MusicPlayScreen(
                             ) {
                                 Text(source.label, color = if (isBuiltInSelected) LocalAccentColor.current else TextSecondary, fontSize = 14.sp)
                                 Text(
-                                    text = when { isBuiltInPlaying -> "▶ 播放中"; isBuiltInSelected -> "已选"; else -> "" },
+                                    text = when { isBuiltInPlaying -> stringResource(R.string.play_playing); isBuiltInSelected -> stringResource(R.string.play_selected); else -> "" },
                                     color = if (isBuiltInPlaying) LocalAccentColor.current else TextHint,
                                     fontSize = 11.sp
                                 )
@@ -882,10 +883,10 @@ fun MusicPlayScreen(
 
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
 
-                    Text("导入的环境音", color = TextHint, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 4.dp))
+                    Text(stringResource(R.string.play_imported_ambient), color = TextHint, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 4.dp))
 
                     if (state.ambientAudios.isEmpty()) {
-                        Text("暂无环境音，请在设置中导入", color = TextHint, fontSize = 14.sp, modifier = Modifier.padding(vertical = 8.dp))
+                        Text(stringResource(R.string.play_no_ambient), color = TextHint, fontSize = 14.sp, modifier = Modifier.padding(vertical = 8.dp))
                     }
                     state.ambientAudios.forEach { path ->
                         val name = path.substringAfterLast('/')
@@ -909,7 +910,7 @@ fun MusicPlayScreen(
                             ) {
                                 Text(name, color = if (isSelected) LocalAccentColor.current else TextSecondary, fontSize = 14.sp)
                                 Text(
-                                    text = when { isPlaying -> "▶ 播放中"; isSelected -> "已选"; else -> "" },
+                                    text = when { isPlaying -> stringResource(R.string.play_playing); isSelected -> stringResource(R.string.play_selected); else -> "" },
                                     color = if (isPlaying) LocalAccentColor.current else TextHint,
                                     fontSize = 11.sp
                                 )
@@ -926,8 +927,8 @@ fun MusicPlayScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("循环播放", color = TextSecondary, fontSize = 14.sp)
-                            Text("开启后环境音将反复播放", color = TextHint, fontSize = 11.sp)
+                            Text(stringResource(R.string.play_ambient_loop), color = TextSecondary, fontSize = 14.sp)
+                            Text(stringResource(R.string.play_ambient_loop_desc), color = TextHint, fontSize = 11.sp)
                         }
                         Switch(
                             checked = state.playerState.ambientLoopEnabled,
@@ -945,13 +946,13 @@ fun MusicPlayScreen(
                             onClick = { viewModel.toggleBackground(); showAmbientDialog = false },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("■ 停止环境音", color = ErrorRed, fontSize = 14.sp)
+                            Text(stringResource(R.string.play_stop_ambient), color = ErrorRed, fontSize = 14.sp)
                         }
                     }
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showAmbientDialog = false }) { Text("关闭", color = TextSecondary) } },
+            dismissButton = { TextButton(onClick = { showAmbientDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
         )
