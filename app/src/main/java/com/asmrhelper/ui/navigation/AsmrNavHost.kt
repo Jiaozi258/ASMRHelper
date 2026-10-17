@@ -1,8 +1,11 @@
 package com.asmrhelper.ui.navigation
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
@@ -13,8 +16,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.widget.Toast
@@ -22,6 +27,7 @@ import com.asmrhelper.domain.model.PlaybackMode
 import com.asmrhelper.ui.background.BackgroundGalleryScreen
 import com.asmrhelper.ui.components.BatteryOptimizationDialog
 import com.asmrhelper.ui.components.MiniPlayer
+import com.asmrhelper.ui.components.ModeToggleButton
 import com.asmrhelper.ui.discover.DiscoverScreen
 import com.asmrhelper.ui.history.HistoryScreen
 import com.asmrhelper.ui.library.LibraryScreen
@@ -172,33 +178,54 @@ private fun PlayPage(
         null -> {
             // 沉浸式播放页始终深色（暗色壁纸 + 浅色文字），不随全局浅色/深色主题切换
             CompositionLocalProvider(LocalAppColors provides DarkAppColors) {
-                if (mode == PlaybackMode.ASMR) {
-                    // ASMR 模式：经典播放页（环境音/白噪音/催眠/双耳节拍，无歌词无工具箱）
-                    PlayScreen(
-                        onNavigateToPlaylist = { onOpenSubScreen(SubScreen.Playlist) },
-                        onNavigateToLibrary = { tabIndex ->
-                            onSetLibraryTab(tabIndex)
-                            onOpenSubScreen(SubScreen.Library)
+                val navigateToPlaylist = { onOpenSubScreen(SubScreen.Playlist) }
+                val navigateToLibrary = { tabIndex: Int ->
+                    onSetLibraryTab(tabIndex)
+                    onOpenSubScreen(SubScreen.Library)
+                }
+                val navigateToBackground = { onOpenSubScreen(SubScreen.BackgroundGallery) }
+                val navigateToSlideshow = { onOpenSubScreen(SubScreen.Slideshow) }
+                val navigateToTriggerPad = { onOpenSubScreen(SubScreen.TriggerPad) }
+                val navigateToSleepJournal = { onOpenSubScreen(SubScreen.SleepJournal) }
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // 两套播放页淡入淡出切换，避免模式切换时突兀跳变
+                    Crossfade(targetState = mode, label = "play_mode") { currentMode ->
+                        if (currentMode == PlaybackMode.ASMR) {
+                            // ASMR 模式：经典播放页（环境音/白噪音/催眠/双耳节拍，无歌词无工具箱）
+                            PlayScreen(
+                                onNavigateToPlaylist = navigateToPlaylist,
+                                onNavigateToLibrary = navigateToLibrary,
+                                onNavigateToBackground = navigateToBackground,
+                                onNavigateToSettings = onOpenSettings,
+                                onNavigateToSlideshow = navigateToSlideshow,
+                                onNavigateToTriggerPad = navigateToTriggerPad,
+                                onNavigateToSleepJournal = navigateToSleepJournal
+                            )
+                        } else {
+                            // MUSIC 模式：沉浸式播放页（歌词/工具箱/切片）
+                            PlayScreenV2(
+                                onNavigateToPlaylist = navigateToPlaylist,
+                                onNavigateToLibrary = navigateToLibrary,
+                                onNavigateToBackground = navigateToBackground,
+                                onNavigateToSettings = onOpenSettings,
+                                onNavigateToSlideshow = navigateToSlideshow,
+                                onNavigateToTriggerPad = navigateToTriggerPad,
+                                onNavigateToSleepJournal = navigateToSleepJournal
+                            )
+                        }
+                    }
+                    // 左上角模式切换按钮：覆盖在两页之上，位置/颜色一致，图标随模式淡入淡出
+                    ModeToggleButton(
+                        mode = mode,
+                        onToggle = {
+                            val next = (mode.ordinal + 1) % PlaybackMode.entries.size
+                            playViewModel.setPlaybackMode(next)
                         },
-                        onNavigateToBackground = { onOpenSubScreen(SubScreen.BackgroundGallery) },
-                        onNavigateToSettings = onOpenSettings,
-                        onNavigateToSlideshow = { onOpenSubScreen(SubScreen.Slideshow) },
-                        onNavigateToTriggerPad = { onOpenSubScreen(SubScreen.TriggerPad) },
-                        onNavigateToSleepJournal = { onOpenSubScreen(SubScreen.SleepJournal) }
-                    )
-                } else {
-                    // MUSIC 模式：沉浸式播放页（歌词/工具箱/切片）
-                    PlayScreenV2(
-                        onNavigateToPlaylist = { onOpenSubScreen(SubScreen.Playlist) },
-                        onNavigateToLibrary = { tabIndex ->
-                            onSetLibraryTab(tabIndex)
-                            onOpenSubScreen(SubScreen.Library)
-                        },
-                        onNavigateToBackground = { onOpenSubScreen(SubScreen.BackgroundGallery) },
-                        onNavigateToSettings = onOpenSettings,
-                        onNavigateToSlideshow = { onOpenSubScreen(SubScreen.Slideshow) },
-                        onNavigateToTriggerPad = { onOpenSubScreen(SubScreen.TriggerPad) },
-                        onNavigateToSleepJournal = { onOpenSubScreen(SubScreen.SleepJournal) }
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .statusBarsPadding()
+                            .padding(top = 6.dp, start = 16.dp)
                     )
                 }
             }

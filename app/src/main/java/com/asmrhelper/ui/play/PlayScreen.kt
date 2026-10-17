@@ -24,15 +24,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.RadioButtonChecked
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,7 +53,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -91,7 +87,6 @@ import kotlin.math.pow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlin.random.Random
 import com.asmrhelper.domain.model.LoopMode
-import com.asmrhelper.domain.model.PlaybackMode
 import com.asmrhelper.player.BinauralPreset
 import com.asmrhelper.ui.components.AsmrDropdownMenu
 import com.asmrhelper.ui.components.HypnosisBackground
@@ -108,7 +103,6 @@ import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
-import com.asmrhelper.ui.theme.pressScale
 
 @Composable
 fun PlayScreen(
@@ -123,8 +117,6 @@ fun PlayScreen(
     onNavigateToSleepJournal: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val playbackMode by viewModel.playbackMode.collectAsStateWithLifecycle()
-    val mode = PlaybackMode.entries.getOrElse(playbackMode) { PlaybackMode.ASMR }
     var showTimerDialog by remember { mutableStateOf(false) }
     var breathingGuide by remember { mutableStateOf(false) }
     var showBinauralDialog by remember { mutableStateOf(false) }
@@ -164,23 +156,6 @@ fun PlayScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(Unit) {
-                        var totalDragX = 0f
-                        detectHorizontalDragGestures(
-                            onDragEnd = {
-                                if (totalDragX > 150f) {
-                                    viewModel.previous()
-                                } else if (totalDragX < -150f) {
-                                    viewModel.next()
-                                }
-                                totalDragX = 0f
-                            },
-                            onDragCancel = { totalDragX = 0f },
-                            onHorizontalDrag = { _, dragAmount ->
-                                totalDragX += dragAmount
-                            }
-                        )
-                    }
                     .pointerInput(state.hypnosisEnabled) {
                         if (state.hypnosisEnabled) {
                             detectTapGestures { viewModel.showHypnosisUi() }
@@ -218,32 +193,6 @@ fun PlayScreen(
                 .statusBarsPadding()
                 .padding(top = 6.dp)
         )
-
-        // 左上角模式切换按钮：空心圆内一个小点（ASMR=圆环+点，MUSIC=空心圆）
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(top = 6.dp, start = 16.dp)
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(DarkSurfaceVariant)
-                .pressScale {
-                    val next = (mode.ordinal + 1) % PlaybackMode.entries.size
-                    viewModel.setPlaybackMode(next)
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (mode == PlaybackMode.ASMR)
-                    Icons.Filled.RadioButtonChecked
-                else
-                    Icons.Filled.RadioButtonUnchecked,
-                contentDescription = if (mode == PlaybackMode.ASMR) "切换到 MUSIC 模式" else "切换到 ASMR 模式",
-                tint = if (mode == PlaybackMode.ASMR) LocalAccentColor.current else TextSecondary,
-                modifier = Modifier.size(22.dp)
-            )
-        }
 
         // 右上角下拉菜单
         AsmrDropdownMenu(

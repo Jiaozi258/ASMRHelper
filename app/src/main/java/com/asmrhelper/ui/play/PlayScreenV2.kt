@@ -19,7 +19,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -37,8 +36,6 @@ import androidx.compose.material.icons.filled.Replay30
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
-import androidx.compose.material.icons.filled.RadioButtonChecked
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -86,7 +83,6 @@ import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.ui.theme.appleClickable
-import com.asmrhelper.ui.theme.pressScale
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -148,29 +144,8 @@ fun PlayScreenV2(
                     .padding(top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 左上角模式切换按钮：空心圆内一个小点（ASMR=圆环+点，MUSIC=空心圆）
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .background(DarkSurfaceVariant)
-                        .pressScale {
-                            val next = (mode.ordinal + 1) % PlaybackMode.entries.size
-                            viewModel.setPlaybackMode(next)
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (mode == PlaybackMode.ASMR)
-                            Icons.Filled.RadioButtonChecked
-                        else
-                            Icons.Filled.RadioButtonUnchecked,
-                        contentDescription = if (mode == PlaybackMode.ASMR) "切换到 MUSIC 模式" else "切换到 ASMR 模式",
-                        tint = if (mode == PlaybackMode.ASMR) LocalAccentColor.current else TextSecondary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-                Spacer(Modifier.width(8.dp))
+                // 为左上角悬浮模式切换按钮预留空间
+                Spacer(Modifier.width(42.dp))
 
                 val timerActive = state.timerActive
                 val timerLabel = if (timerActive) {
