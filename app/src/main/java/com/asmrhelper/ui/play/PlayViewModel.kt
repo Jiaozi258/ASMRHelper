@@ -17,6 +17,9 @@ import com.asmrhelper.data.local.db.entity.BookmarkEntity
 import com.asmrhelper.data.local.db.entity.SceneEntity
 import com.asmrhelper.data.repository.BookmarkRepository
 import com.asmrhelper.data.repository.SceneRepository
+import com.asmrhelper.data.music.MusicSourceManager
+import com.asmrhelper.data.music.isRemoteSong
+import com.asmrhelper.data.music.toLrcLines
 import com.asmrhelper.player.AudioVisualizerController
 import com.asmrhelper.player.BinauralBeatEngine
 import com.asmrhelper.player.EqualizerController
@@ -121,7 +124,8 @@ class PlayViewModel @Inject constructor(
     private val sceneRepository: SceneRepository,
     private val bookmarkRepository: BookmarkRepository,
     private val equalizerController: EqualizerController,
-    private val sceneEffectsController: SceneEffectsController
+    private val sceneEffectsController: SceneEffectsController,
+    private val musicSourceManager: MusicSourceManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayUiState())
@@ -436,11 +440,20 @@ class PlayViewModel @Inject constructor(
                 _rawLyricsText.value = ""
                 return@launch
             }
-            val text = withContext(Dispatchers.IO) { LyricsStore.loadLyrics(context, audio.filePath) }
-            val lines = if (text.isNullOrBlank()) emptyList() else LrcParser.parse(text)
-            _lyrics.value = lines
-            _hasLyrics.value = lines.isNotEmpty()
-            _rawLyricsText.value = text ?: ""
+            if (audio.isRemoteSong()) {
+                musicSourceManager.activeSource.value.getLyric(audio.id.toString()).collect { remote ->
+                    val lines = remote.toLrcLines()
+                    _lyrics.value = lines
+                    _hasLyrics.value = lines.isNotEmpty()
+                    _rawLyricsText.value = remote.rawText
+                }
+            } else {
+                val text = withContext(Dispatchers.IO) { LyricsStore.loadLyrics(context, audio.filePath) }
+                val lines = if (text.isNullOrBlank()) emptyList() else LrcParser.parse(text)
+                _lyrics.value = lines
+                _hasLyrics.value = lines.isNotEmpty()
+                _rawLyricsText.value = text ?: ""
+            }
         }
     }
 
