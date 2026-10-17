@@ -1,0 +1,25 @@
+package com.asmrhelper.util
+
+/** 封面双色调：由主色派生出「深色主调 + 红蓝交换的次调」，形成双色渐变。 */
+object Duotone {
+    data class DuotoneColors(val primary: Long, val secondary: Long)
+
+    fun duotone(seed: Long): DuotoneColors =
+        DuotoneColors(darken(seed, 55), swapRedBlue(seed))
+
+    fun darken(argb: Long, percent: Int): Long {
+        val a = (argb shr 24) and 0xFF
+        val r = ((argb shr 16) and 0xFF) * percent / 100
+        val g = ((argb shr 8) and 0xFF) * percent / 100
+        val b = (argb and 0xFF) * percent / 100
+        return (a.toLong() shl 24) or (r.toLong() shl 16) or (g.toLong() shl 8) or b.toLong()
+    }
+
+    fun swapRedBlue(argb: Long): Long {
+        val a = (argb shr 24) and 0xFF
+        val r = (argb shr 16) and 0xFF
+        val g = (argb shr 8) and 0xFF
+        val b = argb and 0xFF
+        return (a.toLong() shl 24) or (b.toLong() shl 16) or (g.toLong() shl 8) or r.toLong()
+    }
+}

@@ -80,6 +80,7 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
+    implementation(libs.palette.ktx)
 
     // Networking (音源层 HTTP)
     implementation(libs.okhttp)
