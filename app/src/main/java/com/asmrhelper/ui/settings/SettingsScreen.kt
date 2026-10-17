@@ -1,7 +1,9 @@
 package com.asmrhelper.ui.settings
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -91,6 +93,7 @@ import com.asmrhelper.ui.components.HypnosisBgType
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.ControlWhite
 import com.asmrhelper.util.BatteryOptimizationHelper
+import com.asmrhelper.util.GITHUB_URL
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -1757,6 +1760,26 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
             HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
 
             AboutRow(label = "开源许可", value = "Kotlin (Apache 2.0)\nAndroid (Apache 2.0)\nMaterial3 (Apache 2.0)")
+
+            HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL)))
+                    }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("GitHub 仓库", color = TextPrimary, fontSize = 14.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("JiaoZi258/ASMRHelper", color = TextSecondary, fontSize = 13.sp)
+                    Spacer(Modifier.width(4.dp))
+                    Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
+                }
+            }
         }
     }
 }

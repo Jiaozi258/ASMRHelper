@@ -1,8 +1,11 @@
 package com.asmrhelper.ui.profile
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Brush
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Image
@@ -68,6 +72,7 @@ import com.asmrhelper.ui.theme.ErrorRed
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
+import com.asmrhelper.util.GITHUB_URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -382,6 +387,59 @@ fun ProfileScreen(
                     color = LocalAccentColor.current
                 )
                 Spacer(Modifier.weight(1f))
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // ═══ 关于 ═══════════════════════════════════
+
+            val versionName = remember {
+                try {
+                    context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+                } catch (_: Exception) {
+                    "1.0.0"
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("版本", color = TextPrimary, fontSize = 14.sp)
+                        Text("ASMRHelper v$versionName", color = TextSecondary, fontSize = 13.sp)
+                    }
+
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL)))
+                            }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("GitHub 仓库", color = TextPrimary, fontSize = 14.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("JiaoZi258/ASMRHelper", color = TextSecondary, fontSize = 13.sp)
+                            Spacer(Modifier.width(4.dp))
+                            Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
             }
 
             Spacer(Modifier.height(16.dp))
