@@ -14,12 +14,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.sin
 
-enum class SpatialMode(val label: String) {
-    OFF("关闭"),
-    D3("3D立体"),
-    SWEEP("左右扫掠"),
-    CIRCLE("环绕旋转"),
-    WIDE("空间扩展")
+enum class SpatialMode {
+    OFF,
+    D3,
+    SWEEP,
+    CIRCLE,
+    WIDE
 }
 
 @Singleton

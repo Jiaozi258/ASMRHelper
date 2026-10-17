@@ -507,7 +507,7 @@ fun ProfileScreen(
             onDismissRequest = { logoutConfig = null },
             containerColor = DarkSurface,
             title = { Text(stringResource(R.string.profile_logout), color = TextPrimary) },
-            text = { Text(stringResource(R.string.profile_logout_confirm, config.displayName), color = TextSecondary) },
+            text = { Text(stringResource(R.string.profile_logout_confirm, stringResource(config.displayNameRes)), color = TextSecondary) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.musicSourceFor(config).logout()
@@ -577,7 +577,7 @@ private fun MusicPlatformRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(config.displayName, color = TextPrimary, fontSize = 14.sp)
+        Text(stringResource(config.displayNameRes), color = TextPrimary, fontSize = 14.sp)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 if (loggedIn) stringResource(R.string.profile_logged_in) else stringResource(R.string.profile_not_logged_in),

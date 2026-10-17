@@ -62,7 +62,7 @@ fun MusicLoginDialog(source: MusicSource, onDismiss: () -> Unit) {
         containerColor = DarkSurface,
         title = {
             Column {
-                Text(source.displayName, color = TextPrimary)
+                Text(stringResource(source.displayNameRes), color = TextPrimary)
                 if (hasTabs) {
                     Spacer(Modifier.height(12.dp))
                     TabRow(

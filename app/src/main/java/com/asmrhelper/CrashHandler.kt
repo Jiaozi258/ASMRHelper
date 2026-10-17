@@ -35,9 +35,9 @@ object CrashHandler {
             val crashText = crashFile.readText()
             crashFile.delete()
             AlertDialog.Builder(activity)
-                .setTitle("上次崩溃日志")
+                .setTitle(activity.getString(R.string.crash_log_title))
                 .setMessage(crashText.take(2000))
-                .setPositiveButton("关闭", null)
+                .setPositiveButton(activity.getString(R.string.common_close), null)
                 .show()
         }
     }

@@ -17,10 +17,10 @@ import kotlin.math.exp
 import kotlin.math.sqrt
 import kotlin.random.Random
 
-enum class NoiseType(val label: String) {
-    WHITE("白噪音"),
-    PINK("粉红噪音"),
-    BROWN("棕色噪音")
+enum class NoiseType {
+    WHITE,
+    PINK,
+    BROWN
 }
 
 @Singleton

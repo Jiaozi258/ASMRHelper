@@ -17,7 +17,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.PlaybackMode
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.LocalAccentColor
@@ -35,7 +37,7 @@ fun ModeToggleButton(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val description = if (mode == PlaybackMode.ASMR) "切换到 MUSIC 模式" else "切换到 ASMR 模式"
+    val description = if (mode == PlaybackMode.ASMR) stringResource(R.string.mode_toggle_to_music) else stringResource(R.string.mode_toggle_to_asmr)
     Box(
         modifier = modifier
             .size(34.dp)

@@ -2,6 +2,7 @@ package com.asmrhelper.player
 
 import android.content.Context
 import android.media.MediaMetadataRetriever
+import com.asmrhelper.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -57,7 +58,7 @@ class VideoAudioExtractor @Inject constructor(
 
     enum class InitResult { OK }
 
-    fun getLastError(): String = lastError ?: "未知错误"
+    fun getLastError(): String = lastError ?: context.getString(R.string.video_extract_unknown_error)
 
     companion object {
         private const val CONNECT_TIMEOUT = 15_000
@@ -114,7 +115,7 @@ class VideoAudioExtractor @Inject constructor(
                 "youtube" -> extractYoutubeAudio(url, platform, onProgress)
                 "douyin" -> extractDouyinAudio(url, platform, onProgress)
                 else -> {
-                    lastError = "不支持的平台，请手动选择 (B站/YouTube/抖音)"
+                    lastError = context.getString(R.string.video_extract_unsupported_platform)
                     null
                 }
             }
@@ -131,11 +132,11 @@ class VideoAudioExtractor @Inject constructor(
     private fun extractBilibiliInfo(url: String, platform: String): VideoInfo? {
         val resolvedUrl = if ("b23.tv" in url) resolveRedirect(url) ?: return null else url
         val bvid = extractBvId(resolvedUrl)
-            ?: run { lastError = "无法识别B站视频ID (BV号)"; return null }
+            ?: run { lastError = context.getString(R.string.video_extract_bvid_failed); return null }
         val resp = bilibiliApi("x/web-interface/view", "bvid=$bvid") ?: return null
         val data = resp.optJSONObject("data")
-            ?: run { lastError = "B站API返回数据异常"; return null }
-        val title = data.optString("title", "未知视频")
+            ?: run { lastError = context.getString(R.string.video_extract_bili_api_abnormal); return null }
+        val title = data.optString("title", context.getString(R.string.video_extract_unknown_video))
         val dur = data.optLong("duration", 0L)
         lastError = null
         return VideoInfo(title = title, platform = platform, durationMs = dur * 1000)
@@ -149,25 +150,25 @@ class VideoAudioExtractor @Inject constructor(
         android.util.Log.d("Extractor", "B站提取开始: url=$url platform=$platform")
         val resolvedUrl = if ("b23.tv" in url) resolveRedirect(url) ?: return null else url
         val bvid = extractBvId(resolvedUrl)
-            ?: run { lastError = "无法识别B站视频ID (BV号)"; return null }
+            ?: run { lastError = context.getString(R.string.video_extract_bvid_failed); return null }
 
         android.util.Log.d("Extractor", "B站BV号: $bvid")
         onProgress(0f)
         val infoResp = bilibiliApi("x/web-interface/view", "bvid=$bvid") ?: return null
         val data = infoResp.optJSONObject("data")
-            ?: run { lastError = "B站API未返回视频数据（视频可能已删除或私密）"; return null }
-        val title = data.optString("title", "未知视频")
+            ?: run { lastError = context.getString(R.string.video_extract_bili_no_data); return null }
+        val title = data.optString("title", context.getString(R.string.video_extract_unknown_video))
         val cid = data.optLong("cid", -1L)
         val durSec = data.optLong("duration", 0L)
         android.util.Log.d("Extractor", "B站视频: title=$title cid=$cid dur=${durSec}s")
-        if (cid < 0) { lastError = "B站API未返回分P信息"; return null }
+        if (cid < 0) { lastError = context.getString(R.string.video_extract_bili_no_part); return null }
 
         val playResp = bilibiliApi("x/player/playurl", "bvid=$bvid&cid=$cid&fnval=16&qn=0&fnver=0&fourk=1")
             ?: return null
         val dash = playResp.optJSONObject("data")?.optJSONObject("dash")
         val audioArray: JSONArray? = dash?.optJSONArray("audio")
         if (audioArray == null || audioArray.length() == 0) {
-            lastError = "该视频没有可提取的音频流（可能需要大会员）"
+            lastError = context.getString(R.string.video_extract_no_audio_stream)
             android.util.Log.e("Extractor", "B站无音频流: dash=$dash")
             return null
         }
@@ -177,7 +178,7 @@ class VideoAudioExtractor @Inject constructor(
             val backups = audioItem.optJSONArray("backupUrl")
             if (backups != null && backups.length() > 0) audioUrl = backups.getString(0)
         }
-        if (audioUrl.isEmpty()) { lastError = "音频流地址为空"; return null }
+        if (audioUrl.isEmpty()) { lastError = context.getString(R.string.video_extract_audio_url_empty); return null }
 
         android.util.Log.d("Extractor", "B站音频URL: ${audioUrl.take(80)}...")
         val dir = outputDir(platform)
@@ -261,7 +262,7 @@ class VideoAudioExtractor @Inject constructor(
             conn.disconnect()
             if (code !in 200..299 || body.isBlank()) {
                 android.util.Log.e("Extractor", "B站API HTTP错误: $code, body=${body.take(200)}")
-                lastError = "B站API HTTP $code"; return null
+                lastError = context.getString(R.string.video_extract_bili_api_http, code); return null
             }
             android.util.Log.d("Extractor", "B站API body前200字符: ${body.take(200)}")
             val json = JSONObject(body)
@@ -269,9 +270,11 @@ class VideoAudioExtractor @Inject constructor(
             if (apiCode != 0) {
                 val msg = json.optString("message", "")
                 lastError = when (apiCode) {
-                    -404 -> "视频不存在或已删除"; -403 -> "无权访问该视频"
-                    62002 -> "视频不可见"; 62004 -> "视频不存在"
-                    else -> "B站API ($apiCode): $msg".take(150)
+                    -404 -> context.getString(R.string.video_extract_not_found)
+                    -403 -> context.getString(R.string.video_extract_no_access)
+                    62002 -> context.getString(R.string.video_extract_not_visible)
+                    62004 -> context.getString(R.string.video_extract_not_exist)
+                    else -> context.getString(R.string.video_extract_bili_api_code, apiCode, msg).take(150)
                 }
                 android.util.Log.e("Extractor", "B站API业务错误: code=$apiCode, $lastError")
                 return null
@@ -279,15 +282,15 @@ class VideoAudioExtractor @Inject constructor(
             json
         } catch (e: UnknownHostException) {
             android.util.Log.e("Extractor", "B站DNS不可达: ${e.message}")
-            lastError = "无法连接B站服务器: ${e.message}"; null
+            lastError = context.getString(R.string.video_extract_bili_unreachable, e.message); null
         }
         catch (e: SocketTimeoutException) {
             android.util.Log.e("Extractor", "B站超时: ${e.message}")
-            lastError = "连接B站超时"; null
+            lastError = context.getString(R.string.video_extract_bili_timeout); null
         }
         catch (e: IOException) {
             android.util.Log.e("Extractor", "B站网络错误: ${e.message}")
-            lastError = "网络错误: ${e.message?.take(120)}"; null
+            lastError = context.getString(R.string.video_extract_network_error, e.message?.take(120)); null
         }
     }
 
@@ -297,11 +300,11 @@ class VideoAudioExtractor @Inject constructor(
 
     private fun extractYoutubeInfo(url: String, platform: String): VideoInfo? {
         val videoId = extractYoutubeId(url)
-            ?: run { lastError = "无法识别YouTube视频ID"; return null }
+            ?: run { lastError = context.getString(R.string.video_extract_youtube_id_failed); return null }
         // YouTube in China: try Invidious/Piped proxies. If all fail, tell user.
         val resp = invidiousApi("videos/$videoId?fields=title,lengthSeconds")
         if (resp != null) {
-            val title = resp.optString("title", "未知视频")
+            val title = resp.optString("title", context.getString(R.string.video_extract_unknown_video))
             val dur = resp.optLong("lengthSeconds", 0L)
             lastError = null
             return VideoInfo(title = title, platform = platform, durationMs = dur * 1000)
@@ -316,7 +319,7 @@ class VideoAudioExtractor @Inject constructor(
         onProgress: (Float) -> Unit
     ): ExtractionResult? {
         val videoId = extractYoutubeId(url)
-            ?: run { lastError = "无法识别YouTube视频ID"; return null }
+            ?: run { lastError = context.getString(R.string.video_extract_youtube_id_failed); return null }
 
         onProgress(0f)
 
@@ -338,10 +341,10 @@ class VideoAudioExtractor @Inject constructor(
         resp: JSONObject, videoId: String, url: String, platform: String,
         onProgress: (Float) -> Unit
     ): ExtractionResult? {
-        val title = resp.optString("title", "未知视频")
+        val title = resp.optString("title", context.getString(R.string.video_extract_unknown_video))
         val durSec = resp.optLong("lengthSeconds", 0L)
         val formats = resp.optJSONArray("adaptiveFormats")
-            ?: run { lastError = "代理API未返回媒体流"; return null }
+            ?: run { lastError = context.getString(R.string.video_extract_proxy_no_stream); return null }
 
         // Best audio itags: 140 (m4a 128k), 251 (opus 160k), 139 (m4a 48k)
         val preferredItags = setOf("140", "251", "139", "140", "251", "139")
@@ -359,7 +362,7 @@ class VideoAudioExtractor @Inject constructor(
             }
             if (!audioUrl.isNullOrEmpty()) break
         }
-        if (audioUrl.isNullOrEmpty()) { lastError = "未找到可用的音频流 (itag 140/251/139)"; return null }
+        if (audioUrl.isNullOrEmpty()) { lastError = context.getString(R.string.video_extract_no_audio_itag); return null }
 
         val dir = outputDir(platform)
         val outputFile = File(dir, safeFileName(title) + ".m4a")
@@ -403,22 +406,23 @@ class VideoAudioExtractor @Inject constructor(
                         }
                         // Piped doesn't include adaptiveFormats in basic video response.
                         // We need to convert Piped format to look like Invidious format.
-                        errors.add("$baseUrl → Piped格式需二次请求")
+                        errors.add(context.getString(R.string.video_extract_piped_needs_second, baseUrl))
                     }
-                    errors.add("$baseUrl → 响应缺少必要字段")
+                    errors.add(context.getString(R.string.video_extract_missing_field, baseUrl))
                 } else {
-                    errors.add("$baseUrl → HTTP $code")
+                    errors.add(context.getString(R.string.video_extract_http, baseUrl, code))
                 }
-            } catch (e: UnknownHostException) { errors.add("$baseUrl → DNS不可达") }
-            catch (e: SocketTimeoutException) { errors.add("$baseUrl → 超时") }
+            } catch (e: UnknownHostException) { errors.add(context.getString(R.string.video_extract_dns_unreachable, baseUrl)) }
+            catch (e: SocketTimeoutException) { errors.add(context.getString(R.string.video_extract_timeout, baseUrl)) }
             catch (e: Exception) { errors.add("$baseUrl → ${e.javaClass.simpleName}") }
         }
-        lastError = buildString {
-            append("YouTube 提取失败 — 所有代理节点在境内均不可达。\nYouTube 需要 VPN 才能使用。\n\n")
-            append("已尝试 ${errors.size} 个节点:")
-            errors.take(4).forEach { append("\n• $it") }
-            if (errors.size > 4) append("\n• ... 还有 ${errors.size - 4} 个")
+        val shownNodes = errors.take(4).joinToString("\n") { "• $it" }
+        val nodeList = if (errors.size > 4) {
+            shownNodes + "\n• " + context.getString(R.string.video_extract_more_nodes, errors.size - 4)
+        } else {
+            shownNodes
         }
+        lastError = context.getString(R.string.video_extract_youtube_failed, errors.size, nodeList)
         return null
     }
 
@@ -478,7 +482,7 @@ class VideoAudioExtractor @Inject constructor(
             conn.disconnect()
 
             if (code !in 200..299) {
-                lastError = "抖音提取服务 HTTP $code"
+                lastError = context.getString(R.string.video_extract_douyin_http, code)
                 return null
             }
             val json = JSONObject(body)
@@ -486,14 +490,14 @@ class VideoAudioExtractor @Inject constructor(
             if (status == "error") {
                 val errCode = json.optJSONObject("error")?.optString("code", "unknown") ?: "unknown"
                 lastError = when (errCode) {
-                    "error.api.link" -> "抖音链接无效"
-                    "error.api.rate" -> "请求太频繁，稍后重试"
-                    else -> "抖音提取失败: $errCode"
+                    "error.api.link" -> context.getString(R.string.video_extract_douyin_invalid)
+                    "error.api.rate" -> context.getString(R.string.video_extract_douyin_rate)
+                    else -> context.getString(R.string.video_extract_douyin_failed, errCode)
                 }
                 return null
             }
             val dlUrl = json.optString("url", "")
-            if (dlUrl.isEmpty()) { lastError = "未获取到下载链接"; return null }
+            if (dlUrl.isEmpty()) { lastError = context.getString(R.string.video_extract_no_download_link); return null }
 
             val fname = json.optString("filename", "audio.m4a")
             val title = parseTitle(fname)
@@ -504,10 +508,10 @@ class VideoAudioExtractor @Inject constructor(
             downloadFileGeneric(dlUrl, outputFile, onProgress, startPct = 0.1f, endPct = 0.95f)
             return finalizeResult(outputFile, title, platform, videoUrl, 0L)
         } catch (e: UnknownHostException) {
-            lastError = "抖音提取需要联网到海外服务，当前网络无法访问。\n请尝试使用VPN后重试。"
+            lastError = context.getString(R.string.video_extract_douyin_offshore)
             return null
         } catch (e: SocketTimeoutException) {
-            lastError = "连接提取服务超时"
+            lastError = context.getString(R.string.video_extract_service_timeout)
             return null
         } catch (e: Exception) {
             lastError = "${e.javaClass.simpleName}: ${e.message?.take(120)}"
@@ -535,12 +539,12 @@ class VideoAudioExtractor @Inject constructor(
         url: String, durSec: Long
     ): ExtractionResult? {
         if (!file.exists() || file.length() == 0L) {
-            lastError = "下载完成但文件为空"
+            lastError = context.getString(R.string.video_extract_file_empty)
             return null
         }
         if (file.length() < 1024) {
             file.delete()
-            lastError = "文件太小 (${file.length()}B)，下载可能失败"
+            lastError = context.getString(R.string.video_extract_file_too_small, file.length())
             return null
         }
         val durMs = if (durSec > 0) durSec * 1000 else getAudioDuration(file)
@@ -574,7 +578,7 @@ class VideoAudioExtractor @Inject constructor(
             throw IOException(lastError)
         }
         val total = conn.contentLengthLong
-        val input = conn.inputStream ?: throw IOException("下载流为空")
+        val input = conn.inputStream ?: throw IOException(context.getString(R.string.video_extract_download_stream_empty))
         activeConnection = conn
         try {
             input.use { s -> dest.outputStream().use { o ->
@@ -611,7 +615,7 @@ class VideoAudioExtractor @Inject constructor(
             throw IOException(lastError)
         }
         val total = conn.contentLengthLong
-        val input = conn.inputStream ?: throw IOException("下载流为空")
+        val input = conn.inputStream ?: throw IOException(context.getString(R.string.video_extract_download_stream_empty))
         activeConnection = conn
         try {
             input.use { s -> dest.outputStream().use { o ->
@@ -632,12 +636,12 @@ class VideoAudioExtractor @Inject constructor(
 
     /** Translate an HTTP status code into a human-readable Chinese message. */
     private fun httpErrorMessage(code: Int): String = when (code) {
-        403 -> "服务器拒绝访问 (HTTP 403)，音频链接可能已过期，请重新分享链接后重试"
-        404 -> "音频链接已失效 (HTTP 404)，请重新分享链接后重试"
-        412 -> "风控拦截 (HTTP 412)，请稍后重试"
-        429 -> "请求过于频繁 (HTTP 429)，请稍后重试"
-        in 500..599 -> "服务器错误 (HTTP $code)，请稍后重试"
-        else -> "下载失败 (HTTP $code)"
+        403 -> context.getString(R.string.http_error_403)
+        404 -> context.getString(R.string.http_error_404)
+        412 -> context.getString(R.string.http_error_412)
+        429 -> context.getString(R.string.http_error_429)
+        in 500..599 -> context.getString(R.string.http_error_5xx, code)
+        else -> context.getString(R.string.http_error_other, code)
     }
 
     // ── General helpers ──────────────────────────────────
@@ -661,7 +665,7 @@ class VideoAudioExtractor @Inject constructor(
                 }
                 val u = c2.url.toString(); c2.disconnect(); u
             }
-        } catch (e: Exception) { lastError = "短链接解析失败: ${e.message}"; null }
+        } catch (e: Exception) { lastError = context.getString(R.string.video_extract_redirect_failed, e.message); null }
     }
 
     private fun extractBvId(url: String): String? {

@@ -271,6 +271,7 @@
     <string name="library_empty_all">暂无音频，请点击右上角扫描按钮</string>
     <string name="library_empty_favorites">暂无收藏</string>
     <string name="library_unknown_artist">未知艺术家</string>
+    <string name="library_unknown_audio">未知音频</string>
     <string name="library_lyrics">歌词</string>
     <string name="library_remove_favorite">取消收藏</string>
     <string name="library_add_favorite">添加收藏</string>
@@ -437,6 +438,7 @@
     <string name="login_enter_password">请输入密码</string>
     <string name="login_success">登录成功</string>
     <string name="login_failed">登录失败</string>
+    <string name="login_qq_use_web">QQ 请使用网页登录</string>
     <string name="login_in_progress">登录中…</string>
     <string name="login_loading">正在加载登录页…</string>
     <string name="login_qr_hint">请扫码或使用网页登录</string>
@@ -450,4 +452,264 @@
 
     <!-- 音源设置 -->
     <string name="source_hint">选择一个平台作为在线音乐的来源。</string>
+
+    <!-- 通用 -->
+    <string name="common_confirm">确定</string>
+    <string name="common_network_error">网络错误</string>
+
+    <!-- 个人偏好 -->
+    <string name="settings_privacy_section">隐私设置</string>
+    <string name="settings_privacy_mode">隐私模式</string>
+    <string name="settings_privacy_mode_desc">开启后，音频标题中间字符将显示为星号</string>
+    <string name="settings_notif_lock_section">通知与锁屏</string>
+    <string name="settings_notif_control">通知栏播放控件</string>
+    <string name="settings_notif_control_desc">开启后，下拉通知栏可显示当前播放音频并支持暂停、切歌</string>
+    <string name="settings_notif_permission_needed">需要通知权限才能显示播放控件</string>
+    <string name="settings_background_keep_alive">后台播放保活</string>
+    <string name="settings_battery_whitelisted">已关闭电池优化，后台播放受保护</string>
+    <string name="settings_battery_not_whitelisted">关闭电池优化可防止切后台或息屏后被系统强行停止播放</string>
+    <string name="settings_battery_find_hint">请在列表中找到 ASMRHelper 并关闭电池优化</string>
+    <string name="settings_open_failed">无法打开设置: %s</string>
+    <string name="settings_lock_screen">锁屏界面展示</string>
+    <string name="settings_lock_screen_desc">开启后，音频信息将在锁屏界面可见</string>
+
+    <!-- 播放设置 -->
+    <string name="settings_default_loop">默认循环模式</string>
+    <string name="settings_loop_none">播完即止</string>
+    <string name="settings_loop_single">单曲循环</string>
+    <string name="settings_loop_list">列表循环</string>
+    <string name="settings_loop_shuffle">随机播放</string>
+    <string name="settings_fade_out_mode">淡出方式</string>
+    <string name="settings_fade_current">在当前位置淡出</string>
+    <string name="settings_fade_end">歌曲/音频结尾时淡出</string>
+    <string name="settings_remember_playback">记忆播放</string>
+    <string name="settings_remember_playback_desc">开启后，下次打开将保留上次歌曲并定位到播放位置；关闭则每次打开为空白</string>
+    <string name="settings_ambient_fade">环境音渐入渐出</string>
+    <string name="settings_ambient_fade_desc">环境音开头 1 秒渐入、结尾 1 秒淡出，循环播放时过渡更平滑</string>
+    <string name="settings_bluetooth_stop">断开设备停止播放</string>
+    <string name="settings_bluetooth_stop_desc">蓝牙耳机/扬声器断开时自动暂停</string>
+    <string name="settings_bluetooth_resume">连接设备自动续播</string>
+    <string name="settings_bluetooth_resume_desc">连接耳机/外接设备时自动继续播放</string>
+    <string name="settings_pause_on_other">其他应用播放时暂停</string>
+    <string name="settings_pause_on_other_desc">其他应用播放音频/视频时本应用自动暂停</string>
+    <string name="settings_seek_seconds">快进/快退时间：%d 秒</string>
+    <string name="settings_volume_fade_off">渐变音量：关闭</string>
+    <string name="settings_volume_fade">渐变音量：%d ms</string>
+    <string name="settings_volume_fade_desc">播放时渐强、暂停时渐弱音量的过渡时长</string>
+
+    <!-- 均衡器 -->
+    <string name="settings_eq_not_ready">均衡器未就绪，请先播放一首音频</string>
+    <string name="settings_eq_save_custom">保存为自定义</string>
+    <string name="settings_eq_reset">重置</string>
+    <string name="settings_eq_save_custom_title">保存自定义预设</string>
+    <string name="settings_eq_preset_name">预设名称</string>
+    <string name="eq_preset_default">默认</string>
+    <string name="eq_preset_bright">明亮</string>
+    <string name="eq_preset_bass">低音增强</string>
+    <string name="eq_preset_crisp">清脆</string>
+    <string name="eq_preset_dull">沉闷</string>
+    <string name="eq_preset_vocal">人声增强</string>
+    <string name="eq_custom">自定义</string>
+
+    <!-- 外观与主题 -->
+    <string name="settings_appearance_section">外观设置</string>
+    <string name="settings_bg_solid">纯色背景</string>
+    <string name="settings_theme_accent">主题色彩</string>
+    <string name="theme_apple_blue">苹果蓝</string>
+    <string name="theme_purple">暗夜紫</string>
+    <string name="theme_warm_orange">暖橙</string>
+    <string name="theme_forest_green">森林绿</string>
+    <string name="theme_ocean_blue">海洋蓝</string>
+    <string name="theme_rose_gold">玫瑰金</string>
+    <string name="theme_monochrome">极简灰</string>
+    <string name="settings_bg_deep_black">深空黑</string>
+    <string name="settings_bg_deep_blue">深邃蓝</string>
+    <string name="settings_bg_dark_purple">暗紫</string>
+    <string name="settings_bg_dark_green">墨绿</string>
+
+    <!-- 存储管理 -->
+    <string name="settings_cache_section">缓存管理</string>
+    <string name="settings_clear_image_cache">清除图片缓存</string>
+    <string name="settings_clear_all_cache">清除全部缓存</string>
+    <string name="settings_db_stats">数据库统计</string>
+    <string name="settings_stat_audio">音频 %d</string>
+    <string name="settings_stat_playlist">播放列表 %d</string>
+    <string name="settings_clear_image_cache_confirm">确定要清除所有图片缓存吗？已缓存图片将被删除，下次加载时将重新下载。</string>
+    <string name="settings_image_cache_cleared">图片缓存已清除</string>
+    <string name="settings_clear_failed">清除失败</string>
+    <string name="settings_cache_cleared">缓存已清除</string>
+
+    <!-- 环境音管理 -->
+    <string name="settings_import_ambient">导入环境音</string>
+    <string name="settings_ambient_imported">已导入环境音</string>
+
+    <!-- 歌词设置 -->
+    <string name="settings_lyrics_font_size">字体大小：%d sp</string>
+    <string name="settings_lyrics_line_spacing">行间距：%sx</string>
+    <string name="settings_lyrics_shadow">字体阴影</string>
+    <string name="settings_lyrics_shadow_desc">为歌词文字添加阴影，提升可读性</string>
+    <string name="settings_lyrics_display_area">显示区域</string>
+    <string name="settings_lyrics_area_top">上三分之一</string>
+    <string name="settings_lyrics_area_full">全屏</string>
+    <string name="settings_lyrics_alignment">对齐方式</string>
+    <string name="settings_lyrics_align_center">居中</string>
+    <string name="settings_lyrics_align_left">左对齐</string>
+    <string name="settings_lyrics_align_right">右对齐</string>
+
+    <!-- 音频特效 -->
+    <string name="settings_visualizer_section">音频可视化</string>
+    <string name="settings_enable_visualizer">启用音频可视化</string>
+    <string name="settings_volume_trigger_section">音量触发特效</string>
+    <string name="settings_enable_trigger">启用音量触发特效</string>
+    <string name="settings_trigger_threshold">触发阈值: %d%%</string>
+    <string name="settings_trigger_anim">特效动画类型</string>
+    <string name="settings_trigger_anim_diffuse">扩散式</string>
+    <string name="settings_trigger_anim_flicker">闪烁</string>
+    <string name="settings_trigger_anim_fountain">喷泉式</string>
+    <string name="settings_particle_color">粒子颜色</string>
+    <string name="settings_custom_emoji">自定义表情符号（在特效中显示）</string>
+    <string name="settings_emoji_hint">输入一个emoji（如 💖）</string>
+    <string name="settings_particle_count">粒子数量: %d</string>
+    <string name="settings_trigger_cooldown">触发冷却间隔: %s秒</string>
+    <string name="settings_trigger_cooldown_desc">两次特效触发之间的最短间隔，值越小特效越频繁</string>
+    <string name="settings_hypnosis_section">催眠模式</string>
+    <string name="settings_enable_hypnosis">启用催眠模式</string>
+    <string name="settings_hypnosis_desc">开启后播放界面只显示动态催眠背景，点击屏幕浮现UI 5秒</string>
+    <string name="settings_hypnosis_bg">动态背景选择</string>
+    <string name="settings_play_effects">播放界面特效</string>
+    <string name="settings_play_effects_desc">浮动粒子和呼吸光晕效果</string>
+    <string name="hypnosis_bg_circle_diffusion">黑白圆圈扩散</string>
+    <string name="hypnosis_bg_white_pendulum">白底黑摆锤</string>
+    <string name="hypnosis_bg_black_pendulum">黑底白摆锤</string>
+
+    <!-- 关于 -->
+    <string name="settings_version_info">版本信息</string>
+    <string name="settings_check_update">检查更新</string>
+    <string name="settings_checking">检查中…</string>
+    <string name="settings_license">开源许可</string>
+    <string name="settings_update_none">暂无已发布版本</string>
+    <string name="settings_update_failed_http">检查失败（HTTP %d）</string>
+    <string name="settings_update_not_found">未找到版本信息</string>
+    <string name="settings_update_new">发现新版本 v%s</string>
+    <string name="settings_update_latest">当前已是最新版本</string>
+    <string name="settings_update_failed">检查失败：%s</string>
+
+    <!-- 场景效果 -->
+    <string name="scene_effect_none">无</string>
+    <string name="scene_effect_blanket">被窝声</string>
+    <string name="scene_effect_distorted">失真声</string>
+    <string name="scene_effect_concert">演唱会</string>
+    <string name="scene_effect_bathroom">浴室</string>
+    <string name="scene_effect_theater">影院</string>
+
+    <!-- 内置环境音 -->
+    <string name="ambient_rain">🌧️ 雨声</string>
+    <string name="ambient_stream">🌊 溪流</string>
+    <string name="ambient_campfire">🔥 篝火</string>
+    <string name="ambient_wind">💨 风声</string>
+    <string name="ambient_thunder">⚡ 雷声</string>
+    <string name="ambient_ocean">🌊 海浪</string>
+
+    <!-- 双耳节拍预设名称 -->
+    <string name="binaural_name_delta_deep">Delta 深睡</string>
+    <string name="binaural_name_delta_sleep">Delta 入眠</string>
+    <string name="binaural_name_theta_meditation">Theta 冥想</string>
+    <string name="binaural_name_theta_relax">Theta 放松</string>
+    <string name="binaural_name_alpha_calm">Alpha 平静</string>
+    <string name="binaural_name_alpha_study">Alpha 学习</string>
+    <string name="binaural_name_beta_focus">Beta 专注</string>
+    <string name="binaural_name_beta_active">Beta 活跃</string>
+    <string name="binaural_name_gamma_cognition">Gamma 认知</string>
+    <string name="binaural_name_smr_focus">SMR 专注</string>
+
+    <!-- 双耳节拍预设描述 -->
+    <string name="binaural_desc_delta_deep">深度睡眠与修复</string>
+    <string name="binaural_desc_delta_sleep">引导入睡</string>
+    <string name="binaural_desc_theta_meditation">深度冥想与内省</string>
+    <string name="binaural_desc_theta_relax">身心放松</string>
+    <string name="binaural_desc_alpha_calm">平静专注</string>
+    <string name="binaural_desc_alpha_study">轻松学习</string>
+    <string name="binaural_desc_beta_focus">高度集中</string>
+    <string name="binaural_desc_beta_active">思维活跃</string>
+    <string name="binaural_desc_gamma_cognition">高级认知功能</string>
+    <string name="binaural_desc_smr_focus">感官运动节律专注</string>
+
+    <!-- 音源平台 -->
+    <string name="source_netease">网易云音乐</string>
+    <string name="source_qq">QQ音乐</string>
+
+    <!-- 通知 -->
+    <string name="notif_channel_name">ASMR 播放</string>
+    <string name="notif_channel_description">播放控制和当前播放信息</string>
+    <string name="notif_loop_single"> | 单曲循环</string>
+    <string name="notif_loop_list"> | 列表循环</string>
+    <string name="notif_loop_shuffle"> | 随机播放</string>
+    <string name="crash_log_title">上次崩溃日志</string>
+
+    <!-- 电池优化引导 -->
+    <string name="battery_dialog_title">保持后台播放</string>
+    <string name="battery_dialog_body">为确保息屏或切换应用后音乐不会自动停止，需要将 ASMRHelper 加入电池优化白名单。</string>
+    <string name="battery_dialog_rom_hint">您使用的是国产手机系统，建议同时检查以下设置：</string>
+    <string name="battery_dialog_action">去省电设置</string>
+    <string name="battery_dialog_app_info">请在应用信息页中开启「自启动」和「后台运行」权限</string>
+    <string name="battery_dialog_app_details">应用详情 →</string>
+    <string name="battery_dialog_later">稍后再说</string>
+    <string name="battery_guidance_xiaomi">小米/HyperOS: 设置 → 应用设置 → 应用管理 → ASMRHelper → 省电策略 → 无限制\n同时开启: 自启动管理 → 允许自启动</string>
+    <string name="battery_guidance_oppo">OPPO/ColorOS: 设置 → 应用 → 应用管理 → ASMRHelper → 耗电保护 → 允许后台运行\n同时开启: 自启动管理 → 允许自启动</string>
+    <string name="battery_guidance_vivo">vivo/OriginOS: 设置 → 应用与权限 → 权限管理 → 后台弹出界面 → 允许\n同时: i管家 → 实用工具 → 自启动管理 → 打开开关</string>
+    <string name="battery_guidance_huawei">华为/HarmonyOS: 设置 → 应用 → 应用启动管理 → ASMRHelper → 手动管理 → 全部开启\n同时: 设置 → 电池 → 更多电池设置 → 休眠时始终保持网络连接</string>
+
+    <!-- 模式切换 -->
+    <string name="mode_toggle_to_music">切换到 MUSIC 模式</string>
+    <string name="mode_toggle_to_asmr">切换到 ASMR 模式</string>
+
+    <!-- 导航 -->
+    <string name="nav_set_ambient">已设为环境音: %s</string>
+
+    <!-- 视频音频提取 -->
+    <string name="video_extract_unknown_error">未知错误</string>
+    <string name="video_extract_unsupported_platform">不支持的平台，请手动选择 (B站/YouTube/抖音)</string>
+    <string name="video_extract_bvid_failed">无法识别B站视频ID (BV号)</string>
+    <string name="video_extract_bili_api_abnormal">B站API返回数据异常</string>
+    <string name="video_extract_unknown_video">未知视频</string>
+    <string name="video_extract_bili_no_data">B站API未返回视频数据（视频可能已删除或私密）</string>
+    <string name="video_extract_bili_no_part">B站API未返回分P信息</string>
+    <string name="video_extract_no_audio_stream">该视频没有可提取的音频流（可能需要大会员）</string>
+    <string name="video_extract_audio_url_empty">音频流地址为空</string>
+    <string name="video_extract_bili_api_http">B站API HTTP %d</string>
+    <string name="video_extract_not_found">视频不存在或已删除</string>
+    <string name="video_extract_no_access">无权访问该视频</string>
+    <string name="video_extract_not_visible">视频不可见</string>
+    <string name="video_extract_not_exist">视频不存在</string>
+    <string name="video_extract_bili_api_code">B站API (%1$d): %2$s</string>
+    <string name="video_extract_bili_unreachable">无法连接B站服务器: %s</string>
+    <string name="video_extract_bili_timeout">连接B站超时</string>
+    <string name="video_extract_network_error">网络错误: %s</string>
+    <string name="video_extract_youtube_id_failed">无法识别YouTube视频ID</string>
+    <string name="video_extract_proxy_no_stream">代理API未返回媒体流</string>
+    <string name="video_extract_no_audio_itag">未找到可用的音频流 (itag 140/251/139)</string>
+    <string name="video_extract_piped_needs_second">%s → Piped格式需二次请求</string>
+    <string name="video_extract_missing_field">%s → 响应缺少必要字段</string>
+    <string name="video_extract_http">%1$s → HTTP %2$d</string>
+    <string name="video_extract_dns_unreachable">%s → DNS不可达</string>
+    <string name="video_extract_timeout">%s → 超时</string>
+    <string name="video_extract_youtube_failed">YouTube 提取失败 — 所有代理节点在境内均不可达。\nYouTube 需要 VPN 才能使用。\n\n已尝试 %1$d 个节点:\n%2$s</string>
+    <string name="video_extract_more_nodes">... 还有 %d 个</string>
+    <string name="video_extract_douyin_http">抖音提取服务 HTTP %d</string>
+    <string name="video_extract_douyin_invalid">抖音链接无效</string>
+    <string name="video_extract_douyin_rate">请求太频繁，稍后重试</string>
+    <string name="video_extract_douyin_failed">抖音提取失败: %s</string>
+    <string name="video_extract_no_download_link">未获取到下载链接</string>
+    <string name="video_extract_douyin_offshore">抖音提取需要联网到海外服务，当前网络无法访问。\n请尝试使用VPN后重试。</string>
+    <string name="video_extract_service_timeout">连接提取服务超时</string>
+    <string name="video_extract_file_empty">下载完成但文件为空</string>
+    <string name="video_extract_file_too_small">文件太小 (%dB)，下载可能失败</string>
+    <string name="video_extract_redirect_failed">短链接解析失败: %s</string>
+    <string name="http_error_403">服务器拒绝访问 (HTTP 403)，音频链接可能已过期，请重新分享链接后重试</string>
+    <string name="http_error_404">音频链接已失效 (HTTP 404)，请重新分享链接后重试</string>
+    <string name="http_error_412">风控拦截 (HTTP 412)，请稍后重试</string>
+    <string name="http_error_429">请求过于频繁 (HTTP 429)，请稍后重试</string>
+    <string name="http_error_5xx">服务器错误 (HTTP %d)，请稍后重试</string>
+    <string name="http_error_other">下载失败 (HTTP %d)</string>
+    <string name="video_extract_download_stream_empty">下载流为空</string>
 </resources>

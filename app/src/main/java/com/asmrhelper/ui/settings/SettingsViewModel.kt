@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.Coil
+import com.asmrhelper.R
 import com.asmrhelper.data.music.MusicSourceManager
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.domain.music.SourceConfig
@@ -138,9 +139,9 @@ class SettingsViewModel @Inject constructor(
             val msg = try {
                 Coil.imageLoader(context).diskCache?.clear()
                 Coil.imageLoader(context).memoryCache?.clear()
-                "缓存已清除"
+                context.getString(R.string.settings_cache_cleared)
             } catch (e: Exception) {
-                "清除失败: ${e.message}"
+                context.getString(R.string.settings_clear_failed) + ": ${e.message}"
             }
             withContext(Dispatchers.Main) { onResult(msg) }
         }
@@ -418,22 +419,26 @@ class SettingsViewModel @Inject constructor(
     // ── 遮罩工具 ──────────────────────────────────────────
 
     companion object {
-        val volumeEffectOptions = listOf("扩散式", "闪烁", "喷泉式")
+        val volumeEffectOptions = listOf(
+            R.string.settings_trigger_anim_diffuse,
+            R.string.settings_trigger_anim_flicker,
+            R.string.settings_trigger_anim_fountain
+        )
 
         val triggerColorOptions = listOf(
-            "纯白" to 0xFFFFFFFFL,
-            "紫色" to 0xFFBB86FCL,
-            "金色" to 0xFFFFD740L,
-            "青色" to 0xFF03DAC6L,
-            "粉色" to 0xFFFF4081L,
-            "绿色" to 0xFF69F0AEL
+            0xFFFFFFFFL,
+            0xFFBB86FCL,
+            0xFFFFD740L,
+            0xFF03DAC6L,
+            0xFFFF4081L,
+            0xFF69F0AEL
         )
 
         val bgColorOptions = listOf(
-            "深空黑" to androidx.compose.ui.graphics.Color(0xFF0D0D0D),
-            "深邃蓝" to androidx.compose.ui.graphics.Color(0xFF1A1A2E),
-            "暗紫"   to androidx.compose.ui.graphics.Color(0xFF1A0A2E),
-            "墨绿"   to androidx.compose.ui.graphics.Color(0xFF0A1A1A)
+            R.string.settings_bg_deep_black to androidx.compose.ui.graphics.Color(0xFF0D0D0D),
+            R.string.settings_bg_deep_blue to androidx.compose.ui.graphics.Color(0xFF1A1A2E),
+            R.string.settings_bg_dark_purple to androidx.compose.ui.graphics.Color(0xFF1A0A2E),
+            R.string.settings_bg_dark_green to androidx.compose.ui.graphics.Color(0xFF0A1A1A)
         )
 
         /** 隐私遮罩：保留首尾字符，中间替换为星号 */

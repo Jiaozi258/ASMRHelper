@@ -5,6 +5,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -17,13 +18,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import com.asmrhelper.R
 import kotlin.math.cos
 import kotlin.math.sin
 
-enum class HypnosisBgType(val label: String, val index: Int) {
-    CIRCLE_DIFFUSION("黑白圆圈扩散", 0),
-    WHITE_PENDULUM("白底黑摆锤", 1),
-    BLACK_PENDULUM("黑底白摆锤", 2);
+enum class HypnosisBgType(@StringRes val labelRes: Int, val index: Int) {
+    CIRCLE_DIFFUSION(R.string.hypnosis_bg_circle_diffusion, 0),
+    WHITE_PENDULUM(R.string.hypnosis_bg_white_pendulum, 1),
+    BLACK_PENDULUM(R.string.hypnosis_bg_black_pendulum, 2);
 
     companion object {
         fun fromIndex(index: Int): HypnosisBgType =

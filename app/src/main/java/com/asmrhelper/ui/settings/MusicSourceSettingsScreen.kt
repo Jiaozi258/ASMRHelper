@@ -152,6 +152,6 @@ private fun SourceRow(
             }
         }
         Spacer(Modifier.width(12.dp))
-        Text(config.displayName, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        Text(stringResource(config.displayNameRes), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }

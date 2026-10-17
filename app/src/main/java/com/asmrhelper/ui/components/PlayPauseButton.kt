@@ -16,7 +16,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.asmrhelper.R
 import com.asmrhelper.ui.theme.ControlWhite
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.pressScale
@@ -27,7 +29,7 @@ fun PlayPauseButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val description = if (isPlaying) "暂停" else "播放"
+    val description = if (isPlaying) stringResource(R.string.play_pause) else stringResource(R.string.play_play)
     val onClickAction = onClick
     Box(
         modifier = modifier

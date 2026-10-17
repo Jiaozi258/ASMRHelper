@@ -271,6 +271,7 @@
     <string name="library_empty_all">No audio yet. Tap the scan button at the top right.</string>
     <string name="library_empty_favorites">No favorites yet</string>
     <string name="library_unknown_artist">Unknown artist</string>
+    <string name="library_unknown_audio">Unknown audio</string>
     <string name="library_lyrics">Lyrics</string>
     <string name="library_remove_favorite">Remove from favorites</string>
     <string name="library_add_favorite">Add to favorites</string>
@@ -437,6 +438,7 @@
     <string name="login_enter_password">Please enter password</string>
     <string name="login_success">Signed in</string>
     <string name="login_failed">Sign in failed</string>
+    <string name="login_qq_use_web">Please sign in via the QQ website</string>
     <string name="login_in_progress">Signing in…</string>
     <string name="login_loading">Loading sign-in page…</string>
     <string name="login_qr_hint">Scan the code or use web sign in</string>
@@ -450,4 +452,264 @@
 
     <!-- Music source settings -->
     <string name="source_hint">Choose a platform as the source for online music.</string>
+
+    <!-- Common -->
+    <string name="common_confirm">OK</string>
+    <string name="common_network_error">Network error</string>
+
+    <!-- Personal preferences -->
+    <string name="settings_privacy_section">Privacy</string>
+    <string name="settings_privacy_mode">Privacy mode</string>
+    <string name="settings_privacy_mode_desc">Mask the middle characters of audio titles with asterisks</string>
+    <string name="settings_notif_lock_section">Notification &amp; lock screen</string>
+    <string name="settings_notif_control">Notification controls</string>
+    <string name="settings_notif_control_desc">Show now-playing audio in the notification shade with pause and skip</string>
+    <string name="settings_notif_permission_needed">Notification permission is required to show controls</string>
+    <string name="settings_background_keep_alive">Keep alive in background</string>
+    <string name="settings_battery_whitelisted">Battery optimization off, background playback protected</string>
+    <string name="settings_battery_not_whitelisted">Turn off battery optimization to prevent playback from being stopped in the background</string>
+    <string name="settings_battery_find_hint">Find ASMRHelper in the list and turn off battery optimization</string>
+    <string name="settings_open_failed">Cannot open settings: %s</string>
+    <string name="settings_lock_screen">Show on lock screen</string>
+    <string name="settings_lock_screen_desc">When enabled, audio info is shown on the lock screen</string>
+
+    <!-- Playback settings -->
+    <string name="settings_default_loop">Default loop mode</string>
+    <string name="settings_loop_none">Stop after finished</string>
+    <string name="settings_loop_single">Repeat one</string>
+    <string name="settings_loop_list">Repeat list</string>
+    <string name="settings_loop_shuffle">Shuffle</string>
+    <string name="settings_fade_out_mode">Fade-out mode</string>
+    <string name="settings_fade_current">Fade at current position</string>
+    <string name="settings_fade_end">Fade at end of track</string>
+    <string name="settings_remember_playback">Resume playback</string>
+    <string name="settings_remember_playback_desc">Restore the last track and position on launch; when off, each launch starts blank</string>
+    <string name="settings_ambient_fade">Ambient fade in/out</string>
+    <string name="settings_ambient_fade_desc">Fade ambient sounds in for 1s and out for 1s for smoother loops</string>
+    <string name="settings_bluetooth_stop">Pause when device disconnects</string>
+    <string name="settings_bluetooth_stop_desc">Auto-pause when Bluetooth headphones or speakers disconnect</string>
+    <string name="settings_bluetooth_resume">Resume when device connects</string>
+    <string name="settings_bluetooth_resume_desc">Auto-resume when headphones or external devices connect</string>
+    <string name="settings_pause_on_other">Pause when other apps play</string>
+    <string name="settings_pause_on_other_desc">Auto-pause when other apps play audio or video</string>
+    <string name="settings_seek_seconds">Seek time: %d seconds</string>
+    <string name="settings_volume_fade_off">Volume fade: off</string>
+    <string name="settings_volume_fade">Volume fade: %d ms</string>
+    <string name="settings_volume_fade_desc">Fade-in on play and fade-out on pause duration</string>
+
+    <!-- Equalizer -->
+    <string name="settings_eq_not_ready">Equalizer not ready, play an audio first</string>
+    <string name="settings_eq_save_custom">Save as custom</string>
+    <string name="settings_eq_reset">Reset</string>
+    <string name="settings_eq_save_custom_title">Save custom preset</string>
+    <string name="settings_eq_preset_name">Preset name</string>
+    <string name="eq_preset_default">Default</string>
+    <string name="eq_preset_bright">Bright</string>
+    <string name="eq_preset_bass">Bass boost</string>
+    <string name="eq_preset_crisp">Crisp</string>
+    <string name="eq_preset_dull">Mellow</string>
+    <string name="eq_preset_vocal">Vocal boost</string>
+    <string name="eq_custom">Custom</string>
+
+    <!-- Appearance & theme -->
+    <string name="settings_appearance_section">Appearance</string>
+    <string name="settings_bg_solid">Solid background</string>
+    <string name="settings_theme_accent">Accent color</string>
+    <string name="theme_apple_blue">Apple blue</string>
+    <string name="theme_purple">Night purple</string>
+    <string name="theme_warm_orange">Warm orange</string>
+    <string name="theme_forest_green">Forest green</string>
+    <string name="theme_ocean_blue">Ocean blue</string>
+    <string name="theme_rose_gold">Rose gold</string>
+    <string name="theme_monochrome">Monochrome</string>
+    <string name="settings_bg_deep_black">Deep black</string>
+    <string name="settings_bg_deep_blue">Deep blue</string>
+    <string name="settings_bg_dark_purple">Dark purple</string>
+    <string name="settings_bg_dark_green">Ink green</string>
+
+    <!-- Storage -->
+    <string name="settings_cache_section">Cache</string>
+    <string name="settings_clear_image_cache">Clear image cache</string>
+    <string name="settings_clear_all_cache">Clear all cache</string>
+    <string name="settings_db_stats">Database stats</string>
+    <string name="settings_stat_audio">Audio %d</string>
+    <string name="settings_stat_playlist">Playlists %d</string>
+    <string name="settings_clear_image_cache_confirm">Clear all image cache? Cached images will be deleted and re-downloaded on next load.</string>
+    <string name="settings_image_cache_cleared">Image cache cleared</string>
+    <string name="settings_clear_failed">Clear failed</string>
+    <string name="settings_cache_cleared">Cache cleared</string>
+
+    <!-- Ambient sounds -->
+    <string name="settings_import_ambient">Import ambient sound</string>
+    <string name="settings_ambient_imported">Ambient sound imported</string>
+
+    <!-- Lyrics settings -->
+    <string name="settings_lyrics_font_size">Font size: %d sp</string>
+    <string name="settings_lyrics_line_spacing">Line spacing: %sx</string>
+    <string name="settings_lyrics_shadow">Font shadow</string>
+    <string name="settings_lyrics_shadow_desc">Add shadow to lyrics for readability</string>
+    <string name="settings_lyrics_display_area">Display area</string>
+    <string name="settings_lyrics_area_top">Top third</string>
+    <string name="settings_lyrics_area_full">Full screen</string>
+    <string name="settings_lyrics_alignment">Alignment</string>
+    <string name="settings_lyrics_align_center">Center</string>
+    <string name="settings_lyrics_align_left">Left</string>
+    <string name="settings_lyrics_align_right">Right</string>
+
+    <!-- Audio effects -->
+    <string name="settings_visualizer_section">Audio visualizer</string>
+    <string name="settings_enable_visualizer">Enable audio visualizer</string>
+    <string name="settings_volume_trigger_section">Volume trigger effects</string>
+    <string name="settings_enable_trigger">Enable volume trigger effects</string>
+    <string name="settings_trigger_threshold">Trigger threshold: %d%%</string>
+    <string name="settings_trigger_anim">Effect animation type</string>
+    <string name="settings_trigger_anim_diffuse">Diffuse</string>
+    <string name="settings_trigger_anim_flicker">Flicker</string>
+    <string name="settings_trigger_anim_fountain">Fountain</string>
+    <string name="settings_particle_color">Particle color</string>
+    <string name="settings_custom_emoji">Custom emoji (shown in effects)</string>
+    <string name="settings_emoji_hint">Enter an emoji (e.g. 💖)</string>
+    <string name="settings_particle_count">Particle count: %d</string>
+    <string name="settings_trigger_cooldown">Trigger cooldown: %ss</string>
+    <string name="settings_trigger_cooldown_desc">Minimum interval between triggers; smaller means more frequent</string>
+    <string name="settings_hypnosis_section">Hypnosis mode</string>
+    <string name="settings_enable_hypnosis">Enable hypnosis mode</string>
+    <string name="settings_hypnosis_desc">When enabled, the player shows only the hypnosis background; tap to reveal UI for 5s</string>
+    <string name="settings_hypnosis_bg">Dynamic background</string>
+    <string name="settings_play_effects">Player effects</string>
+    <string name="settings_play_effects_desc">Floating particles and breathing glow</string>
+    <string name="hypnosis_bg_circle_diffusion">Black &amp; white circle diffusion</string>
+    <string name="hypnosis_bg_white_pendulum">White background, black pendulum</string>
+    <string name="hypnosis_bg_black_pendulum">Black background, white pendulum</string>
+
+    <!-- About -->
+    <string name="settings_version_info">Version info</string>
+    <string name="settings_check_update">Check for updates</string>
+    <string name="settings_checking">Checking…</string>
+    <string name="settings_license">Open-source licenses</string>
+    <string name="settings_update_none">No released versions yet</string>
+    <string name="settings_update_failed_http">Check failed (HTTP %d)</string>
+    <string name="settings_update_not_found">Version info not found</string>
+    <string name="settings_update_new">New version v%s available</string>
+    <string name="settings_update_latest">You are up to date</string>
+    <string name="settings_update_failed">Check failed: %s</string>
+
+    <!-- Scene effects -->
+    <string name="scene_effect_none">None</string>
+    <string name="scene_effect_blanket">Blanket</string>
+    <string name="scene_effect_distorted">Distorted</string>
+    <string name="scene_effect_concert">Concert</string>
+    <string name="scene_effect_bathroom">Bathroom</string>
+    <string name="scene_effect_theater">Theater</string>
+
+    <!-- Built-in ambient sounds -->
+    <string name="ambient_rain">🌧️ Rain</string>
+    <string name="ambient_stream">🌊 Stream</string>
+    <string name="ambient_campfire">🔥 Campfire</string>
+    <string name="ambient_wind">💨 Wind</string>
+    <string name="ambient_thunder">⚡ Thunder</string>
+    <string name="ambient_ocean">🌊 Ocean waves</string>
+
+    <!-- Binaural preset names -->
+    <string name="binaural_name_delta_deep">Delta deep sleep</string>
+    <string name="binaural_name_delta_sleep">Delta falling asleep</string>
+    <string name="binaural_name_theta_meditation">Theta meditation</string>
+    <string name="binaural_name_theta_relax">Theta relaxation</string>
+    <string name="binaural_name_alpha_calm">Alpha calm</string>
+    <string name="binaural_name_alpha_study">Alpha study</string>
+    <string name="binaural_name_beta_focus">Beta focus</string>
+    <string name="binaural_name_beta_active">Beta active</string>
+    <string name="binaural_name_gamma_cognition">Gamma cognition</string>
+    <string name="binaural_name_smr_focus">SMR focus</string>
+
+    <!-- Binaural preset descriptions -->
+    <string name="binaural_desc_delta_deep">Deep sleep and recovery</string>
+    <string name="binaural_desc_delta_sleep">Guide into sleep</string>
+    <string name="binaural_desc_theta_meditation">Deep meditation and introspection</string>
+    <string name="binaural_desc_theta_relax">Body and mind relaxation</string>
+    <string name="binaural_desc_alpha_calm">Calm focus</string>
+    <string name="binaural_desc_alpha_study">Effortless studying</string>
+    <string name="binaural_desc_beta_focus">High concentration</string>
+    <string name="binaural_desc_beta_active">Active thinking</string>
+    <string name="binaural_desc_gamma_cognition">Advanced cognition</string>
+    <string name="binaural_desc_smr_focus">Sensorimotor rhythm focus</string>
+
+    <!-- Music sources -->
+    <string name="source_netease">NetEase Cloud Music</string>
+    <string name="source_qq">QQ Music</string>
+
+    <!-- Notification -->
+    <string name="notif_channel_name">ASMR playback</string>
+    <string name="notif_channel_description">Playback controls and now-playing info</string>
+    <string name="notif_loop_single"> | Repeat one</string>
+    <string name="notif_loop_list"> | Repeat list</string>
+    <string name="notif_loop_shuffle"> | Shuffle</string>
+    <string name="crash_log_title">Last crash log</string>
+
+    <!-- Battery optimization guidance -->
+    <string name="battery_dialog_title">Keep background playback</string>
+    <string name="battery_dialog_body">To keep music playing after screen-off or app switching, add ASMRHelper to the battery optimization whitelist.</string>
+    <string name="battery_dialog_rom_hint">You are using a Chinese ROM; we also suggest checking these settings:</string>
+    <string name="battery_dialog_action">Battery settings</string>
+    <string name="battery_dialog_app_info">In the app info page, enable Auto-start and Run in background permissions</string>
+    <string name="battery_dialog_app_details">App details →</string>
+    <string name="battery_dialog_later">Later</string>
+    <string name="battery_guidance_xiaomi">Xiaomi/HyperOS: Settings → Apps → Manage apps → ASMRHelper → Battery saver → No restrictions\nAlso enable: Auto-start → Allow</string>
+    <string name="battery_guidance_oppo">OPPO/ColorOS: Settings → Apps → Manage apps → ASMRHelper → Battery → Allow background\nAlso enable: Auto-start → Allow</string>
+    <string name="battery_guidance_vivo">vivo/OriginOS: Settings → Apps &amp; permissions → Permissions → Background pop-ups → Allow\nAlso: i Manager → Tools → Auto-start → On</string>
+    <string name="battery_guidance_huawei">Huawei/HarmonyOS: Settings → Apps → App launch → ASMRHelper → Manual → Enable all\nAlso: Settings → Battery → More battery settings → Keep network connected during sleep</string>
+
+    <!-- Mode toggle -->
+    <string name="mode_toggle_to_music">Switch to MUSIC mode</string>
+    <string name="mode_toggle_to_asmr">Switch to ASMR mode</string>
+
+    <!-- Navigation -->
+    <string name="nav_set_ambient">Set as ambient: %s</string>
+
+    <!-- Video audio extraction -->
+    <string name="video_extract_unknown_error">Unknown error</string>
+    <string name="video_extract_unsupported_platform">Unsupported platform, please select manually (Bilibili/YouTube/Douyin)</string>
+    <string name="video_extract_bvid_failed">Cannot identify Bilibili video ID (BV)</string>
+    <string name="video_extract_bili_api_abnormal">Bilibili API returned abnormal data</string>
+    <string name="video_extract_unknown_video">Unknown video</string>
+    <string name="video_extract_bili_no_data">Bilibili API returned no video data (may be deleted or private)</string>
+    <string name="video_extract_bili_no_part">Bilibili API returned no part info</string>
+    <string name="video_extract_no_audio_stream">This video has no extractable audio stream (may require premium)</string>
+    <string name="video_extract_audio_url_empty">Audio stream URL is empty</string>
+    <string name="video_extract_bili_api_http">Bilibili API HTTP %d</string>
+    <string name="video_extract_not_found">Video not found or deleted</string>
+    <string name="video_extract_no_access">No access to this video</string>
+    <string name="video_extract_not_visible">Video not visible</string>
+    <string name="video_extract_not_exist">Video does not exist</string>
+    <string name="video_extract_bili_api_code">Bilibili API (%1$d): %2$s</string>
+    <string name="video_extract_bili_unreachable">Cannot connect to Bilibili server: %s</string>
+    <string name="video_extract_bili_timeout">Connection to Bilibili timed out</string>
+    <string name="video_extract_network_error">Network error: %s</string>
+    <string name="video_extract_youtube_id_failed">Cannot identify YouTube video ID</string>
+    <string name="video_extract_proxy_no_stream">Proxy API returned no media stream</string>
+    <string name="video_extract_no_audio_itag">No usable audio stream found (itag 140/251/139)</string>
+    <string name="video_extract_piped_needs_second">%s → Piped format needs second request</string>
+    <string name="video_extract_missing_field">%s → response missing required fields</string>
+    <string name="video_extract_http">%1$s → HTTP %2$d</string>
+    <string name="video_extract_dns_unreachable">%s → DNS unreachable</string>
+    <string name="video_extract_timeout">%s → timed out</string>
+    <string name="video_extract_youtube_failed">YouTube extraction failed — all proxy nodes are unreachable from within China.\nYouTube requires a VPN.\n\nTried %1$d nodes:\n%2$s</string>
+    <string name="video_extract_more_nodes">... %d more</string>
+    <string name="video_extract_douyin_http">Douyin extraction service HTTP %d</string>
+    <string name="video_extract_douyin_invalid">Invalid Douyin link</string>
+    <string name="video_extract_douyin_rate">Too many requests, retry later</string>
+    <string name="video_extract_douyin_failed">Douyin extraction failed: %s</string>
+    <string name="video_extract_no_download_link">No download link received</string>
+    <string name="video_extract_douyin_offshore">Douyin extraction requires an overseas service that is currently unreachable.\nPlease try again with a VPN.</string>
+    <string name="video_extract_service_timeout">Connection to extraction service timed out</string>
+    <string name="video_extract_file_empty">Download completed but file is empty</string>
+    <string name="video_extract_file_too_small">File too small (%dB), download may have failed</string>
+    <string name="video_extract_redirect_failed">Short link resolution failed: %s</string>
+    <string name="http_error_403">Server denied access (HTTP 403); the audio link may have expired, please re-share the link</string>
+    <string name="http_error_404">Audio link expired (HTTP 404), please re-share the link</string>
+    <string name="http_error_412">Risk control block (HTTP 412), retry later</string>
+    <string name="http_error_429">Too many requests (HTTP 429), retry later</string>
+    <string name="http_error_5xx">Server error (HTTP %d), retry later</string>
+    <string name="http_error_other">Download failed (HTTP %d)</string>
+    <string name="video_extract_download_stream_empty">Download stream is empty</string>
 </resources>

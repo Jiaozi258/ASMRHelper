@@ -1,5 +1,7 @@
 package com.asmrhelper.data.music.netease
 
+import android.content.Context
+import com.asmrhelper.R
 import com.asmrhelper.data.music.neteaselib.Weapi
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
@@ -23,13 +25,14 @@ import org.json.JSONObject
 /** 网易云音乐原生音源：直接请求 music.163.com，weapi 加密。 */
 class NeteaseMusicSource(
     private val client: OkHttpClient,
+    private val context: Context,
     persistedCookie: String = "",
     persistedNickname: String = "",
     private val onLoginChanged: (cookie: String, nickname: String) -> Unit = { _, _ -> }
 ) : MusicSource {
 
     override val id: String = "netease"
-    override val displayName: String = "网易云音乐"
+    override val displayNameRes: Int = R.string.source_netease
 
     private var cookie: String = persistedCookie
     private var nickname: String = persistedNickname
@@ -104,7 +107,7 @@ class NeteaseMusicSource(
             onLoginChanged(cookie, nickname)
             emit(Result.success(Unit))
         } else {
-            val msg = NeteaseJson.parseMessage(resp.body).ifBlank { "登录失败" }
+            val msg = NeteaseJson.parseMessage(resp.body).ifBlank { context.getString(R.string.login_failed) }
             emit(Result.failure(IllegalStateException(msg)))
         }
     }

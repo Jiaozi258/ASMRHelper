@@ -752,7 +752,7 @@ fun PlayScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = if (isActive) "▶ ${preset.name}" else "${preset.name}  (${preset.description})",
+                                    text = if (isActive) "▶ ${stringResource(preset.nameRes)}" else "${stringResource(preset.nameRes)}  (${stringResource(preset.descriptionRes)})",
                                     color = if (isActive) LocalAccentColor.current else TextSecondary,
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.fillMaxWidth()
@@ -908,7 +908,7 @@ fun PlayScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = source.label,
+                                    text = stringResource(source.labelRes),
                                     color = if (isBuiltInSelected) LocalAccentColor.current else TextSecondary,
                                     style = MaterialTheme.typography.bodyMedium
                                 )

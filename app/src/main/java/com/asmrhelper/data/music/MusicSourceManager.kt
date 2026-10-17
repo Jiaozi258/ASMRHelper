@@ -1,5 +1,6 @@
 package com.asmrhelper.data.music
 
+import android.content.Context
 import com.asmrhelper.data.music.netease.NeteaseMusicSource
 import com.asmrhelper.data.music.qq.QqMusicSource
 import com.asmrhelper.domain.model.music.MusicLogin
@@ -7,6 +8,7 @@ import com.asmrhelper.domain.music.MusicSource
 import com.asmrhelper.domain.music.SourceConfig
 import com.asmrhelper.domain.music.SourcePresets
 import com.asmrhelper.domain.repository.SettingsRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,7 +30,8 @@ import javax.inject.Singleton
 @Singleton
 class MusicSourceManager @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val okHttpClient: OkHttpClient
+    private val okHttpClient: OkHttpClient,
+    @ApplicationContext private val context: Context
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -69,12 +72,14 @@ class MusicSourceManager @Inject constructor(
             when (config.id) {
                 "qq" -> QqMusicSource(
                     client = okHttpClient,
+                    context = context,
                     persistedCookie = login.cookie,
                     persistedNickname = login.nickname,
                     onLoginChanged = onLoginChanged
                 )
                 else -> NeteaseMusicSource(
                     client = okHttpClient,
+                    context = context,
                     persistedCookie = login.cookie,
                     persistedNickname = login.nickname,
                     onLoginChanged = onLoginChanged

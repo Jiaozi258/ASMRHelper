@@ -1,5 +1,6 @@
 package com.asmrhelper.domain.music
 
+import androidx.annotation.StringRes
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemotePlaylist
@@ -20,7 +21,7 @@ data class WebLoginConfig(
 
 interface MusicSource {
     val id: String
-    val displayName: String
+    @get:StringRes val displayNameRes: Int
     val isLoggedIn: StateFlow<Boolean>
 
     /** 网页登录（WebView 抓 Cookie）配置；null 表示该源不支持网页登录。 */

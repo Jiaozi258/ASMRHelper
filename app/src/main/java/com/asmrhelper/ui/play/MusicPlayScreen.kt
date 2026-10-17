@@ -520,7 +520,7 @@ fun MusicPlayScreen(
                                     .clickable { viewModel.applySceneEffect(scene) }
                                     .padding(horizontal = 10.dp, vertical = 6.dp)
                             ) {
-                                Text(scene.label, color = if (selected) LocalAccentColor.current else TextSecondary, fontSize = 12.sp)
+                                Text(stringResource(scene.labelRes), color = if (selected) LocalAccentColor.current else TextSecondary, fontSize = 12.sp)
                             }
                         }
                     }
@@ -686,8 +686,8 @@ fun MusicPlayScreen(
                         "D3" -> stringResource(R.string.play_spatial_3d); "SWEEP" -> stringResource(R.string.play_spatial_sweep); "CIRCLE" -> stringResource(R.string.play_spatial_circle); "WIDE" -> stringResource(R.string.play_spatial_wide)
                         else -> stringResource(R.string.play_spatial_3d_off)
                     }
-                    val binauralLabel = state.binauralPreset?.name
-                        ?.let { stringResource(R.string.play_binaural_preset, it) } ?: stringResource(R.string.play_binaural_full)
+                    val binauralLabel = state.binauralPreset?.nameRes
+                        ?.let { stringResource(R.string.play_binaural_preset, stringResource(it)) } ?: stringResource(R.string.play_binaural_full)
 
                     val tools = listOf(
                         Triple(stringResource(R.string.play_ambient), state.playerState.isBackgroundPlaying) { showAmbientDialog = true },
@@ -751,7 +751,7 @@ fun MusicPlayScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = if (isActive) "▶ ${preset.name}" else "${preset.name}  (${preset.description})",
+                                    text = if (isActive) "▶ ${stringResource(preset.nameRes)}" else "${stringResource(preset.nameRes)}  (${stringResource(preset.descriptionRes)})",
                                     color = if (isActive) LocalAccentColor.current else TextSecondary,
                                     fontSize = 14.sp,
                                     modifier = Modifier.fillMaxWidth()
@@ -871,7 +871,7 @@ fun MusicPlayScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(source.label, color = if (isBuiltInSelected) LocalAccentColor.current else TextSecondary, fontSize = 14.sp)
+                                Text(stringResource(source.labelRes), color = if (isBuiltInSelected) LocalAccentColor.current else TextSecondary, fontSize = 14.sp)
                                 Text(
                                     text = when { isBuiltInPlaying -> stringResource(R.string.play_playing); isBuiltInSelected -> stringResource(R.string.play_selected); else -> "" },
                                     color = if (isBuiltInPlaying) LocalAccentColor.current else TextHint,

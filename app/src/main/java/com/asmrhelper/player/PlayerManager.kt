@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.domain.model.PlayerState
@@ -109,7 +110,7 @@ class PlayerManager @Inject constructor(
     /** Load saved playback info. Returns null if nothing was saved. */
     fun loadLastPlayback(): Audio? {
         val path = prefs.getString("last_file_path", null) ?: return null
-        val title = prefs.getString("last_title", "") ?: "未知"
+        val title = prefs.getString("last_title", "") ?: context.getString(R.string.common_unknown)
         val artist = prefs.getString("last_artist", "") ?: ""
         val duration = prefs.getLong("last_duration_ms", 0L)
         val coverUrl = prefs.getString("last_cover_url", "")?.takeIf { it.isNotBlank() }
@@ -142,7 +143,7 @@ class PlayerManager @Inject constructor(
 
     private fun loadPlaylistState(): List<Audio> {
         val json = prefs.getString("playlist_json", null) ?: return emptyList()
-        return PlaylistStateCodec.decode(json)
+        return PlaylistStateCodec.decode(json, context.getString(R.string.common_unknown))
     }
 
     /** 恢复保存的完整播放队列，返回应定位到的当前曲目；无队列则回退到单曲。 */

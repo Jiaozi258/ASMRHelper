@@ -114,11 +114,12 @@ import com.asmrhelper.ui.theme.ThemePreset
 
 // ── 循环模式显示名 ────────────────────────────────────────
 
-private fun LoopMode.displayName(): String = when (this) {
-    LoopMode.NONE    -> "播完即止"
-    LoopMode.SINGLE  -> "单曲循环"
-    LoopMode.LIST    -> "列表循环"
-    LoopMode.SHUFFLE -> "随机播放"
+@StringRes
+private fun LoopMode.displayNameRes(): Int = when (this) {
+    LoopMode.NONE    -> R.string.settings_loop_none
+    LoopMode.SINGLE  -> R.string.settings_loop_single
+    LoopMode.LIST    -> R.string.settings_loop_list
+    LoopMode.SHUFFLE -> R.string.settings_loop_shuffle
 }
 
 // ── 设置分类 ─────────────────────────────────────────────
@@ -185,7 +186,7 @@ private fun SettingsHub(
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, "返回", tint = TextPrimary)
+                        Icon(Icons.Filled.ArrowBack, stringResource(R.string.common_back), tint = TextPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -229,7 +230,7 @@ private fun SubScreenScaffold(
                 title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, "返回", tint = TextPrimary)
+                        Icon(Icons.Filled.ArrowBack, stringResource(R.string.common_back), tint = TextPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -272,12 +273,12 @@ private fun PersonalPreferenceScreen(
         if (granted) {
             viewModel.setShowNotification(true)
         } else {
-            Toast.makeText(context, "需要通知权限才能显示播放控件", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.settings_notif_permission_needed), Toast.LENGTH_SHORT).show()
         }
     }
 
-    SubScreenScaffold(title = "个人偏好", onBack = onBack) {
-        SectionHeader(icon = Icons.Filled.Lock, title = "隐私设置")
+    SubScreenScaffold(title = stringResource(R.string.category_personal), onBack = onBack) {
+        SectionHeader(icon = Icons.Filled.Lock, title = stringResource(R.string.settings_privacy_section))
 
         Card(
             modifier = Modifier
@@ -294,9 +295,9 @@ private fun PersonalPreferenceScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("隐私模式", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_privacy_mode), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        "开启后，音频标题中间字符将显示为星号",
+                        stringResource(R.string.settings_privacy_mode_desc),
                         color = TextHint,
                         fontSize = 12.sp
                     )
@@ -316,7 +317,7 @@ private fun PersonalPreferenceScreen(
 
         SectionSpacer()
 
-        SectionHeader(icon = Icons.Filled.Info, title = "通知与锁屏")
+        SectionHeader(icon = Icons.Filled.Info, title = stringResource(R.string.settings_notif_lock_section))
 
         Card(
             modifier = Modifier
@@ -334,9 +335,9 @@ private fun PersonalPreferenceScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("通知栏播放控件", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_notif_control), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        "开启后，下拉通知栏可显示当前播放音频并支持暂停、切歌",
+                        stringResource(R.string.settings_notif_control_desc),
                         color = TextHint,
                         fontSize = 12.sp
                     )
@@ -380,21 +381,21 @@ private fun PersonalPreferenceScreen(
                             BatteryOptimizationHelper.openBatterySettings(context)
                             Toast.makeText(
                                 context,
-                                "请在列表中找到 ASMRHelper 并关闭电池优化",
+                                context.getString(R.string.settings_battery_find_hint),
                                 Toast.LENGTH_LONG
                             ).show()
                         } catch (e: Exception) {
-                            Toast.makeText(context, "无法打开设置: ${e.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.settings_open_failed, e.message), Toast.LENGTH_SHORT).show()
                         }
                     },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("后台播放保活", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_background_keep_alive), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        if (isWhitelisted) "已关闭电池优化，后台播放受保护"
-                        else "关闭电池优化可防止切后台或息屏后被系统强行停止播放",
+                        if (isWhitelisted) stringResource(R.string.settings_battery_whitelisted)
+                        else stringResource(R.string.settings_battery_not_whitelisted),
                         color = if (isWhitelisted) Color(0xFF4CAF50) else TextHint,
                         fontSize = 12.sp
                     )
@@ -413,9 +414,9 @@ private fun PersonalPreferenceScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("锁屏界面展示", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_lock_screen), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        "开启后，音频信息将在锁屏界面可见",
+                        stringResource(R.string.settings_lock_screen_desc),
                         color = TextHint,
                         fontSize = 12.sp
                     )
@@ -454,8 +455,8 @@ private fun PlaybackSettingsScreen(
     val seekSeconds by viewModel.seekTimeSeconds.collectAsStateWithLifecycle()
     val volumeFadeMs by viewModel.volumeFadeMs.collectAsStateWithLifecycle()
 
-    SubScreenScaffold(title = "播放设置", onBack = onBack) {
-        SectionHeader(icon = Icons.Filled.Loop, title = "播放设置")
+    SubScreenScaffold(title = stringResource(R.string.category_playback), onBack = onBack) {
+        SectionHeader(icon = Icons.Filled.Loop, title = stringResource(R.string.category_playback))
 
         Card(
             modifier = Modifier
@@ -474,9 +475,9 @@ private fun PlaybackSettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("默认循环模式", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_default_loop), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        loopMode.displayName(),
+                        stringResource(loopMode.displayNameRes()),
                         color = LocalAccentColor.current,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
@@ -492,7 +493,7 @@ private fun PlaybackSettingsScreen(
                             DropdownMenuItem(
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(mode.displayName(), color = TextPrimary)
+                                        Text(stringResource(mode.displayNameRes()), color = TextPrimary)
                                         if (mode == loopMode) {
                                             Spacer(Modifier.width(8.dp))
                                             Icon(Icons.Filled.Check, null, tint = LocalAccentColor.current, modifier = Modifier.size(18.dp))
@@ -527,9 +528,9 @@ private fun PlaybackSettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("淡出方式", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_fade_out_mode), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        if (fadeOutMode == 1) "歌曲/音频结尾时淡出" else "在当前位置淡出",
+                        if (fadeOutMode == 1) stringResource(R.string.settings_fade_end) else stringResource(R.string.settings_fade_current),
                         color = LocalAccentColor.current,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
@@ -541,7 +542,7 @@ private fun PlaybackSettingsScreen(
                         expanded = fadeOutMenuExpanded,
                         onDismissRequest = { fadeOutMenuExpanded = false }
                     ) {
-                        listOf("在当前位置淡出", "歌曲/音频结尾时淡出").forEachIndexed { i, label ->
+                        listOf(stringResource(R.string.settings_fade_current), stringResource(R.string.settings_fade_end)).forEachIndexed { i, label ->
                             DropdownMenuItem(
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -578,9 +579,9 @@ private fun PlaybackSettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("记忆播放", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_remember_playback), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        "开启后，下次打开将保留上次歌曲并定位到播放位置；关闭则每次打开为空白",
+                        stringResource(R.string.settings_remember_playback_desc),
                         color = TextHint,
                         fontSize = 12.sp
                     )
@@ -613,9 +614,9 @@ private fun PlaybackSettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("环境音渐入渐出", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_ambient_fade), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        "环境音开头 1 秒渐入、结尾 1 秒淡出，循环播放时过渡更平滑",
+                        stringResource(R.string.settings_ambient_fade_desc),
                         color = TextHint,
                         fontSize = 12.sp
                     )
@@ -648,8 +649,8 @@ private fun PlaybackSettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("断开设备停止播放", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    Text("蓝牙耳机/扬声器断开时自动暂停", color = TextHint, fontSize = 12.sp)
+                    Text(stringResource(R.string.settings_bluetooth_stop), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_bluetooth_stop_desc), color = TextHint, fontSize = 12.sp)
                 }
                 Switch(
                     checked = bluetoothStop,
@@ -674,8 +675,8 @@ private fun PlaybackSettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("连接设备自动续播", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    Text("连接耳机/外接设备时自动继续播放", color = TextHint, fontSize = 12.sp)
+                    Text(stringResource(R.string.settings_bluetooth_resume), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_bluetooth_resume_desc), color = TextHint, fontSize = 12.sp)
                 }
                 Switch(
                     checked = bluetoothResume,
@@ -700,8 +701,8 @@ private fun PlaybackSettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("其他应用播放时暂停", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    Text("其他应用播放音频/视频时本应用自动暂停", color = TextHint, fontSize = 12.sp)
+                    Text(stringResource(R.string.settings_pause_on_other), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_pause_on_other_desc), color = TextHint, fontSize = 12.sp)
                 }
                 Switch(
                     checked = pauseOnOther,
@@ -719,7 +720,7 @@ private fun PlaybackSettingsScreen(
             colors = CardDefaults.cardColors(containerColor = DarkSurface)
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                Text("快进/快退时间：${seekSeconds} 秒", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.settings_seek_seconds, seekSeconds), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Slider(
                     value = seekSeconds.toFloat(),
                     onValueChange = { viewModel.setSeekTimeSeconds(it.toInt()) },
@@ -739,7 +740,7 @@ private fun PlaybackSettingsScreen(
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 Text(
-                    if (volumeFadeMs == 0) "渐变音量：关闭" else "渐变音量：${volumeFadeMs} ms",
+                    if (volumeFadeMs == 0) stringResource(R.string.settings_volume_fade_off) else stringResource(R.string.settings_volume_fade, volumeFadeMs),
                     color = TextPrimary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium
@@ -751,7 +752,7 @@ private fun PlaybackSettingsScreen(
                     steps = 29,
                     colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                 )
-                Text("播放时渐强、暂停时渐弱音量的过渡时长", color = TextHint, fontSize = 12.sp)
+                Text(stringResource(R.string.settings_volume_fade_desc), color = TextHint, fontSize = 12.sp)
             }
         }
     }
@@ -770,8 +771,8 @@ private fun EqualizerSettingsScreen(
     val eqLevels by viewModel.eqBandLevels.collectAsStateWithLifecycle()
     val eqCurrentPreset by viewModel.eqCurrentPreset.collectAsStateWithLifecycle()
 
-    SubScreenScaffold(title = "均衡器", onBack = onBack) {
-        SectionHeader(icon = Icons.Filled.GraphicEq, title = "均衡器")
+    SubScreenScaffold(title = stringResource(R.string.category_equalizer), onBack = onBack) {
+        SectionHeader(icon = Icons.Filled.GraphicEq, title = stringResource(R.string.category_equalizer))
 
         Card(
             modifier = Modifier
@@ -782,7 +783,7 @@ private fun EqualizerSettingsScreen(
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 if (!eqEnabled) {
-                    Text("均衡器未就绪，请先播放一首音频", color = TextHint, fontSize = 13.sp)
+                    Text(stringResource(R.string.settings_eq_not_ready), color = TextHint, fontSize = 13.sp)
                 } else {
                     // ── 预设选择 ──
                     Row(
@@ -800,7 +801,7 @@ private fun EqualizerSettingsScreen(
                                     .clickable { viewModel.applyEqPreset(preset) }
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
-                                Text(preset.name, color = if (selected) LocalAccentColor.current else TextSecondary, fontSize = 12.sp)
+                                Text(stringResource(preset.nameRes), color = if (selected) LocalAccentColor.current else TextSecondary, fontSize = 12.sp)
                             }
                         }
                         val custom = remember { viewModel.loadCustomEqPreset() }
@@ -857,10 +858,10 @@ private fun EqualizerSettingsScreen(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         TextButton(onClick = { showSavePreset = true }) {
-                            Text("保存为自定义", color = LocalAccentColor.current, fontSize = 12.sp)
+                            Text(stringResource(R.string.settings_eq_save_custom), color = LocalAccentColor.current, fontSize = 12.sp)
                         }
                         TextButton(onClick = { viewModel.resetEq() }) {
-                            Text("重置", color = TextSecondary, fontSize = 12.sp)
+                            Text(stringResource(R.string.settings_eq_reset), color = TextSecondary, fontSize = 12.sp)
                         }
                     }
 
@@ -868,12 +869,12 @@ private fun EqualizerSettingsScreen(
                         var presetName by remember { mutableStateOf("") }
                         AlertDialog(
                             onDismissRequest = { showSavePreset = false },
-                            title = { Text("保存自定义预设", color = TextPrimary) },
+                            title = { Text(stringResource(R.string.settings_eq_save_custom_title), color = TextPrimary) },
                             text = {
                                 androidx.compose.material3.OutlinedTextField(
                                     value = presetName,
                                     onValueChange = { presetName = it },
-                                    placeholder = { Text("预设名称", color = TextHint) },
+                                    placeholder = { Text(stringResource(R.string.settings_eq_preset_name), color = TextHint) },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth()
                                 )
@@ -887,10 +888,10 @@ private fun EqualizerSettingsScreen(
                                         }
                                     },
                                     enabled = presetName.isNotBlank()
-                                ) { Text("保存", color = LocalAccentColor.current) }
+                                ) { Text(stringResource(R.string.common_save), color = LocalAccentColor.current) }
                             },
                             dismissButton = {
-                                TextButton(onClick = { showSavePreset = false }) { Text("取消", color = TextSecondary) }
+                                TextButton(onClick = { showSavePreset = false }) { Text(stringResource(R.string.common_cancel), color = TextSecondary) }
                             },
                             containerColor = DarkSurface,
                             shape = RoundedCornerShape(16.dp)
@@ -917,8 +918,8 @@ private fun AppearanceSettingsScreen(
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    SubScreenScaffold(title = "外观与主题", onBack = onBack) {
-        SectionHeader(icon = Icons.Filled.Palette, title = "外观设置")
+    SubScreenScaffold(title = stringResource(R.string.category_appearance), onBack = onBack) {
+        SectionHeader(icon = Icons.Filled.Palette, title = stringResource(R.string.settings_appearance_section))
 
         Card(
             modifier = Modifier
@@ -932,7 +933,7 @@ private fun AppearanceSettingsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
-                Text("主题模式", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.theme_mode), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Text(
                     stringResource(R.string.theme_mode_desc),
                     color = TextHint,
@@ -1000,8 +1001,8 @@ private fun AppearanceSettingsScreen(
                     )
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("纯色背景", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                        Text(label, color = LocalAccentColor.current, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.settings_bg_solid), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text(stringResource(label), color = LocalAccentColor.current, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
@@ -1016,7 +1017,7 @@ private fun AppearanceSettingsScreen(
             colors = CardDefaults.cardColors(containerColor = DarkSurface)
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                Text("主题色彩", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.settings_theme_accent), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1045,7 +1046,7 @@ private fun AppearanceSettingsScreen(
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
-                                    preset.label,
+                                    stringResource(preset.labelRes),
                                     color = if (isSelected) preset.accent else TextHint,
                                     fontSize = 10.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
@@ -1122,8 +1123,8 @@ private fun StorageSettingsScreen(
     val context = LocalContext.current
     var showClearImageDialog by remember { mutableStateOf(false) }
 
-    SubScreenScaffold(title = "存储管理", onBack = onBack) {
-        SectionHeader(icon = Icons.Filled.Storage, title = "缓存管理")
+    SubScreenScaffold(title = stringResource(R.string.category_storage), onBack = onBack) {
+        SectionHeader(icon = Icons.Filled.Storage, title = stringResource(R.string.settings_cache_section))
 
         Card(
             modifier = Modifier
@@ -1143,7 +1144,7 @@ private fun StorageSettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Delete, null, tint = ErrorRed.copy(alpha = 0.8f))
                     Spacer(Modifier.width(10.dp))
-                    Text("清除图片缓存", color = TextPrimary, fontSize = 15.sp)
+                    Text(stringResource(R.string.settings_clear_image_cache), color = TextPrimary, fontSize = 15.sp)
                 }
                 Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
             }
@@ -1165,7 +1166,7 @@ private fun StorageSettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Delete, null, tint = ErrorRed.copy(alpha = 0.8f))
                     Spacer(Modifier.width(10.dp))
-                    Text("清除全部缓存", color = TextPrimary, fontSize = 15.sp)
+                    Text(stringResource(R.string.settings_clear_all_cache), color = TextPrimary, fontSize = 15.sp)
                 }
                 Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
             }
@@ -1179,11 +1180,11 @@ private fun StorageSettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("数据库统计", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.settings_db_stats), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Row {
-                    Text("音频 ${audioCount}", color = LocalAccentColor.current, fontSize = 13.sp)
+                    Text(stringResource(R.string.settings_stat_audio, audioCount), color = LocalAccentColor.current, fontSize = 13.sp)
                     Spacer(Modifier.width(16.dp))
-                    Text("播放列表 ${playlistCount}", color = LocalAccentColor.current, fontSize = 13.sp)
+                    Text(stringResource(R.string.settings_stat_playlist, playlistCount), color = LocalAccentColor.current, fontSize = 13.sp)
                 }
             }
         }
@@ -1193,25 +1194,25 @@ private fun StorageSettingsScreen(
     if (showClearImageDialog) {
         AlertDialog(
             onDismissRequest = { showClearImageDialog = false },
-            title = { Text("清除图片缓存") },
-            text = { Text("确定要清除所有图片缓存吗？已缓存图片将被删除，下次加载时将重新下载。") },
+            title = { Text(stringResource(R.string.settings_clear_image_cache)) },
+            text = { Text(stringResource(R.string.settings_clear_image_cache_confirm)) },
             confirmButton = {
                 Button(
                     onClick = {
                         viewModel.clearImageCache { success ->
-                            val msg = if (success) "图片缓存已清除" else "清除失败"
+                            val msg = if (success) context.getString(R.string.settings_image_cache_cleared) else context.getString(R.string.settings_clear_failed)
                             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                         }
                         showClearImageDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = LocalAccentColor.current)
                 ) {
-                    Text("确定")
+                    Text(stringResource(R.string.common_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearImageDialog = false }) {
-                    Text("取消", color = TextSecondary)
+                    Text(stringResource(R.string.common_cancel), color = TextSecondary)
                 }
             },
             containerColor = DarkSurface,
@@ -1243,12 +1244,12 @@ private fun AmbientSettingsScreen(
                 file.outputStream().use { output -> input.copyTo(output) }
             }
             viewModel.addAmbientAudio(file.absolutePath)
-            Toast.makeText(context, "已导入环境音", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.settings_ambient_imported), Toast.LENGTH_SHORT).show()
         }
     }
 
-    SubScreenScaffold(title = "环境音管理", onBack = onBack) {
-        SectionHeader(icon = Icons.Filled.MusicNote, title = "环境音管理")
+    SubScreenScaffold(title = stringResource(R.string.category_ambient), onBack = onBack) {
+        SectionHeader(icon = Icons.Filled.MusicNote, title = stringResource(R.string.category_ambient))
 
         Card(
             modifier = Modifier
@@ -1268,7 +1269,7 @@ private fun AmbientSettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Add, null, tint = LocalAccentColor.current)
                     Spacer(Modifier.width(10.dp))
-                    Text("导入环境音", color = TextPrimary, fontSize = 15.sp)
+                    Text(stringResource(R.string.settings_import_ambient), color = TextPrimary, fontSize = 15.sp)
                 }
                 Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
             }
@@ -1302,7 +1303,7 @@ private fun AmbientSettingsScreen(
                                 Spacer(Modifier.width(8.dp))
                             }
                             Icon(
-                                Icons.Filled.Delete, "删除",
+                                Icons.Filled.Delete, stringResource(R.string.common_delete),
                                 tint = ErrorRed.copy(alpha = 0.7f),
                                 modifier = Modifier.size(18.dp).clickable { viewModel.removeAmbientAudio(path) }
                             )
@@ -1330,8 +1331,8 @@ private fun LyricsSettingsScreen(
     val lyricsDisplayArea by viewModel.lyricsDisplayArea.collectAsStateWithLifecycle()
     val lyricsAlignment by viewModel.lyricsAlignment.collectAsStateWithLifecycle()
 
-    SubScreenScaffold(title = "歌词设置", onBack = onBack) {
-        SectionHeader(icon = Icons.Filled.MusicNote, title = "歌词设置")
+    SubScreenScaffold(title = stringResource(R.string.category_lyrics), onBack = onBack) {
+        SectionHeader(icon = Icons.Filled.MusicNote, title = stringResource(R.string.category_lyrics))
 
         Card(
             modifier = Modifier
@@ -1341,7 +1342,7 @@ private fun LyricsSettingsScreen(
             colors = CardDefaults.cardColors(containerColor = DarkSurface)
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                Text("字体大小：${lyricsFontSize} sp", color = TextPrimary, fontSize = 14.sp)
+                Text(stringResource(R.string.settings_lyrics_font_size, lyricsFontSize), color = TextPrimary, fontSize = 14.sp)
                 Slider(
                     value = lyricsFontSize.toFloat(),
                     onValueChange = { viewModel.setLyricsFontSize(it.toInt()) },
@@ -1350,7 +1351,7 @@ private fun LyricsSettingsScreen(
                     colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                 )
 
-                Text("行间距：${"%.1f".format(lyricsLineSpacing)}x", color = TextPrimary, fontSize = 14.sp)
+                Text(stringResource(R.string.settings_lyrics_line_spacing, "%.1f".format(lyricsLineSpacing)), color = TextPrimary, fontSize = 14.sp)
                 Slider(
                     value = lyricsLineSpacing,
                     onValueChange = { viewModel.setLyricsLineSpacing(it) },
@@ -1366,8 +1367,8 @@ private fun LyricsSettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("字体阴影", color = TextPrimary, fontSize = 14.sp)
-                        Text("为歌词文字添加阴影，提升可读性", color = TextHint, fontSize = 12.sp)
+                        Text(stringResource(R.string.settings_lyrics_shadow), color = TextPrimary, fontSize = 14.sp)
+                        Text(stringResource(R.string.settings_lyrics_shadow_desc), color = TextHint, fontSize = 12.sp)
                     }
                     Switch(
                         checked = lyricsShadow,
@@ -1387,13 +1388,13 @@ private fun LyricsSettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("显示区域", color = TextPrimary, fontSize = 14.sp)
-                        Text(if (lyricsDisplayArea == 0) "上三分之一" else "全屏", color = LocalAccentColor.current, fontSize = 12.sp)
+                        Text(stringResource(R.string.settings_lyrics_display_area), color = TextPrimary, fontSize = 14.sp)
+                        Text(if (lyricsDisplayArea == 0) stringResource(R.string.settings_lyrics_area_top) else stringResource(R.string.settings_lyrics_area_full), color = LocalAccentColor.current, fontSize = 12.sp)
                     }
                     Box {
                         Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
                         DropdownMenu(expanded = displayAreaExpanded, onDismissRequest = { displayAreaExpanded = false }) {
-                            listOf("上三分之一", "全屏").forEachIndexed { i, label ->
+                            listOf(stringResource(R.string.settings_lyrics_area_top), stringResource(R.string.settings_lyrics_area_full)).forEachIndexed { i, label ->
                                 DropdownMenuItem(
                                     text = { Text(label, color = TextPrimary) },
                                     onClick = { viewModel.setLyricsDisplayArea(i); displayAreaExpanded = false }
@@ -1414,13 +1415,18 @@ private fun LyricsSettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("对齐方式", color = TextPrimary, fontSize = 14.sp)
-                        Text(listOf("居中", "左对齐", "右对齐").getOrElse(lyricsAlignment) { "居中" }, color = LocalAccentColor.current, fontSize = 12.sp)
+                        Text(stringResource(R.string.settings_lyrics_alignment), color = TextPrimary, fontSize = 14.sp)
+                        Text(
+                            listOf(stringResource(R.string.settings_lyrics_align_center), stringResource(R.string.settings_lyrics_align_left), stringResource(R.string.settings_lyrics_align_right))
+                                .getOrElse(lyricsAlignment) { stringResource(R.string.settings_lyrics_align_center) },
+                            color = LocalAccentColor.current,
+                            fontSize = 12.sp
+                        )
                     }
                     Box {
                         Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
                         DropdownMenu(expanded = alignmentExpanded, onDismissRequest = { alignmentExpanded = false }) {
-                            listOf("居中", "左对齐", "右对齐").forEachIndexed { i, label ->
+                            listOf(stringResource(R.string.settings_lyrics_align_center), stringResource(R.string.settings_lyrics_align_left), stringResource(R.string.settings_lyrics_align_right)).forEachIndexed { i, label ->
                                 DropdownMenuItem(
                                     text = { Text(label, color = TextPrimary) },
                                     onClick = { viewModel.setLyricsAlignment(i); alignmentExpanded = false }
@@ -1455,8 +1461,8 @@ private fun AudioEffectsSettingsScreen(
     val hypnosisBgType by viewModel.hypnosisBgType.collectAsStateWithLifecycle()
     val playEffectsEnabled by viewModel.playEffectsEnabled.collectAsStateWithLifecycle()
 
-    SubScreenScaffold(title = "音频特效", onBack = onBack) {
-        SectionHeader(icon = Icons.Filled.GraphicEq, title = "音频可视化")
+    SubScreenScaffold(title = stringResource(R.string.category_audio_effects), onBack = onBack) {
+        SectionHeader(icon = Icons.Filled.GraphicEq, title = stringResource(R.string.settings_visualizer_section))
 
         Card(
             modifier = Modifier
@@ -1476,7 +1482,7 @@ private fun AudioEffectsSettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.GraphicEq, null, tint = if (visualizerEnabled) LocalAccentColor.current else TextHint)
                     Spacer(Modifier.width(10.dp))
-                    Text("启用音频可视化", color = if (visualizerEnabled) LocalAccentColor.current else TextPrimary, fontSize = 15.sp)
+                    Text(stringResource(R.string.settings_enable_visualizer), color = if (visualizerEnabled) LocalAccentColor.current else TextPrimary, fontSize = 15.sp)
                 }
                 if (visualizerEnabled) Icon(Icons.Filled.Check, null, tint = LocalAccentColor.current, modifier = Modifier.size(20.dp))
             }
@@ -1484,7 +1490,7 @@ private fun AudioEffectsSettingsScreen(
 
         SectionSpacer()
 
-        SectionHeader(icon = Icons.Filled.AutoAwesome, title = "音量触发特效")
+        SectionHeader(icon = Icons.Filled.AutoAwesome, title = stringResource(R.string.settings_volume_trigger_section))
 
         Card(
             modifier = Modifier
@@ -1504,7 +1510,7 @@ private fun AudioEffectsSettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.AutoAwesome, null, tint = if (triggerEnabled) LocalAccentColor.current else TextHint)
                     Spacer(Modifier.width(10.dp))
-                    Text("启用音量触发特效", color = if (triggerEnabled) LocalAccentColor.current else TextPrimary, fontSize = 15.sp)
+                    Text(stringResource(R.string.settings_enable_trigger), color = if (triggerEnabled) LocalAccentColor.current else TextPrimary, fontSize = 15.sp)
                 }
                 if (triggerEnabled) Icon(Icons.Filled.Check, null, tint = LocalAccentColor.current, modifier = Modifier.size(20.dp))
             }
@@ -1513,7 +1519,7 @@ private fun AudioEffectsSettingsScreen(
                 HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
 
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                    Text("触发阈值: ${triggerThreshold}%", color = TextPrimary, fontSize = 14.sp)
+                    Text(stringResource(R.string.settings_trigger_threshold, triggerThreshold), color = TextPrimary, fontSize = 14.sp)
                     Spacer(Modifier.height(4.dp))
                     Slider(
                         value = triggerThreshold.toFloat(),
@@ -1535,9 +1541,9 @@ private fun AudioEffectsSettingsScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 10.dp)
                 ) {
-                    Text("特效动画类型", color = TextPrimary, fontSize = 14.sp)
+                    Text(stringResource(R.string.settings_trigger_anim), color = TextPrimary, fontSize = 14.sp)
                     Spacer(Modifier.height(8.dp))
-                    SettingsViewModel.volumeEffectOptions.forEachIndexed { index, name ->
+                    SettingsViewModel.volumeEffectOptions.forEachIndexed { index, nameRes ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1546,7 +1552,7 @@ private fun AudioEffectsSettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (triggerAnimType == index) "● $name" else "○ $name",
+                                text = if (triggerAnimType == index) "● ${stringResource(nameRes)}" else "○ ${stringResource(nameRes)}",
                                 color = if (triggerAnimType == index) LocalAccentColor.current else TextSecondary,
                                 fontSize = 14.sp
                             )
@@ -1561,13 +1567,13 @@ private fun AudioEffectsSettingsScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 10.dp)
                 ) {
-                    Text("粒子颜色", color = TextPrimary, fontSize = 14.sp)
+                    Text(stringResource(R.string.settings_particle_color), color = TextPrimary, fontSize = 14.sp)
                     Spacer(Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        SettingsViewModel.triggerColorOptions.forEach { (name, colorValue) ->
+                        SettingsViewModel.triggerColorOptions.forEach { colorValue ->
                             val isSelected = triggerColor == colorValue
                             Box(
                                 modifier = Modifier
@@ -1592,7 +1598,7 @@ private fun AudioEffectsSettingsScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 10.dp)
                 ) {
-                    Text("自定义表情符号（在特效中显示）", color = TextPrimary, fontSize = 14.sp)
+                    Text(stringResource(R.string.settings_custom_emoji), color = TextPrimary, fontSize = 14.sp)
                     Spacer(Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1605,7 +1611,7 @@ private fun AudioEffectsSettingsScreen(
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                         ) {
                             if (triggerEmoji.isEmpty()) {
-                                Text("输入一个emoji（如 💖）", color = TextHint, fontSize = 14.sp)
+                                Text(stringResource(R.string.settings_emoji_hint), color = TextHint, fontSize = 14.sp)
                             }
                             BasicTextField(
                                 value = triggerEmoji,
@@ -1621,7 +1627,7 @@ private fun AudioEffectsSettingsScreen(
                         if (triggerEmoji.isNotEmpty()) {
                             Spacer(Modifier.width(8.dp))
                             TextButton(onClick = { viewModel.setVolumeTriggerEmoji("") }) {
-                                Text("清除", color = ErrorRed, fontSize = 12.sp)
+                                Text(stringResource(R.string.common_clear), color = ErrorRed, fontSize = 12.sp)
                             }
                         }
                     }
@@ -1630,7 +1636,7 @@ private fun AudioEffectsSettingsScreen(
                 HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
 
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                    Text("粒子数量: ${triggerParticleCount}", color = TextPrimary, fontSize = 14.sp)
+                    Text(stringResource(R.string.settings_particle_count, triggerParticleCount), color = TextPrimary, fontSize = 14.sp)
                     Spacer(Modifier.height(4.dp))
                     Slider(
                         value = triggerParticleCount.toFloat(),
@@ -1650,9 +1656,9 @@ private fun AudioEffectsSettingsScreen(
 
                 val cooldownSec = triggerCooldownMs / 1000f
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                    Text("触发冷却间隔: %.1f秒".format(cooldownSec), color = TextPrimary, fontSize = 14.sp)
+                    Text(stringResource(R.string.settings_trigger_cooldown, "%.1f".format(cooldownSec)), color = TextPrimary, fontSize = 14.sp)
                     Text(
-                        "两次特效触发之间的最短间隔，值越小特效越频繁",
+                        stringResource(R.string.settings_trigger_cooldown_desc),
                         color = TextHint,
                         fontSize = 11.sp
                     )
@@ -1674,7 +1680,7 @@ private fun AudioEffectsSettingsScreen(
 
         SectionSpacer()
 
-        SectionHeader(icon = Icons.Filled.AutoAwesome, title = "催眠模式")
+        SectionHeader(icon = Icons.Filled.AutoAwesome, title = stringResource(R.string.settings_hypnosis_section))
 
         Card(
             modifier = Modifier
@@ -1692,9 +1698,9 @@ private fun AudioEffectsSettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("启用催眠模式", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_enable_hypnosis), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        "开启后播放界面只显示动态催眠背景，点击屏幕浮现UI 5秒",
+                        stringResource(R.string.settings_hypnosis_desc),
                         color = TextHint,
                         fontSize = 12.sp
                     )
@@ -1719,7 +1725,7 @@ private fun AudioEffectsSettingsScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 10.dp)
                 ) {
-                    Text("动态背景选择", color = TextPrimary, fontSize = 14.sp)
+                    Text(stringResource(R.string.settings_hypnosis_bg), color = TextPrimary, fontSize = 14.sp)
                     Spacer(Modifier.height(8.dp))
                     HypnosisBgType.entries.forEach { bgType ->
                         val isSelected = bgType.index == hypnosisBgType
@@ -1731,7 +1737,7 @@ private fun AudioEffectsSettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (isSelected) "● ${bgType.label}" else "○ ${bgType.label}",
+                                text = if (isSelected) "● ${stringResource(bgType.labelRes)}" else "○ ${stringResource(bgType.labelRes)}",
                                 color = if (isSelected) LocalAccentColor.current else TextSecondary,
                                 fontSize = 14.sp
                             )
@@ -1750,9 +1756,9 @@ private fun AudioEffectsSettingsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("播放界面特效", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.settings_play_effects), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Text(
-                    "浮动粒子和呼吸光晕效果",
+                    stringResource(R.string.settings_play_effects_desc),
                     color = TextHint,
                     fontSize = 12.sp
                 )
@@ -1793,7 +1799,7 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = DarkSurface)
         ) {
-            AboutRow(label = "版本信息", value = "ASMRHelper v1.0.0")
+            AboutRow(label = stringResource(R.string.settings_version_info), value = "ASMRHelper v1.0.0")
 
             HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
 
@@ -1812,9 +1818,9 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("检查更新", color = TextPrimary, fontSize = 14.sp)
+                Text(stringResource(R.string.settings_check_update), color = TextPrimary, fontSize = 14.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (checking) "检查中…" else "v1.0.0", color = TextSecondary, fontSize = 13.sp)
+                    Text(if (checking) stringResource(R.string.settings_checking) else "v1.0.0", color = TextSecondary, fontSize = 13.sp)
                     Spacer(Modifier.width(4.dp))
                     Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
                 }
@@ -1822,7 +1828,7 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
 
             HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
 
-            AboutRow(label = "开源许可", value = "Kotlin (Apache 2.0)\nAndroid (Apache 2.0)\nMaterial3 (Apache 2.0)")
+            AboutRow(label = stringResource(R.string.settings_license), value = "Kotlin (Apache 2.0)\nAndroid (Apache 2.0)\nMaterial3 (Apache 2.0)")
 
             HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
 
@@ -1836,7 +1842,7 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("GitHub 仓库", color = TextPrimary, fontSize = 14.sp)
+                Text(stringResource(R.string.profile_github), color = TextPrimary, fontSize = 14.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("JiaoZi258/ASMRHelper", color = TextSecondary, fontSize = 13.sp)
                     Spacer(Modifier.width(4.dp))
@@ -1859,18 +1865,18 @@ private fun checkForUpdate(context: android.content.Context): String {
             setRequestProperty("User-Agent", "ASMRHelper")
         }
         val code = conn.responseCode
-        if (code == 404) return "暂无已发布版本"
-        if (code !in 200..299) return "检查失败（HTTP $code）"
+        if (code == 404) return context.getString(R.string.settings_update_none)
+        if (code !in 200..299) return context.getString(R.string.settings_update_failed_http, code)
         val body = conn.inputStream.bufferedReader().use { it.readText() }
         val tag = Regex("\"tag_name\"\\s*:\\s*\"([^\"]+)\"")
             .find(body)?.groupValues?.get(1)
-            ?: return "未找到版本信息"
+            ?: return context.getString(R.string.settings_update_not_found)
         val latest = tag.trim().removePrefix("v")
         val current = (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.0.0")
             .trim().removePrefix("v")
-        if (compareVersions(latest, current) > 0) "发现新版本 v$latest" else "当前已是最新版本"
+        if (compareVersions(latest, current) > 0) context.getString(R.string.settings_update_new, latest) else context.getString(R.string.settings_update_latest)
     } catch (e: Exception) {
-        "检查失败：${e.message ?: "网络错误"}"
+        context.getString(R.string.settings_update_failed, e.message ?: context.getString(R.string.common_network_error))
     }
 }
 

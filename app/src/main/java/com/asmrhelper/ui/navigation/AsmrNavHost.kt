@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.widget.Toast
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.PlaybackMode
 import com.asmrhelper.ui.background.BackgroundGalleryScreen
 import com.asmrhelper.ui.components.BatteryOptimizationDialog
@@ -284,7 +285,7 @@ private fun PlayPage(
                         initialTabIndex = libraryInitialTab,
                         onSetBackground = { a ->
                             playViewModel.setBackgroundAudio(a.filePath)
-                            Toast.makeText(context, "已设为环境音: ${a.title}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.nav_set_ambient, a.title), Toast.LENGTH_SHORT).show()
                         }
                     )
                 }

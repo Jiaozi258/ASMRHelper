@@ -4,7 +4,9 @@ import android.media.audiofx.BassBoost
 import android.media.audiofx.LoudnessEnhancer
 import android.media.audiofx.PresetReverb
 import androidx.media3.common.Player
+import androidx.annotation.StringRes
 import androidx.media3.exoplayer.ExoPlayer
+import com.asmrhelper.R
 import com.asmrhelper.di.MainPlayer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,13 +23,13 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /** 场景效果预设 */
-enum class SceneEffect(val label: String) {
-    NONE("无"),
-    BLANKET("被窝声"),   // 闷声包裹感
-    DISTORTED("失真声"), // 黑胶失真感
-    CONCERT("演唱会"),   // 大厅混响
-    BATHROOM("浴室"),    // 小房间混响
-    THEATER("影院"),     // 中型厅混响
+enum class SceneEffect(@StringRes val labelRes: Int) {
+    NONE(R.string.scene_effect_none),
+    BLANKET(R.string.scene_effect_blanket),   // 闷声包裹感
+    DISTORTED(R.string.scene_effect_distorted), // 黑胶失真感
+    CONCERT(R.string.scene_effect_concert),   // 大厅混响
+    BATHROOM(R.string.scene_effect_bathroom), // 小房间混响
+    THEATER(R.string.scene_effect_theater),   // 中型厅混响
 }
 
 /**

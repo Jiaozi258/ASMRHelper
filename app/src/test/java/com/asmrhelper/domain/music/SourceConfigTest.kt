@@ -1,5 +1,6 @@
 package com.asmrhelper.domain.music
 
+import com.asmrhelper.R
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -17,8 +18,8 @@ class SourceConfigTest {
     }
 
     @Test
-    fun presetDisplayNames() {
-        assertEquals("网易云音乐", SourcePresets.NETEASE.displayName)
-        assertEquals("QQ音乐", SourcePresets.QQ.displayName)
+    fun presetDisplayNameResources() {
+        assertEquals(R.string.source_netease, SourcePresets.NETEASE.displayNameRes)
+        assertEquals(R.string.source_qq, SourcePresets.QQ.displayNameRes)
     }
 }

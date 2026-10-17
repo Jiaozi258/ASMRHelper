@@ -34,10 +34,10 @@ class AsmrApplication : Application() {
         // Build the desired channel config
         val desired = NotificationChannel(
             Constants.NOTIFICATION_CHANNEL_ID,
-            Constants.NOTIFICATION_CHANNEL_NAME,
+            getString(R.string.notif_channel_name),
             targetImportance
         ).apply {
-            description = "播放控制和当前播放信息"
+            description = getString(R.string.notif_channel_description)
             setShowBadge(false)
             setSound(null, null)
             enableVibration(false)

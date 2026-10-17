@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import com.asmrhelper.R
 
 /**
  * Helps the user whitelist this app from battery optimization so background
@@ -107,25 +108,21 @@ object BatteryOptimizationHelper {
 
     /** Human-readable ROM-specific guidance for the autostart / background
      *  running permission path. */
-    fun getRomGuidance(): String? {
+    fun getRomGuidance(context: Context): String? {
         val manufacturer = Build.MANUFACTURER.lowercase()
         val brand = Build.BRAND.lowercase()
         return when {
             manufacturer.contains("xiaomi") || brand.contains("xiaomi") || brand.contains("redmi") ->
-                "小米/HyperOS: 设置 → 应用设置 → 应用管理 → ASMRHelper → 省电策略 → 无限制\n" +
-                "同时开启: 自启动管理 → 允许自启动"
+                context.getString(R.string.battery_guidance_xiaomi)
 
             manufacturer.contains("oppo") || brand.contains("oppo") || brand.contains("realme") || brand.contains("oneplus") ->
-                "OPPO/ColorOS: 设置 → 应用 → 应用管理 → ASMRHelper → 耗电保护 → 允许后台运行\n" +
-                "同时开启: 自启动管理 → 允许自启动"
+                context.getString(R.string.battery_guidance_oppo)
 
             manufacturer.contains("vivo") || brand.contains("vivo") ->
-                "vivo/OriginOS: 设置 → 应用与权限 → 权限管理 → 后台弹出界面 → 允许\n" +
-                "同时: i管家 → 实用工具 → 自启动管理 → 打开开关"
+                context.getString(R.string.battery_guidance_vivo)
 
             manufacturer.contains("huawei") || brand.contains("huawei") || brand.contains("honor") ->
-                "华为/HarmonyOS: 设置 → 应用 → 应用启动管理 → ASMRHelper → 手动管理 → 全部开启\n" +
-                "同时: 设置 → 电池 → 更多电池设置 → 休眠时始终保持网络连接"
+                context.getString(R.string.battery_guidance_huawei)
 
             else -> null
         }

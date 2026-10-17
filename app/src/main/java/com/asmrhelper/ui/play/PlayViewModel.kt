@@ -894,7 +894,7 @@ class PlayViewModel @Inject constructor(
                 name = name,
                 audioFilePath = state.playerState.currentAudio?.filePath ?: "",
                 bgColorIndex = state.backgroundColorIndex,
-                binauralPresetName = state.binauralPreset?.name ?: "",
+                binauralPresetName = state.binauralPreset?.id ?: "",
                 timerMinutes = state.timerMinutes,
                 noiseType = state.noiseType,
                 spatialMode = state.spatialMode,
@@ -932,7 +932,7 @@ class PlayViewModel @Inject constructor(
         }
         // Apply binaural
         if (scene.binauralPresetName.isNotEmpty()) {
-            BinauralPreset.PRESETS.find { it.name == scene.binauralPresetName }?.let {
+            BinauralPreset.PRESETS.find { it.id == scene.binauralPresetName }?.let {
                 toggleBinaural(it)
             }
         }

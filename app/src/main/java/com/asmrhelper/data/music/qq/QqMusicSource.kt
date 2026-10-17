@@ -1,5 +1,7 @@
 package com.asmrhelper.data.music.qq
 
+import android.content.Context
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemotePlaylist
@@ -23,13 +25,14 @@ import org.json.JSONObject
 /** QQ 音乐原生音源：直接 POST `u.y.qq.com/cgi-bin/musics.fcg`，zzc 签名，匿名 `uin=0`。 */
 class QqMusicSource(
     private val client: OkHttpClient,
+    private val context: Context,
     persistedCookie: String = "",
     persistedNickname: String = "",
     private val onLoginChanged: (cookie: String, nickname: String) -> Unit = { _, _ -> }
 ) : MusicSource {
 
     override val id: String = "qq"
-    override val displayName: String = "QQ音乐"
+    override val displayNameRes: Int = R.string.source_qq
 
     private var cookie: String = persistedCookie
     private var nickname: String = persistedNickname
@@ -93,7 +96,7 @@ class QqMusicSource(
     // ── 登录（账号密码走 QQ 网页登录页；WebView 抓 Cookie 后 importLogin） ──
 
     override fun loginAccount(username: String, password: String): Flow<Result<Unit>> = flow {
-        emit(Result.failure(IllegalStateException("QQ 请使用网页登录")))
+        emit(Result.failure(IllegalStateException(context.getString(R.string.login_qq_use_web))))
     }
 
     override fun importLogin(cookie: String, nickname: String) {

@@ -6,9 +6,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.asmrhelper.R
 import com.asmrhelper.util.BatteryOptimizationHelper
 
 /**
@@ -27,7 +29,7 @@ fun BatteryOptimizationDialog(
 ) {
     val context = LocalContext.current
     val isChineseRom = remember { BatteryOptimizationHelper.isChineseRom() }
-    val romGuidance = remember { BatteryOptimizationHelper.getRomGuidance() }
+    val romGuidance = remember { BatteryOptimizationHelper.getRomGuidance(context) }
 
     // Record that we've shown the dialog (once per composition, not per recomposition)
     LaunchedEffect(Unit) {
@@ -38,7 +40,7 @@ fun BatteryOptimizationDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "保持后台播放",
+                text = stringResource(R.string.battery_dialog_title),
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
@@ -49,7 +51,7 @@ fun BatteryOptimizationDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "为确保息屏或切换应用后音乐不会自动停止，需要将 ASMRHelper 加入电池优化白名单。",
+                    text = stringResource(R.string.battery_dialog_body),
                     fontSize = 14.sp,
                     lineHeight = 20.sp
                 )
@@ -57,7 +59,7 @@ fun BatteryOptimizationDialog(
                 if (isChineseRom && romGuidance != null) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Text(
-                        text = "您使用的是国产手机系统，建议同时检查以下设置：",
+                        text = stringResource(R.string.battery_dialog_rom_hint),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
@@ -76,7 +78,7 @@ fun BatteryOptimizationDialog(
                 BatteryOptimizationHelper.openBatterySettings(context)
                 onDismiss()
             }) {
-                Text("去省电设置")
+                Text(stringResource(R.string.battery_dialog_action))
             }
         },
         dismissButton = {
@@ -86,13 +88,13 @@ fun BatteryOptimizationDialog(
                     BatteryOptimizationHelper.openAppSettings(context)
                     Toast.makeText(
                         context,
-                        "请在应用信息页中开启「自启动」和「后台运行」权限",
+                        context.getString(R.string.battery_dialog_app_info),
                         Toast.LENGTH_LONG
                     ).show()
                 }
                 onDismiss()
             }) {
-                Text(if (isChineseRom) "应用详情 →" else "稍后再说")
+                Text(if (isChineseRom) stringResource(R.string.battery_dialog_app_details) else stringResource(R.string.battery_dialog_later))
             }
         }
     )

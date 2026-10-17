@@ -181,13 +181,13 @@ class AsmrMediaService : Service() {
         val showOnLockScreen = prefs.getBoolean("show_on_lockscreen", false)
         val loopLabel = when (state.loopMode) {
             LoopMode.NONE -> ""
-            LoopMode.SINGLE -> " | 单曲循环"
-            LoopMode.LIST -> " | 列表循环"
-            LoopMode.SHUFFLE -> " | 随机播放"
+            LoopMode.SINGLE -> " | " + getString(R.string.settings_loop_single)
+            LoopMode.LIST -> " | " + getString(R.string.settings_loop_list)
+            LoopMode.SHUFFLE -> " | " + getString(R.string.settings_loop_shuffle)
             else -> ""
         }
         val title = state.currentAudio?.title ?: "ASMRHelper"
-        val subtitle = (state.currentAudio?.artist ?: "未在播放") + loopLabel
+        val subtitle = (state.currentAudio?.artist ?: getString(R.string.play_not_playing)) + loopLabel
 
         val builder = NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID)
             .setContentTitle(title)
@@ -205,7 +205,7 @@ class AsmrMediaService : Service() {
             .addAction(
                 if (state.isPlaying) android.R.drawable.ic_media_pause
                 else android.R.drawable.ic_media_play,
-                if (state.isPlaying) "暂停" else "播放",
+                if (state.isPlaying) getString(R.string.play_pause) else getString(R.string.play_play),
                 MediaButtonReceiver.buildMediaButtonPendingIntent(
                     this,
                     if (state.isPlaying) PlaybackStateCompat.ACTION_PAUSE
@@ -214,14 +214,14 @@ class AsmrMediaService : Service() {
             )
             .addAction(
                 android.R.drawable.ic_media_next,
-                "下一首",
+                getString(R.string.play_next),
                 MediaButtonReceiver.buildMediaButtonPendingIntent(
                     this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT
                 )
             )
             .addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
-                "关闭",
+                getString(R.string.common_close),
                 PendingIntent.getService(
                     this, 0,
                     Intent(this, AsmrMediaService::class.java).setAction(Constants.ACTION_STOP_SERVICE),

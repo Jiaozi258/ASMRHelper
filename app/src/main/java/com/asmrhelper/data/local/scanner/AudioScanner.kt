@@ -2,6 +2,7 @@ package com.asmrhelper.data.local.scanner
 
 import android.content.Context
 import android.provider.MediaStore
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.Audio
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -38,8 +39,8 @@ class AudioScanner @Inject constructor(
             while (it.moveToNext()) {
                 audioList.add(
                     Audio(
-                        title = it.getString(titleCol) ?: "未知音频",
-                        artist = it.getString(artistCol) ?: "未知艺术家",
+                        title = it.getString(titleCol) ?: context.getString(R.string.library_unknown_audio),
+                        artist = it.getString(artistCol) ?: context.getString(R.string.library_unknown_artist),
                         filePath = it.getString(dataCol) ?: continue,
                         durationMs = it.getLong(durationCol)
                     )

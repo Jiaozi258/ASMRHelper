@@ -24,13 +24,13 @@ object PlaylistStateCodec {
         return arr.toString()
     }
 
-    fun decode(json: String): List<Audio> = try {
+    fun decode(json: String, unknownTitle: String = ""): List<Audio> = try {
         val arr = JSONArray(json)
         (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
             Audio(
                 id = o.optLong("id", 0L),
-                title = o.optString("title", "未知"),
+                title = o.optString("title", unknownTitle),
                 artist = o.optString("artist", ""),
                 filePath = o.optString("filePath", ""),
                 durationMs = o.optLong("durationMs", 0L),

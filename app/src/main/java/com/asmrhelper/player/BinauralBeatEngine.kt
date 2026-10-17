@@ -3,6 +3,8 @@ package com.asmrhelper.player
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import androidx.annotation.StringRes
+import com.asmrhelper.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -13,24 +15,25 @@ import kotlin.math.PI
 import kotlin.math.sin
 
 data class BinauralPreset(
-    val name: String,
+    val id: String,
+    @StringRes val nameRes: Int,
     val category: String,
     val baseFrequency: Float,
     val beatFrequency: Float,
-    val description: String
+    @StringRes val descriptionRes: Int
 ) {
     companion object {
         val PRESETS = listOf(
-            BinauralPreset("Delta 深睡", "Delta (1-4 Hz)", 100f, 3f, "深度睡眠与修复"),
-            BinauralPreset("Delta 入眠", "Delta (1-4 Hz)", 120f, 2f, "引导入睡"),
-            BinauralPreset("Theta 冥想", "Theta (4-8 Hz)", 150f, 6f, "深度冥想与内省"),
-            BinauralPreset("Theta 放松", "Theta (4-8 Hz)", 160f, 5f, "身心放松"),
-            BinauralPreset("Alpha 平静", "Alpha (8-14 Hz)", 200f, 10f, "平静专注"),
-            BinauralPreset("Alpha 学习", "Alpha (8-14 Hz)", 210f, 12f, "轻松学习"),
-            BinauralPreset("Beta 专注", "Beta (14-30 Hz)", 250f, 20f, "高度集中"),
-            BinauralPreset("Beta 活跃", "Beta (14-30 Hz)", 260f, 18f, "思维活跃"),
-            BinauralPreset("Gamma 认知", "Gamma (30-50 Hz)", 300f, 40f, "高级认知功能"),
-            BinauralPreset("SMR 专注", "SMR (12-15 Hz)", 220f, 13f, "感官运动节律专注")
+            BinauralPreset("delta_deep", R.string.binaural_name_delta_deep, "Delta (1-4 Hz)", 100f, 3f, R.string.binaural_desc_delta_deep),
+            BinauralPreset("delta_sleep", R.string.binaural_name_delta_sleep, "Delta (1-4 Hz)", 120f, 2f, R.string.binaural_desc_delta_sleep),
+            BinauralPreset("theta_meditation", R.string.binaural_name_theta_meditation, "Theta (4-8 Hz)", 150f, 6f, R.string.binaural_desc_theta_meditation),
+            BinauralPreset("theta_relax", R.string.binaural_name_theta_relax, "Theta (4-8 Hz)", 160f, 5f, R.string.binaural_desc_theta_relax),
+            BinauralPreset("alpha_calm", R.string.binaural_name_alpha_calm, "Alpha (8-14 Hz)", 200f, 10f, R.string.binaural_desc_alpha_calm),
+            BinauralPreset("alpha_study", R.string.binaural_name_alpha_study, "Alpha (8-14 Hz)", 210f, 12f, R.string.binaural_desc_alpha_study),
+            BinauralPreset("beta_focus", R.string.binaural_name_beta_focus, "Beta (14-30 Hz)", 250f, 20f, R.string.binaural_desc_beta_focus),
+            BinauralPreset("beta_active", R.string.binaural_name_beta_active, "Beta (14-30 Hz)", 260f, 18f, R.string.binaural_desc_beta_active),
+            BinauralPreset("gamma_cognition", R.string.binaural_name_gamma_cognition, "Gamma (30-50 Hz)", 300f, 40f, R.string.binaural_desc_gamma_cognition),
+            BinauralPreset("smr_focus", R.string.binaural_name_smr_focus, "SMR (12-15 Hz)", 220f, 13f, R.string.binaural_desc_smr_focus)
         )
     }
 }

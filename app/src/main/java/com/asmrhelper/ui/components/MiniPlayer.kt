@@ -27,8 +27,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.asmrhelper.R
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.pressScale
 import com.asmrhelper.ui.theme.DarkSurface
@@ -49,7 +51,7 @@ fun MiniPlayer(
         targetValue = if (isPlaying) LocalAccentColor.current.copy(alpha = 0.08f) else DarkSurface,
         animationSpec = tween(300)
     )
-    val playPauseDescription = if (isPlaying) "暂停" else "播放"
+    val playPauseDescription = if (isPlaying) stringResource(R.string.play_pause) else stringResource(R.string.play_play)
 
     Box(
         modifier = modifier
@@ -63,7 +65,7 @@ fun MiniPlayer(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = title.ifEmpty { "未在播放" },
+                text = title.ifEmpty { stringResource(R.string.play_not_playing) },
                 color = TextPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

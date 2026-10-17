@@ -2,8 +2,10 @@ package com.asmrhelper.player
 
 import android.content.Context
 import android.media.audiofx.Equalizer
+import androidx.annotation.StringRes
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.asmrhelper.R
 import com.asmrhelper.di.MainPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -24,7 +26,8 @@ import javax.inject.Singleton
 /** 均衡器预设 */
 data class EqPreset(
     val name: String,
-    val values: List<Float> // 10 个频段的 dB 值
+    val values: List<Float>, // 10 个频段的 dB 值
+    @StringRes val nameRes: Int = 0
 )
 
 @Singleton
@@ -47,7 +50,7 @@ class EqualizerController @Inject constructor(
     val isEnabled: StateFlow<Boolean> = _isEnabled.asStateFlow()
 
     /** 当前选中的预设名 */
-    private val _currentPreset = MutableStateFlow("自定义")
+    private val _currentPreset = MutableStateFlow(context.getString(R.string.eq_custom))
     val currentPreset: StateFlow<String> = _currentPreset.asStateFlow()
 
     /** 设备实际提供的 EQ 频段索引（用于 UI 频段 → 设备频段映射） */
@@ -58,12 +61,12 @@ class EqualizerController @Inject constructor(
     companion object {
         /** 内置预设 */
         val PRESETS = listOf(
-            EqPreset("默认", listOf(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)),
-            EqPreset("明亮", listOf(-2f, -1f, 0f, 1f, 2f, 3f, 4f, 5f, 5f, 6f)),
-            EqPreset("低音增强", listOf(6f, 6f, 5f, 4f, 2f, 1f, 0f, 0f, 0f, 0f)),
-            EqPreset("清脆", listOf(0f, 0f, 1f, 2f, 3f, 4f, 3f, 2f, 1f, 0f)),
-            EqPreset("沉闷", listOf(3f, 3f, 2f, 1f, 0f, -1f, -2f, -3f, -4f, -5f)),
-            EqPreset("人声增强", listOf(0f, 0f, 0f, 1f, 2f, 3f, 4f, 3f, 2f, 1f)),
+            EqPreset("default", listOf(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f), R.string.eq_preset_default),
+            EqPreset("bright", listOf(-2f, -1f, 0f, 1f, 2f, 3f, 4f, 5f, 5f, 6f), R.string.eq_preset_bright),
+            EqPreset("bass", listOf(6f, 6f, 5f, 4f, 2f, 1f, 0f, 0f, 0f, 0f), R.string.eq_preset_bass),
+            EqPreset("crisp", listOf(0f, 0f, 1f, 2f, 3f, 4f, 3f, 2f, 1f, 0f), R.string.eq_preset_crisp),
+            EqPreset("dull", listOf(3f, 3f, 2f, 1f, 0f, -1f, -2f, -3f, -4f, -5f), R.string.eq_preset_dull),
+            EqPreset("vocal", listOf(0f, 0f, 0f, 1f, 2f, 3f, 4f, 3f, 2f, 1f), R.string.eq_preset_vocal),
         )
     }
 
@@ -130,7 +133,7 @@ class EqualizerController @Inject constructor(
                 if (band in it.indices) it[band] = clamped
             }
         }
-        _currentPreset.value = "自定义"
+        _currentPreset.value = context.getString(R.string.eq_custom)
         applySingleBand(band, clamped)
     }
 
