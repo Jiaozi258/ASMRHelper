@@ -18,12 +18,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.widget.Toast
+import com.asmrhelper.domain.model.PlaybackMode
 import com.asmrhelper.ui.background.BackgroundGalleryScreen
 import com.asmrhelper.ui.components.BatteryOptimizationDialog
 import com.asmrhelper.ui.components.MiniPlayer
 import com.asmrhelper.ui.discover.DiscoverScreen
 import com.asmrhelper.ui.history.HistoryScreen
 import com.asmrhelper.ui.library.LibraryScreen
+import com.asmrhelper.ui.play.PlayScreen
 import com.asmrhelper.ui.play.PlayScreenV2
 import com.asmrhelper.ui.play.PlayViewModel
 import com.asmrhelper.ui.playlist.PlaylistScreen
@@ -163,23 +165,42 @@ private fun PlayPage(
     onBackFromSettings: () -> Unit
 ) {
     val context = LocalContext.current
+    val playbackMode by playViewModel.playbackMode.collectAsStateWithLifecycle()
+    val mode = PlaybackMode.entries.getOrElse(playbackMode) { PlaybackMode.ASMR }
 
     when (playSubScreen) {
         null -> {
             // 沉浸式播放页始终深色（暗色壁纸 + 浅色文字），不随全局浅色/深色主题切换
             CompositionLocalProvider(LocalAppColors provides DarkAppColors) {
-                PlayScreenV2(
-                    onNavigateToPlaylist = { onOpenSubScreen(SubScreen.Playlist) },
-                    onNavigateToLibrary = { tabIndex ->
-                        onSetLibraryTab(tabIndex)
-                        onOpenSubScreen(SubScreen.Library)
-                    },
-                    onNavigateToBackground = { onOpenSubScreen(SubScreen.BackgroundGallery) },
-                    onNavigateToSettings = onOpenSettings,
-                    onNavigateToSlideshow = { onOpenSubScreen(SubScreen.Slideshow) },
-                    onNavigateToTriggerPad = { onOpenSubScreen(SubScreen.TriggerPad) },
-                    onNavigateToSleepJournal = { onOpenSubScreen(SubScreen.SleepJournal) }
-                )
+                if (mode == PlaybackMode.ASMR) {
+                    // ASMR 模式：经典播放页（环境音/白噪音/催眠/双耳节拍，无歌词无工具箱）
+                    PlayScreen(
+                        onNavigateToPlaylist = { onOpenSubScreen(SubScreen.Playlist) },
+                        onNavigateToLibrary = { tabIndex ->
+                            onSetLibraryTab(tabIndex)
+                            onOpenSubScreen(SubScreen.Library)
+                        },
+                        onNavigateToBackground = { onOpenSubScreen(SubScreen.BackgroundGallery) },
+                        onNavigateToSettings = onOpenSettings,
+                        onNavigateToSlideshow = { onOpenSubScreen(SubScreen.Slideshow) },
+                        onNavigateToTriggerPad = { onOpenSubScreen(SubScreen.TriggerPad) },
+                        onNavigateToSleepJournal = { onOpenSubScreen(SubScreen.SleepJournal) }
+                    )
+                } else {
+                    // MUSIC 模式：沉浸式播放页（歌词/工具箱/切片）
+                    PlayScreenV2(
+                        onNavigateToPlaylist = { onOpenSubScreen(SubScreen.Playlist) },
+                        onNavigateToLibrary = { tabIndex ->
+                            onSetLibraryTab(tabIndex)
+                            onOpenSubScreen(SubScreen.Library)
+                        },
+                        onNavigateToBackground = { onOpenSubScreen(SubScreen.BackgroundGallery) },
+                        onNavigateToSettings = onOpenSettings,
+                        onNavigateToSlideshow = { onOpenSubScreen(SubScreen.Slideshow) },
+                        onNavigateToTriggerPad = { onOpenSubScreen(SubScreen.TriggerPad) },
+                        onNavigateToSleepJournal = { onOpenSubScreen(SubScreen.SleepJournal) }
+                    )
+                }
             }
         }
 
