@@ -348,13 +348,21 @@ fun FloatingControls(
     onNext: () -> Unit,
     onSeek: (Long) -> Unit,
     onMore: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    animateEntrance: Boolean = true,
+    onEntered: () -> Unit = {}
 ) {
     val accent = LocalAccentColor.current
     var dragValue by remember { mutableStateOf<Float?>(null) }
     val shownValue = dragValue ?: progress.coerceIn(0f, 1f)
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible = true }
+    // 首次入场才上滑淡入；已在场（子页返回/模式切回）时直接可见，不重播
+    var visible by remember { mutableStateOf(!animateEntrance) }
+    LaunchedEffect(animateEntrance) {
+        if (animateEntrance) {
+            visible = true
+            onEntered()
+        }
+    }
     AnimatedVisibility(
         visible = visible,
         modifier = modifier,

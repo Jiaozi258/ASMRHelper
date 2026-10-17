@@ -178,6 +178,11 @@ private fun PlayPage(
     val playbackMode by playViewModel.playbackMode.collectAsStateWithLifecycle()
     val mode = PlaybackMode.entries.getOrElse(playbackMode) { PlaybackMode.ASMR }
 
+    // MUSIC 悬浮控制条入场动画：只在首次进入 MUSIC 播放页时播一次，
+    // 子页（歌单/曲库）返回与 ASMR↔MUSIC 模式切换不重播（评审 finding #1）。
+    // 标志提升到 PlayPage，其组合在子页/模式切换时均存活。
+    var musicControlsEntered by remember { mutableStateOf(false) }
+
     when (playSubScreen) {
         null -> {
             // 沉浸式播放页始终深色（暗色壁纸 + 浅色文字），不随全局浅色/深色主题切换
@@ -219,7 +224,9 @@ private fun PlayPage(
                                 onToggleMode = {
                                     val next = (PlaybackMode.MUSIC.ordinal + 1) % PlaybackMode.entries.size
                                     playViewModel.setPlaybackMode(next)
-                                }
+                                },
+                                controlsEntered = musicControlsEntered,
+                                onControlsEntered = { musicControlsEntered = true }
                             )
                         }
                     }

@@ -89,7 +89,9 @@ fun MusicPlayScreen(
     onNavigateToSlideshow: () -> Unit = {},
     onNavigateToTriggerPad: () -> Unit = {},
     onNavigateToSleepJournal: () -> Unit = {},
-    onToggleMode: () -> Unit = {}
+    onToggleMode: () -> Unit = {},
+    controlsEntered: Boolean = false,
+    onControlsEntered: () -> Unit = {}
 ) {
     val viewModel: PlayViewModel = hiltViewModel()
     val playlistViewModel: PlaylistViewModel = hiltViewModel()
@@ -213,7 +215,9 @@ fun MusicPlayScreen(
                 onMore = { showMoreDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp)
+                    .padding(bottom = 16.dp),
+                animateEntrance = !controlsEntered,
+                onEntered = onControlsEntered
             )
         }
 
