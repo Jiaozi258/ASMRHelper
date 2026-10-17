@@ -1,6 +1,7 @@
 package com.asmrhelper.domain.repository
 
 import com.asmrhelper.domain.model.BackgroundImage
+import com.asmrhelper.domain.music.SourceConfig
 import kotlinx.coroutines.flow.Flow
 
 interface SettingsRepository {
@@ -120,4 +121,10 @@ interface SettingsRepository {
     suspend fun setMinThresholdDb(db: Int)
     fun getMaxThresholdDb(): Flow<Int> // 最大阈值 dB (-40~0)
     suspend fun setMaxThresholdDb(db: Int)
+
+    // ── 音乐音源 ───────────────────────────────────────
+    fun getMusicSources(): Flow<List<SourceConfig>> // 无存储时返回内置预设
+    suspend fun setMusicSources(sources: List<SourceConfig>)
+    fun getActiveSourceId(): Flow<String> // 默认 "netease"
+    suspend fun setActiveSourceId(id: String)
 }

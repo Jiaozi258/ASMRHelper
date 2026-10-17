@@ -8,6 +8,9 @@ import com.asmrhelper.data.local.db.entity.BackgroundImageEntity
 import com.asmrhelper.data.mapper.toDomain
 import com.asmrhelper.data.mapper.toEntity
 import com.asmrhelper.domain.model.BackgroundImage
+import com.asmrhelper.data.music.MusicSourceJson
+import com.asmrhelper.domain.music.SourceConfig
+import com.asmrhelper.domain.music.SourcePresets
 import com.asmrhelper.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -41,6 +44,8 @@ class SettingsRepositoryImpl @Inject constructor(
     private val _ambientAudios = MutableStateFlow(loadAmbientList())
     private val _hypnosisEnabled = MutableStateFlow(prefs.getBoolean("hypnosis_mode", false))
     private val _hypnosisBgType = MutableStateFlow(prefs.getInt("hypnosis_bg_type", 0))
+    private val _musicSources = MutableStateFlow(loadMusicSources())
+    private val _activeSourceId = MutableStateFlow(prefs.getString("music_active_source", "netease") ?: "netease")
 
     override fun getBackgroundImages(): Flow<List<BackgroundImage>> =
         imageDao.getAllImages().map { list -> list.map { it.toDomain() } }
@@ -432,5 +437,26 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setMaxThresholdDb(db: Int) {
         prefs.edit().putInt("max_threshold_db", db.coerceIn(-40, 0)).apply()
         _maxThresholdDb.value = db.coerceIn(-40, 0)
+    }
+
+    // ── 音乐音源 ───────────────────────────────────────
+
+    private fun loadMusicSources(): List<SourceConfig> {
+        val json = prefs.getString("music_sources", null) ?: return SourcePresets.ALL
+        return MusicSourceJson.sourcesFromJson(json).ifEmpty { SourcePresets.ALL }
+    }
+
+    override fun getMusicSources(): Flow<List<SourceConfig>> = _musicSources
+
+    override suspend fun setMusicSources(sources: List<SourceConfig>) {
+        prefs.edit().putString("music_sources", MusicSourceJson.sourcesToJson(sources)).apply()
+        _musicSources.value = sources
+    }
+
+    override fun getActiveSourceId(): Flow<String> = _activeSourceId
+
+    override suspend fun setActiveSourceId(id: String) {
+        prefs.edit().putString("music_active_source", id).apply()
+        _activeSourceId.value = id
     }
 }
