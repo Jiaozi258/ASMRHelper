@@ -76,9 +76,15 @@ class QqMusicSource(
     override fun getSongDetail(songId: String): Flow<RemoteSong> = flow {}
     override fun getPlaylist(playlistId: String): Flow<RemotePlaylist> = flow { emit(RemotePlaylist("", "")) }
 
-    /** QQ 排行榜/推荐匿名返回 500003（需登录），匿名源返回空；登录落地后补齐。 */
-    override fun getRecommendations(): Flow<List<RemoteSong>> = flow { emit(emptyList()) }
-    override fun getCharts(): Flow<List<RemoteChart>> = flow { emit(emptyList()) }
+    /** 排行榜/推荐需登录；未登录时匿名返回 500003，解析器返回空，不崩溃。 */
+    override fun getRecommendations(): Flow<List<RemoteSong>> = flow {
+        val param = JSONObject().put("offset", 0).put("limit", 30)
+        emit(QqMusicJson.parseRecommendations(post("music.recommend.RecommendAdaptor", "getRecommendation", param)))
+    }
+
+    override fun getCharts(): Flow<List<RemoteChart>> = flow {
+        emit(QqMusicJson.parseCharts(post("musicToplist.ToplistInfo", "GetAll", JSONObject())))
+    }
 
     // ── 登录（占位：QQ 扫码登录后续里程碑经 WebView 注入） ──
 
@@ -114,7 +120,7 @@ class QqMusicSource(
                     .put("notice", 0)
                     .put("platform", "yqq.json")
                     .put("needNewCode", 1)
-                    .put("uin", 0)
+                    .put("uin", QqMusicJson.uin(cookie).toLongOrNull() ?: 0L)
                 val payload = JSONObject()
                     .put("comm", comm)
                     .put("req_0", JSONObject().put("module", module).put("method", method).put("param", param))
@@ -125,6 +131,7 @@ class QqMusicSource(
                     .header("User-Agent", USER_AGENT)
                     .header("Referer", "https://y.qq.com/")
                     .header("Content-Type", "application/json")
+                    .apply { if (cookie.isNotBlank()) header("Cookie", cookie) }
                     .post(body.toRequestBody("application/json".toMediaType()))
                     .build()
                 client.newCall(request).execute().use { resp ->
