@@ -83,6 +83,8 @@ dependencies {
 
     // Networking (音源层 HTTP)
     implementation(libs.okhttp)
+    // QR 二维码渲染（登录扫码）
+    implementation(libs.zxing.core)
 
     // Core
     implementation(libs.core.ktx)

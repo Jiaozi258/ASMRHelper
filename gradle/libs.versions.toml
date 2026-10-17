@@ -15,6 +15,7 @@ coil = "2.7.0"
 core-ktx = "1.15.0"
 activity-compose = "1.9.3"
 okhttp = "4.12.0"
+zxing-core = "3.5.3"
 
 [libraries]
 # Compose BOM
@@ -64,6 +65,8 @@ activity-compose = { group = "androidx.activity", name = "activity-compose", ver
 
 # Networking
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+# QR 二维码渲染（登录扫码）
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing-core" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

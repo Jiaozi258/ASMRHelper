@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -66,6 +67,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.asmrhelper.R
+import com.asmrhelper.domain.music.MusicSource
+import com.asmrhelper.domain.music.SourceConfig
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
@@ -88,6 +91,10 @@ fun ProfileScreen(
     val audioCount by viewModel.audioCount.collectAsStateWithLifecycle()
     val playlistCount by viewModel.playlistCount.collectAsStateWithLifecycle()
     val bgImageCount by viewModel.bgImageCount.collectAsStateWithLifecycle()
+    val musicSources by viewModel.musicSources.collectAsStateWithLifecycle()
+
+    var loginConfig by remember { mutableStateOf<SourceConfig?>(null) }
+    var logoutConfig by remember { mutableStateOf<SourceConfig?>(null) }
 
     val context = LocalContext.current
 
@@ -341,6 +348,44 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(24.dp))
 
+            // ═══ 在线音乐平台 ═══════════════════════════════
+
+            Text(
+                "在线音乐平台",
+                color = LocalAccentColor.current,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 20.dp, bottom = 8.dp)
+            )
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Column {
+                    musicSources.forEachIndexed { index, config ->
+                        MusicPlatformRow(
+                            config = config,
+                            source = viewModel.musicSourceFor(config),
+                            onAction = { loggedIn ->
+                                if (loggedIn) logoutConfig = config else loginConfig = config
+                            }
+                        )
+                        if (index != musicSources.lastIndex) {
+                            HorizontalDivider(
+                                color = DarkSurfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
             // ═══ 统计卡片 ═══════════════════════════════════
 
             Text(
@@ -447,6 +492,33 @@ fun ProfileScreen(
             Spacer(Modifier.height(16.dp))
         }
     }
+
+    // ── 在线音乐平台：登录 / 退出 ─────────────────────────
+
+    loginConfig?.let { config ->
+        MusicLoginDialog(
+            source = viewModel.musicSourceFor(config),
+            onDismiss = { loginConfig = null }
+        )
+    }
+
+    logoutConfig?.let { config ->
+        AlertDialog(
+            onDismissRequest = { logoutConfig = null },
+            containerColor = DarkSurface,
+            title = { Text("退出登录", color = TextPrimary) },
+            text = { Text("确定退出「${config.displayName}」登录？", color = TextSecondary) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.musicSourceFor(config).logout()
+                    logoutConfig = null
+                }) { Text("退出", color = ErrorRed) }
+            },
+            dismissButton = {
+                TextButton(onClick = { logoutConfig = null }) { Text("取消", color = TextSecondary) }
+            }
+        )
+    }
 }
 
 // ── 统计卡片组件 ──────────────────────────────────────────
@@ -484,6 +556,36 @@ private fun StatCard(
                 Text(count.toString(), color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Text(label, color = TextSecondary, fontSize = 12.sp)
             }
+        }
+    }
+}
+
+// ── 在线音乐平台行 ──────────────────────────────────────────
+
+@Composable
+private fun MusicPlatformRow(
+    config: SourceConfig,
+    source: MusicSource,
+    onAction: (Boolean) -> Unit
+) {
+    val loggedIn by source.isLoggedIn.collectAsStateWithLifecycle()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onAction(loggedIn) }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(config.displayName, color = TextPrimary, fontSize = 14.sp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (loggedIn) "已登录" else "未登录",
+                color = if (loggedIn) LocalAccentColor.current else TextHint,
+                fontSize = 12.sp
+            )
+            Spacer(Modifier.width(4.dp))
+            Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
         }
     }
 }

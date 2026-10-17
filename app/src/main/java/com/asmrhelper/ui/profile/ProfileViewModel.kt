@@ -3,6 +3,9 @@ package com.asmrhelper.ui.profile
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.asmrhelper.data.music.MusicSourceManager
+import com.asmrhelper.domain.music.MusicSource
+import com.asmrhelper.domain.music.SourceConfig
 import com.asmrhelper.domain.repository.AudioRepository
 import com.asmrhelper.domain.repository.PlaylistRepository
 import com.asmrhelper.domain.repository.SettingsRepository
@@ -21,8 +24,15 @@ class ProfileViewModel @Inject constructor(
     private val audioRepository: AudioRepository,
     private val playlistRepository: PlaylistRepository,
     private val settingsRepository: SettingsRepository,
+    private val musicSourceManager: MusicSourceManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    // ── 在线音乐平台 ──────────────────────────────────────
+
+    val musicSources: StateFlow<List<SourceConfig>> = musicSourceManager.sources
+
+    fun musicSourceFor(config: SourceConfig): MusicSource = musicSourceManager.sourceFor(config)
 
     private val prefs = context.getSharedPreferences("asmr_profile", Context.MODE_PRIVATE)
 
