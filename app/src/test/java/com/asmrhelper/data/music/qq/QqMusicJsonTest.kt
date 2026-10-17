@@ -69,4 +69,39 @@ class QqMusicJsonTest {
         assertTrue(QqMusicJson.parseLyric("not json").lines.isEmpty())
         assertTrue(QqMusicJson.parseLyric("""{"req_0":{"data":{"lyric":"!!!"}}}""").lines.isEmpty())
     }
+
+    @Test
+    fun parseChartsMapsToplists() {
+        val json = """{"code":0,"req_0":{"code":0,"data":{"group":[
+            {"groupName":"巅峰榜","toplist":[
+              {"topId":26,"title":"热歌榜","songList":[
+                {"mid":"0035GveV3i9dBM","name":"小苹果","singer":[{"name":"筷子兄弟"}],
+                 "album":{"mid":"000owywt4caGcV","name":"老男孩"},"interval":213}
+              ]}
+            ]}
+        ]}}}"""
+        val charts = QqMusicJson.parseCharts(json)
+        assertEquals(1, charts.size)
+        assertEquals("26", charts[0].id)
+        assertEquals("热歌榜", charts[0].name)
+        assertEquals(1, charts[0].songs.size)
+        assertEquals("0035GveV3i9dBM", charts[0].songs[0].id)
+    }
+
+    @Test
+    fun parseChartsEmptyOnMalformed() {
+        assertTrue(QqMusicJson.parseCharts("not json").isEmpty())
+        assertTrue(QqMusicJson.parseCharts("""{"req_0":{"data":{}}}""").isEmpty())
+    }
+
+    @Test
+    fun parseRecommendationsAndUin() {
+        val json = """{"req_0":{"data":{"songlist":[
+            {"mid":"m1","name":"歌","singer":[{"name":"A"}],"album":{"mid":"am","name":"专"},"interval":200}
+        ]}}}"""
+        assertEquals(1, QqMusicJson.parseRecommendations(json).size)
+        assertEquals("", QqMusicJson.uin(""))
+        assertEquals("123456", QqMusicJson.uin("uin=o123456; qm_keyst=K"))
+        assertEquals("", QqMusicJson.uin("qm_keyst=K"))
+    }
 }

@@ -1,5 +1,6 @@
 package com.asmrhelper.data.music.qq
 
+import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemoteLyricLine
 import com.asmrhelper.domain.model.music.RemoteSong
@@ -59,6 +60,48 @@ object QqMusicJson {
     }
 
     // ── 内部 ────────────────────────────────────────────
+
+    /** 榜单：`musicToplist.ToplistInfo.GetAll` → `req_0.data.group[].toplist[]`。 */
+    fun parseCharts(json: String): List<RemoteChart> = try {
+        val groups = JSONObject(json).optJSONObject("req_0")?.optJSONObject("data")
+            ?.optJSONArray("group") ?: return emptyList()
+        val charts = mutableListOf<RemoteChart>()
+        for (i in 0 until groups.length()) {
+            val toplists = groups.optJSONObject(i)?.optJSONArray("toplist") ?: continue
+            for (j in 0 until toplists.length()) {
+                val t = toplists.optJSONObject(j) ?: continue
+                val songs = mutableListOf<RemoteSong>()
+                t.optJSONArray("songList")?.let { list ->
+                    for (k in 0 until list.length()) {
+                        list.optJSONObject(k)?.let { songs.add(parseSong(it)) }
+                    }
+                }
+                charts.add(RemoteChart(id = t.optString("topId"), name = t.optString("title"), songs = songs))
+            }
+        }
+        charts
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 推荐：`req_0.data.songlist[]`（登录接口形状 best-effort，异常/缺失返回空）。 */
+    fun parseRecommendations(json: String): List<RemoteSong> = try {
+        val items = JSONObject(json).optJSONObject("req_0")?.optJSONObject("data")
+            ?.optJSONArray("songlist") ?: return emptyList()
+        val songs = mutableListOf<RemoteSong>()
+        for (i in 0 until items.length()) {
+            items.optJSONObject(i)?.let { songs.add(parseSong(it)) }
+        }
+        songs
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 从 QQ Cookie 提取纯数字 uin（`uin=o<号码>` 去 `o` 前缀），无则空串。 */
+    fun uin(cookie: String): String {
+        val m = Regex("""(?:^|;\s*)uin=([^;]+)""").find(cookie) ?: return ""
+        return m.groupValues[1].trim().removePrefix("o")
+    }
 
     private fun parseSong(s: JSONObject): RemoteSong {
         val artists = s.optJSONArray("singer")?.let { a ->
