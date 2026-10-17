@@ -31,8 +31,8 @@ import com.asmrhelper.ui.components.ModeToggleButton
 import com.asmrhelper.ui.discover.DiscoverScreen
 import com.asmrhelper.ui.history.HistoryScreen
 import com.asmrhelper.ui.library.LibraryScreen
+import com.asmrhelper.ui.play.MusicPlayScreen
 import com.asmrhelper.ui.play.PlayScreen
-import com.asmrhelper.ui.play.PlayScreenV2
 import com.asmrhelper.ui.play.PlayViewModel
 import com.asmrhelper.ui.playlist.PlaylistScreen
 import com.asmrhelper.ui.profile.ProfileScreen
@@ -207,30 +207,34 @@ private fun PlayPage(
                                 onNavigateToSleepJournal = navigateToSleepJournal
                             )
                         } else {
-                            // MUSIC 模式：沉浸式播放页（歌词/工具箱/切片）
-                            PlayScreenV2(
+                            // MUSIC 模式：Folia 沉浸式播放页（双色调封面/可视化/居中歌词/悬浮控制）
+                            MusicPlayScreen(
                                 onNavigateToPlaylist = navigateToPlaylist,
                                 onNavigateToLibrary = navigateToLibrary,
                                 onNavigateToBackground = navigateToBackground,
                                 onNavigateToSettings = onOpenSettings,
                                 onNavigateToSlideshow = navigateToSlideshow,
                                 onNavigateToTriggerPad = navigateToTriggerPad,
-                                onNavigateToSleepJournal = navigateToSleepJournal
+                                onNavigateToSleepJournal = navigateToSleepJournal,
+                                onToggleMode = { playViewModel.setPlaybackMode(PlaybackMode.ASMR.ordinal) }
                             )
                         }
                     }
-                    // 左上角模式切换按钮：覆盖在两页之上，位置/颜色一致，图标随模式淡入淡出
-                    ModeToggleButton(
-                        mode = mode,
-                        onToggle = {
-                            val next = (mode.ordinal + 1) % PlaybackMode.entries.size
-                            playViewModel.setPlaybackMode(next)
-                        },
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .statusBarsPadding()
-                            .padding(top = 6.dp, start = 16.dp)
-                    )
+                    // 左上角模式切换按钮：仅 ASMR 时由播放页统一叠加（常显）；
+                    // MUSIC 由 MusicPlayScreen 自绘「2 秒淡出」版，不在此叠加。
+                    if (mode == PlaybackMode.ASMR) {
+                        ModeToggleButton(
+                            mode = mode,
+                            onToggle = {
+                                val next = (mode.ordinal + 1) % PlaybackMode.entries.size
+                                playViewModel.setPlaybackMode(next)
+                            },
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .statusBarsPadding()
+                                .padding(top = 6.dp, start = 16.dp)
+                        )
+                    }
                 }
             }
         }

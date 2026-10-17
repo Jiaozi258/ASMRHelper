@@ -1,7 +1,11 @@
 package com.asmrhelper.ui.play
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,38 +15,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.ContentCut
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.Handyman
-import androidx.compose.material.icons.filled.Forward30
-import androidx.compose.material.icons.filled.Replay30
-import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
@@ -52,13 +31,16 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,55 +48,55 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.asmrhelper.domain.model.LoopMode
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.PlaybackMode
 import com.asmrhelper.domain.model.isMenuItemVisible
 import com.asmrhelper.ui.components.AsmrDropdownMenu
 import com.asmrhelper.ui.components.MenuItem
-import com.asmrhelper.ui.components.PlayPauseButton
+import com.asmrhelper.ui.components.ModeToggleButton
+import com.asmrhelper.ui.play.folia.CenteredLyrics
+import com.asmrhelper.ui.play.folia.CoverDuotoneBackground
+import com.asmrhelper.ui.play.folia.FloatingControls
+import com.asmrhelper.ui.play.folia.MusicVisualizer
+import com.asmrhelper.ui.play.folia.VisualizerStyle
 import com.asmrhelper.ui.playlist.PlaylistViewModel
-import com.asmrhelper.ui.settings.SettingsViewModel
-import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
+import com.asmrhelper.ui.theme.DynamicIsland
 import com.asmrhelper.ui.theme.ErrorRed
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.ui.theme.appleClickable
-import kotlinx.coroutines.flow.StateFlow
+import com.asmrhelper.util.LyricMode
+import kotlinx.coroutines.delay
 
 /**
- * 第二种播放状态（新版沉浸式播放界面）。
+ * MUSIC 模式 Folia 风格播放页。
  *
- * 布局自上而下：
- * 1. 顶部栏：定时 + 播放列表 + 三点菜单
- * 2. 歌词区域（占上三分之一）：默认"暂无歌词"，点击弹出添加歌词浮层
- * 3. 音频名称
- * 4. 进度条（点状滑块）+ 当前时长 / 总时长
- * 5. 功能图标栏：收藏 / 添加到播放列表 / 工具箱 / 音效器 / 切片
- * 6. 底部控制栏：播放顺序 / 上一曲 / 播放暂停 / 下一曲 / 快进15s
+ * 布局：全屏双色调封面背景 → 顶部灵动岛 + 左上角淡出式模式按钮 + 右上角导航菜单
+ * → 音频可视化 → 歌名/艺术家 → 居中歌词 → 底部悬浮控制条。
+ * 音效器/切片/工具箱/歌单/定时/歌词编辑对话框自 `PlayScreenV2` 原样迁入。
  */
 @Composable
-fun PlayScreenV2(
+fun MusicPlayScreen(
     onNavigateToPlaylist: () -> Unit = {},
     onNavigateToLibrary: (Int) -> Unit = {},
     onNavigateToBackground: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToSlideshow: () -> Unit = {},
     onNavigateToTriggerPad: () -> Unit = {},
-    onNavigateToSleepJournal: () -> Unit = {}
+    onNavigateToSleepJournal: () -> Unit = {},
+    onToggleMode: () -> Unit = {}
 ) {
     val viewModel: PlayViewModel = hiltViewModel()
     val playlistViewModel: PlaylistViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val favorite by viewModel.currentFavorite.collectAsStateWithLifecycle()
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
-    val hasLyrics by viewModel.hasLyrics.collectAsStateWithLifecycle()
     val rawLyricsText by viewModel.rawLyricsText.collectAsStateWithLifecycle()
-    val playbackMode by viewModel.playbackMode.collectAsStateWithLifecycle()
-    val mode = PlaybackMode.entries.getOrElse(playbackMode) { PlaybackMode.ASMR }
+    val waveform by viewModel.waveformBytes.collectAsStateWithLifecycle()
+    val fft by viewModel.fftMagnitudes.collectAsStateWithLifecycle()
 
     var showTimerDialog by remember { mutableStateOf(false) }
     var showLyricsDialog by remember { mutableStateOf(false) }
@@ -125,132 +107,70 @@ fun PlayScreenV2(
     var showBinauralDialog by remember { mutableStateOf(false) }
     var showNoiseDialog by remember { mutableStateOf(false) }
     var showAmbientDialog by remember { mutableStateOf(false) }
+    var showMoreDialog by remember { mutableStateOf(false) }
+
+    var visualizerStyle by remember { mutableStateOf(VisualizerStyle.BAR) }
+    var lyricMode by remember { mutableStateOf(LyricMode.JUMP) }
+
+    // 模式按钮 2 秒无交互淡出；任意触摸递增 tick 重置计时（Review Focus #6）。
+    var interactionTick by remember { mutableIntStateOf(0) }
+    var controlsVisible by remember { mutableStateOf(true) }
+    LaunchedEffect(interactionTick) {
+        controlsVisible = true
+        delay(2000)
+        controlsVisible = false
+    }
+    val modeButtonAlpha by animateFloatAsState(
+        targetValue = if (controlsVisible) 1f else 0f,
+        animationSpec = tween(300),
+        label = "modeButtonAlpha"
+    )
+
+    val coverUrl = state.playerState.currentAudio?.coverUrl
+    val progressMs = state.playerState.progressMs
+    val durationMs = state.playerState.durationMs
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(SettingsViewModel.bgColorOptions.getOrElse(state.backgroundColorIndex) { SettingsViewModel.bgColorOptions[0] }.second)
+            .pointerInput(Unit) { detectTapGestures { interactionTick++ } }
     ) {
+        CoverDuotoneBackground(coverUrl, Modifier.fillMaxSize())
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(horizontal = 20.dp)
         ) {
-            // ── 1. 顶部栏 ─────────────────────────────────
-            Row(
+            // 顶部留白给灵动岛 + 模式按钮
+            Spacer(Modifier.height(40.dp))
+
+            // 音频可视化（点击切换柱状/波形）
+            MusicVisualizer(
+                waveform = waveform,
+                fft = fft,
+                style = visualizerStyle,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // 为左上角悬浮模式切换按钮预留空间
-                Spacer(Modifier.width(42.dp))
-
-                val timerActive = state.timerActive
-                val timerLabel = if (timerActive) {
-                    val min = state.timerRemainingMs / 60000
-                    val sec = (state.timerRemainingMs % 60000) / 1000
-                    "⏱ %02d:%02d".format(min, sec)
-                } else "⏱ 定时"
-                TextButton(onClick = { showTimerDialog = true }) {
-                    Text(timerLabel, color = if (timerActive) LocalAccentColor.current else TextSecondary, fontSize = 13.sp)
-                }
-                TextButton(onClick = { onNavigateToPlaylist() }) {
-                    Text("📃 播放列表", color = TextSecondary, fontSize = 13.sp)
-                }
-                Spacer(Modifier.weight(1f))
-                Box {
-                    AsmrDropdownMenu(
-                        items = listOf(
-                            MenuItem("slideshow", "图片"),
-                            MenuItem("favorites", "我的收藏"),
-                            MenuItem("scan", "本地文件扫描"),
-                            MenuItem("file_manager", "文件管理器"),
-                            MenuItem("background", "背景图库"),
-                            MenuItem("trigger_pad", "触发器面板"),
-                            MenuItem("sleep_journal", "睡眠记录"),
-                            MenuItem("video_audio", "视频音频"),
-                            MenuItem("settings", "设置")
-                        ).filter { item -> mode.isMenuItemVisible(item.id) },
-                        onItemClick = { item ->
-                            when (item.id) {
-                                "slideshow" -> onNavigateToSlideshow()
-                                "favorites" -> onNavigateToLibrary(1)
-                                "scan" -> onNavigateToLibrary(0)
-                                "file_manager" -> onNavigateToLibrary(2)
-                                "trigger_pad" -> onNavigateToTriggerPad()
-                                "background" -> onNavigateToBackground()
-                                "sleep_journal" -> onNavigateToSleepJournal()
-                                "video_audio" -> onNavigateToLibrary(3)
-                                "settings" -> onNavigateToSettings()
-                            }
-                        }
-                    )
-                }
-            }
-
-            // ── 2. 歌词区域（上三分之一） ─────────────────
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .clickable { showLyricsDialog = true },
-                contentAlignment = Alignment.Center
-            ) {
-                if (hasLyrics && lyrics.isNotEmpty()) {
-                    val progressMs = state.playerState.progressMs
-                    val currentIndex = lyrics.indexOfLast { it.timeMs <= progressMs }
-                        .let { if (it < 0) 0 else it }
-                    val listState = rememberLazyListState()
-                    LaunchedEffect(currentIndex) {
-                        if (currentIndex > 0) listState.animateScrollToItem(currentIndex - 1)
+                    .height(96.dp)
+                    .appleClickable {
+                        visualizerStyle = if (visualizerStyle == VisualizerStyle.BAR)
+                            VisualizerStyle.WAVE else VisualizerStyle.BAR
                     }
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        itemsIndexed(lyrics) { index, line ->
-                            val isCurrent = index == currentIndex
-                            Text(
-                                text = line.text,
-                                color = if (isCurrent) LocalAccentColor.current else TextHint,
-                                fontSize = if (isCurrent) 18.sp else 15.sp,
-                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 6.dp)
-                            )
-                        }
-                    }
-                } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "暂无歌词",
-                            color = TextHint,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            "点击添加歌词",
-                            color = TextHint.copy(alpha = 0.6f),
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
+            )
 
-            // ── 3. 音频名称 ───────────────────────────────
+            Spacer(Modifier.height(12.dp))
+
+            // 歌名 / 艺术家
             Text(
                 text = state.displayTitle.ifEmpty { "未在播放" },
                 color = TextPrimary,
-                fontSize = 20.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
             state.playerState.currentAudio?.artist?.let { artist ->
@@ -258,140 +178,150 @@ fun PlayScreenV2(
                 Text(
                     text = artist,
                     color = TextSecondary,
-                    fontSize = 13.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // ── 4. 进度条 + 时间 ──────────────────────────
-            val progress = state.playerState.progressMs
-            val duration = state.playerState.durationMs
-            var isDragging by remember { mutableStateOf(false) }
-            var dragValue by remember { mutableStateOf(0f) }
-            // 拖拽时显示目标时间点
-            if (isDragging) {
-                Text(
-                    text = "拖拽至 ${formatTime(dragValue.toLong())}",
-                    color = LocalAccentColor.current,
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.height(4.dp))
             }
-            Slider(
-                value = if (isDragging) dragValue
-                else if (duration > 0) progress.toFloat().coerceIn(0f, duration.toFloat()) else 0f,
-                onValueChange = { isDragging = true; dragValue = it },
-                onValueChangeFinished = {
-                    isDragging = false
-                    viewModel.seekTo(dragValue.toLong())
+
+            Spacer(Modifier.height(8.dp))
+
+            // 居中歌词
+            CenteredLyrics(
+                lines = lyrics,
+                progressMs = progressMs,
+                mode = lyricMode,
+                onToggleMode = {
+                    lyricMode = if (lyricMode == LyricMode.JUMP) LyricMode.SCROLL else LyricMode.JUMP
                 },
-                valueRange = 0f..(duration.takeIf { it > 0 } ?: 1L).toFloat(),
-                modifier = Modifier.fillMaxWidth(),
-                colors = SliderDefaults.colors(
-                    thumbColor = LocalAccentColor.current,
-                    activeTrackColor = LocalAccentColor.current,
-                    inactiveTrackColor = DarkSurfaceVariant
-                )
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(formatTime(progress), color = TextHint, fontSize = 12.sp)
-                Text(formatTime(duration), color = TextHint, fontSize = 12.sp)
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            // ── 5. 功能图标栏 ─────────────────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // 收藏
-                FunctionIcon(
-                    icon = if (favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    label = "收藏",
-                    tint = if (favorite) ErrorRed else TextSecondary,
-                    onClick = { viewModel.toggleFavorite() }
-                )
-                // 添加到播放列表
-                FunctionIcon(
-                    icon = Icons.Filled.PlaylistAdd,
-                    label = "歌单",
-                    onClick = { showPlaylistDialog = true }
-                )
-                // 工具箱（收纳九个小功能）
-                FunctionIcon(
-                    icon = Icons.Filled.Handyman,
-                    label = "工具箱",
-                    onClick = { showToolboxDialog = true }
-                )
-                // 音效器
-                FunctionIcon(
-                    icon = Icons.Filled.Tune,
-                    label = "音效",
-                    onClick = { showEffectsDialog = true }
-                )
-                // 切片
-                FunctionIcon(
-                    icon = Icons.Filled.ContentCut,
-                    label = "切片",
-                    onClick = { showSliceDialog = true }
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // ── 6. 底部控制栏 ─────────────────────────────
-            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // 播放顺序
-                val loopIcon = when (state.playerState.loopMode) {
-                    LoopMode.NONE -> Icons.Filled.Repeat
-                    LoopMode.SINGLE -> Icons.Filled.RepeatOne
-                    LoopMode.LIST -> Icons.Filled.Repeat
-                    LoopMode.SHUFFLE -> Icons.Filled.Shuffle
-                }
-                IconButton(onClick = { viewModel.cycleLoopMode() }) {
-                    Icon(
-                        loopIcon,
-                        contentDescription = "播放顺序",
-                        tint = if (state.playerState.loopMode != LoopMode.NONE) LocalAccentColor.current else TextSecondary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                // 上一曲
-                IconButton(onClick = { viewModel.previous() }) {
-                    Icon(Icons.Filled.SkipPrevious, "上一曲", tint = TextPrimary, modifier = Modifier.size(36.dp))
-                }
-                // 播放/暂停
-                PlayPauseButton(
-                    isPlaying = state.playerState.isPlaying,
-                    onClick = { viewModel.togglePlayPause() }
-                )
-                // 下一曲
-                IconButton(onClick = { viewModel.next() }) {
-                    Icon(Icons.Filled.SkipNext, "下一曲", tint = TextPrimary, modifier = Modifier.size(36.dp))
-                }
-                // 快进15s
-                IconButton(onClick = { viewModel.forward15s() }) {
-                    Icon(Icons.Filled.Forward30, "快进15秒", tint = TextSecondary, modifier = Modifier.size(28.dp))
-                }
-            }
+                    .weight(1f)
+            )
+
+            // 底部悬浮控制条
+            FloatingControls(
+                isPlaying = state.playerState.isPlaying,
+                progress = if (durationMs > 0) progressMs.toFloat() / durationMs else 0f,
+                durationMs = durationMs,
+                onPlayPause = { viewModel.togglePlayPause() },
+                onPrevious = { viewModel.previous() },
+                onNext = { viewModel.next() },
+                onSeek = { viewModel.seekTo(it) },
+                onMore = { showMoreDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            )
         }
+
+        // 灵动岛「正在播放」胶囊
+        DynamicIsland(
+            title = state.displayTitle.ifEmpty { null },
+            isPlaying = state.playerState.isPlaying,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 6.dp)
+        )
+
+        // 左上角模式切换按钮（2 秒淡出，触摸恢复）
+        ModeToggleButton(
+            mode = PlaybackMode.MUSIC,
+            onToggle = { if (controlsVisible) onToggleMode() else interactionTick++ },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(top = 6.dp, start = 16.dp)
+                .alpha(modeButtonAlpha)
+        )
+
+        // 右上角导航菜单
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(top = 4.dp, end = 16.dp)
+        ) {
+            AsmrDropdownMenu(
+                items = listOf(
+                    MenuItem("slideshow", "图片"),
+                    MenuItem("favorites", "我的收藏"),
+                    MenuItem("scan", "本地文件扫描"),
+                    MenuItem("file_manager", "文件管理器"),
+                    MenuItem("background", "背景图库"),
+                    MenuItem("trigger_pad", "触发器面板"),
+                    MenuItem("sleep_journal", "睡眠记录"),
+                    MenuItem("video_audio", "视频音频"),
+                    MenuItem("settings", "设置")
+                ).filter { item -> PlaybackMode.MUSIC.isMenuItemVisible(item.id) },
+                onItemClick = { item ->
+                    when (item.id) {
+                        "slideshow" -> onNavigateToSlideshow()
+                        "favorites" -> onNavigateToLibrary(1)
+                        "scan" -> onNavigateToLibrary(0)
+                        "file_manager" -> onNavigateToLibrary(2)
+                        "trigger_pad" -> onNavigateToTriggerPad()
+                        "background" -> onNavigateToBackground()
+                        "sleep_journal" -> onNavigateToSleepJournal()
+                        "video_audio" -> onNavigateToLibrary(3)
+                        "settings" -> onNavigateToSettings()
+                    }
+                }
+            )
+        }
+    }
+
+    // ── 更多菜单 ───────────────────────────────────────
+    if (showMoreDialog) {
+        AlertDialog(
+            onDismissRequest = { showMoreDialog = false },
+            title = { Text(stringResource(R.string.more), color = TextPrimary) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .height(360.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    MoreRow(
+                        label = stringResource(R.string.visualizer_style),
+                        value = if (visualizerStyle == VisualizerStyle.BAR)
+                            stringResource(R.string.visualizer_bar)
+                        else stringResource(R.string.visualizer_wave),
+                        onClick = {
+                            visualizerStyle = if (visualizerStyle == VisualizerStyle.BAR)
+                                VisualizerStyle.WAVE else VisualizerStyle.BAR
+                        }
+                    )
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
+                    MoreRow(
+                        label = stringResource(R.string.lyric_mode),
+                        value = if (lyricMode == LyricMode.JUMP)
+                            stringResource(R.string.lyric_mode_jump)
+                        else stringResource(R.string.lyric_mode_scroll),
+                        onClick = {
+                            lyricMode = if (lyricMode == LyricMode.JUMP)
+                                LyricMode.SCROLL else LyricMode.JUMP
+                        }
+                    )
+                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
+                    MoreRow("⏱ 定时", "") { showMoreDialog = false; showTimerDialog = true }
+                    MoreRow("🎵 歌词编辑", "") { showMoreDialog = false; showLyricsDialog = true }
+                    MoreRow("📃 歌单", "") { showMoreDialog = false; showPlaylistDialog = true }
+                    MoreRow("🧰 工具箱", "") { showMoreDialog = false; showToolboxDialog = true }
+                    MoreRow("🎚 音效器", "") { showMoreDialog = false; showEffectsDialog = true }
+                    MoreRow("✂ 切片", "") { showMoreDialog = false; showSliceDialog = true }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showMoreDialog = false }) { Text("关闭", color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 
     // ── 定时对话框 ─────────────────────────────────────
@@ -427,7 +357,7 @@ fun PlayScreenV2(
         )
     }
 
-    // ── 歌词浮层 ───────────────────────────────────────
+    // ── 歌词编辑浮层 ───────────────────────────────────
     if (showLyricsDialog) {
         var lyricText by remember(showLyricsDialog) { mutableStateOf(rawLyricsText) }
         AlertDialog(
@@ -555,7 +485,6 @@ fun PlayScreenV2(
         val currentScene by viewModel.currentSceneEffect.collectAsStateWithLifecycle()
         val loudness by viewModel.loudnessGain.collectAsStateWithLifecycle()
         val balance by viewModel.stereoBalance.collectAsStateWithLifecycle()
-        // 用真实状态而非本地 remember(1f)：否则重开对话框会复位到 1.0x
         val playbackSpeed by viewModel.playbackSpeed.collectAsStateWithLifecycle()
         val playbackPitch by viewModel.playbackPitch.collectAsStateWithLifecycle()
         val thresholdMode by viewModel.volumeThresholdMode.collectAsStateWithLifecycle()
@@ -571,7 +500,6 @@ fun PlayScreenV2(
                         .height(420.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // 场景效果
                     Text("场景效果", color = TextSecondary, fontSize = 13.sp)
                     Row(
                         modifier = Modifier
@@ -593,7 +521,6 @@ fun PlayScreenV2(
                         }
                     }
 
-                    // 音量阈值（响度模式 / 阈值模式）
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
                     Text("音量阈值", color = TextSecondary, fontSize = 13.sp)
                     Row(
@@ -645,7 +572,6 @@ fun PlayScreenV2(
                         )
                     }
 
-                    // 变速变调
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
                     Text("变速 ${"%.2f".format(playbackSpeed)}x", color = TextSecondary, fontSize = 13.sp)
                     Slider(
@@ -662,7 +588,6 @@ fun PlayScreenV2(
                         colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                     )
 
-                    // 立体声左右平衡
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
                     Text("左右平衡 ${when { balance < -0.05f -> "偏左"; balance > 0.05f -> "偏右"; else -> "居中" }}", color = TextSecondary, fontSize = 13.sp)
                     Slider(
@@ -672,7 +597,6 @@ fun PlayScreenV2(
                         colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                     )
 
-                    // 均衡器
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
                     Text("均衡器（更多频段可在设置中调节）", color = TextHint, fontSize = 12.sp)
                     val bandLabels = listOf("低音", "中音", "高音")
@@ -702,7 +626,6 @@ fun PlayScreenV2(
     // ── 切片对话框 ─────────────────────────────────────
     if (showSliceDialog) {
         val duration = state.playerState.durationMs
-        // 用 duration 作为 key，避免在未加载（duration=0）或切歌时滑杆卡在 0
         var startMs by remember(duration) { mutableStateOf(0f) }
         var endMs by remember(duration) { mutableStateOf(duration.toFloat()) }
         AlertDialog(
@@ -752,7 +675,6 @@ fun PlayScreenV2(
                         .height(360.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // 动态 label + 选中态，与第一种播放界面保持一致
                     val noiseLabel = if (state.noiseActive) {
                         when (state.noiseType) { "PINK" -> "🌸 粉噪"; "BROWN" -> "🍂 棕噪"; else -> "🔊 白噪" }
                     } else "🔇 噪音生成"
@@ -763,8 +685,6 @@ fun PlayScreenV2(
                     val binauralLabel = state.binauralPreset?.name
                         ?.let { "🧠 双耳节拍（$it）" } ?: "🧠 双耳节拍"
 
-                    // Triple(label, active, action)。可开关工具选中后不关闭对话框，
-                    // 让高亮原地刷新；一次性动作（淡出/彻底停止）仍关闭。
                     val tools = listOf(
                         Triple("🌧 环境音", state.playerState.isBackgroundPlaying) { showAmbientDialog = true },
                         Triple(binauralLabel, state.binauralActive) { showBinauralDialog = true },
@@ -1034,21 +954,20 @@ fun PlayScreenV2(
     }
 }
 
-// ── 工具箱对话框（收纳九个小功能） ────────────────────
+/** 「更多」菜单里的一行：左侧 label、右侧当前值，点击执行 [onClick]。 */
 @Composable
-private fun FunctionIcon(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    tint: Color = TextSecondary
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick)
+private fun MoreRow(label: String, value: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .appleClickable { onClick() }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(26.dp))
-        Spacer(Modifier.height(4.dp))
-        Text(label, color = tint, fontSize = 11.sp)
+        Text(label, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        if (value.isNotEmpty()) {
+            Text(value, color = LocalAccentColor.current, fontSize = 13.sp)
+        }
     }
 }
 

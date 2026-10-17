@@ -70,4 +70,14 @@
     <string name="discover_recent">Recently played</string>
     <string name="discover_no_results">No results found</string>
     <string name="discover_play_failed">Cannot get stream URL</string>
+
+    <!-- MUSIC player -->
+    <string name="lyric_mode">Lyric mode</string>
+    <string name="lyric_mode_jump">Jump</string>
+    <string name="lyric_mode_scroll">Scroll</string>
+    <string name="no_lyrics">No lyrics</string>
+    <string name="visualizer_style">Visualizer style</string>
+    <string name="visualizer_bar">Bars</string>
+    <string name="visualizer_wave">Wave</string>
+    <string name="more">More</string>
 </resources>

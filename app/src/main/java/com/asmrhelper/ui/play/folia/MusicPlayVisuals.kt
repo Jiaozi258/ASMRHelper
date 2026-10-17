@@ -52,12 +52,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.asmrhelper.R
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.TextHint
@@ -200,7 +202,7 @@ fun CenteredLyrics(
     Column(modifier = modifier) {
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             if (lines.isEmpty()) {
-                Text("暂无歌词", color = TextSecondary, fontSize = 15.sp)
+                Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
             } else {
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                     itemsIndexed(lines) { i, line ->
@@ -223,7 +225,11 @@ fun CenteredLyrics(
             }
         }
         TextButton(onClick = onToggleMode, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            Text(if (mode == LyricMode.JUMP) "跳转" else "滚动", color = TextHint, fontSize = 12.sp)
+            Text(
+                stringResource(if (mode == LyricMode.JUMP) R.string.lyric_mode_jump else R.string.lyric_mode_scroll),
+                color = TextHint,
+                fontSize = 12.sp
+            )
         }
     }
 }
