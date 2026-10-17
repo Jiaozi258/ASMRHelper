@@ -1,6 +1,7 @@
 package com.asmrhelper.domain.repository
 
 import com.asmrhelper.domain.model.BackgroundImage
+import com.asmrhelper.domain.model.music.MusicLogin
 import com.asmrhelper.domain.music.SourceConfig
 import kotlinx.coroutines.flow.Flow
 
@@ -127,4 +128,9 @@ interface SettingsRepository {
     suspend fun setMusicSources(sources: List<SourceConfig>)
     fun getActiveSourceId(): Flow<String> // 默认 "netease"
     suspend fun setActiveSourceId(id: String)
+
+    // ── 音乐平台登录态（cookie + 昵称，键 music_login_<id>）──
+    suspend fun getMusicLogin(sourceId: String): MusicLogin
+    suspend fun setMusicLogin(sourceId: String, login: MusicLogin)
+    suspend fun clearMusicLogin(sourceId: String)
 }

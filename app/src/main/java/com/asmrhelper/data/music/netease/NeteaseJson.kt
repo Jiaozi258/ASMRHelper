@@ -72,6 +72,50 @@ object NeteaseJson {
         emptyList()
     }
 
+    // ── 登录 ────────────────────────────────────────────
+
+    fun parseCode(json: String): Int = try {
+        JSONObject(json).optInt("code")
+    } catch (_: Exception) {
+        -1
+    }
+
+    fun parseMessage(json: String): String = try {
+        JSONObject(json).optString("message")
+    } catch (_: Exception) {
+        ""
+    }
+
+    fun parseQrKey(json: String): String = try {
+        JSONObject(json).optJSONObject("data")?.optString("unikey") ?: ""
+    } catch (_: Exception) {
+        ""
+    }
+
+    fun parseQrImg(json: String): String = try {
+        JSONObject(json).optJSONObject("data")?.optString("qrimg") ?: ""
+    } catch (_: Exception) {
+        ""
+    }
+
+    fun parseQrCookie(json: String): String = try {
+        JSONObject(json).optString("cookie")
+    } catch (_: Exception) {
+        ""
+    }
+
+    fun parseQrNickname(json: String): String = try {
+        JSONObject(json).optString("nickname")
+    } catch (_: Exception) {
+        ""
+    }
+
+    fun parseLoginNickname(json: String): String = try {
+        JSONObject(json).optJSONObject("profile")?.optString("nickname") ?: ""
+    } catch (_: Exception) {
+        ""
+    }
+
     // ── 内部 ────────────────────────────────────────────
 
     private fun parseSongArray(arr: JSONArray?): List<RemoteSong> {

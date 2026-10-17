@@ -8,6 +8,7 @@ import com.asmrhelper.data.local.db.entity.BackgroundImageEntity
 import com.asmrhelper.data.mapper.toDomain
 import com.asmrhelper.data.mapper.toEntity
 import com.asmrhelper.domain.model.BackgroundImage
+import com.asmrhelper.domain.model.music.MusicLogin
 import com.asmrhelper.data.music.MusicSourceJson
 import com.asmrhelper.domain.music.SourceConfig
 import com.asmrhelper.domain.music.SourcePresets
@@ -458,5 +459,28 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setActiveSourceId(id: String) {
         prefs.edit().putString("music_active_source", id).apply()
         _activeSourceId.value = id
+    }
+
+    // ── 音乐平台登录态 ───────────────────────────────────
+
+    override suspend fun getMusicLogin(sourceId: String): MusicLogin {
+        val json = prefs.getString("music_login_$sourceId", null) ?: return MusicLogin()
+        return try {
+            val obj = org.json.JSONObject(json)
+            MusicLogin(cookie = obj.optString("cookie"), nickname = obj.optString("nickname"))
+        } catch (_: Exception) {
+            MusicLogin()
+        }
+    }
+
+    override suspend fun setMusicLogin(sourceId: String, login: MusicLogin) {
+        val obj = org.json.JSONObject()
+        obj.put("cookie", login.cookie)
+        obj.put("nickname", login.nickname)
+        prefs.edit().putString("music_login_$sourceId", obj.toString()).apply()
+    }
+
+    override suspend fun clearMusicLogin(sourceId: String) {
+        prefs.edit().remove("music_login_$sourceId").apply()
     }
 }
