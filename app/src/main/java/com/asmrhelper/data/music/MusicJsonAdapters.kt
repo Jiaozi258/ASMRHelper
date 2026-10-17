@@ -44,6 +44,15 @@ object MusicJsonAdapters {
         }
     }
 
+    fun parseSongDetail(json: String): RemoteSong? {
+        val data = unwrapData(json) ?: return null
+        return try {
+            parseSong(data as? JSONObject)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     fun parseLyric(json: String): RemoteLyric {
         val data = unwrapData(json) ?: return RemoteLyric()
         val lrc = try {
