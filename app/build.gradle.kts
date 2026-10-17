@@ -81,10 +81,15 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
 
+    // Networking (音源层 HTTP)
+    implementation(libs.okhttp)
+
     // Core
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
 
     // Test
     testImplementation("junit:junit:4.13.2")
+    // JVM 单测中 android.jar 的 org.json 是 stub（默认抛 not mocked），补一个真实实现
+    testImplementation("org.json:json:20240303")
 }
