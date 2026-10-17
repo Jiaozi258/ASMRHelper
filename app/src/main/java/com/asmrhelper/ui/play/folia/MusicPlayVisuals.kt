@@ -191,36 +191,42 @@ fun MusicVisualizer(
                 }
             }
             VisualizerStyle.DOTS -> {
-                val n = heights.size.coerceAtLeast(1)
-                val step = w / n
-                heights.forEachIndexed { i, v ->
-                    val cx = i * step + step / 2f
-                    val r = 2.dp.toPx() + v * 6.dp.toPx()
-                    drawCircle(
-                        color = accent.copy(alpha = 0.3f + 0.6f * v),
-                        radius = r,
-                        center = Offset(cx, mid)
-                    )
+                // 空闲（无数据）时只画基线，不画静态点阵
+                if (heights.any { it > 0f }) {
+                    val n = heights.size
+                    val step = w / n
+                    heights.forEachIndexed { i, v ->
+                        val cx = i * step + step / 2f
+                        val r = 2.dp.toPx() + v * 6.dp.toPx()
+                        drawCircle(
+                            color = accent.copy(alpha = 0.3f + 0.6f * v),
+                            radius = r,
+                            center = Offset(cx, mid)
+                        )
+                    }
                 }
             }
             VisualizerStyle.RADIAL -> {
-                val n = heights.size.coerceAtLeast(1)
-                val cx = w / 2f
-                val cy = h / 2f
-                val maxR = minOf(w, h) * 0.42f
-                val inner = maxR * 0.16f
-                heights.forEachIndexed { i, v ->
-                    val angle = (i.toFloat() / n) * 2f * PI.toFloat()
-                    val dirX = cos(angle)
-                    val dirY = sin(angle)
-                    val len = inner + v * (maxR - inner)
-                    drawLine(
-                        color = accent.copy(alpha = 0.35f + 0.6f * v),
-                        start = Offset(cx + dirX * inner, cy + dirY * inner),
-                        end = Offset(cx + dirX * len, cy + dirY * len),
-                        strokeWidth = 4.dp.toPx(),
-                        cap = StrokeCap.Round
-                    )
+                // 空闲（无数据）时只画基线，不画静态圆环
+                if (heights.any { it > 0f }) {
+                    val n = heights.size
+                    val cx = w / 2f
+                    val cy = h / 2f
+                    val maxR = minOf(w, h) * 0.42f
+                    val inner = maxR * 0.16f
+                    heights.forEachIndexed { i, v ->
+                        val angle = (i.toFloat() / n) * 2f * PI.toFloat()
+                        val dirX = cos(angle)
+                        val dirY = sin(angle)
+                        val len = inner + v * (maxR - inner)
+                        drawLine(
+                            color = accent.copy(alpha = 0.35f + 0.6f * v),
+                            start = Offset(cx + dirX * inner, cy + dirY * inner),
+                            end = Offset(cx + dirX * len, cy + dirY * len),
+                            strokeWidth = 4.dp.toPx(),
+                            cap = StrokeCap.Round
+                        )
+                    }
                 }
             }
             VisualizerStyle.MIRROR -> {
@@ -249,15 +255,29 @@ fun MusicVisualizer(
                     val step = w / (n - 1)
                     val amp = h * 0.45f
                     val pts = heights.mapIndexed { i, v -> Offset(i * step, mid - v * amp) }
-                    // 二次贝塞尔过中点：平滑穿过采样点
+                    // Catmull-Rom → 三次贝塞尔，平滑穿过每个采样点
                     val path = Path()
                     path.moveTo(pts[0].x, pts[0].y)
-                    for (i in 1 until n) {
-                        val prev = pts[i - 1]
-                        val cur = pts[i]
-                        path.quadraticTo(prev.x, prev.y, (prev.x + cur.x) / 2f, (prev.y + cur.y) / 2f)
+                    for (i in 0 until n - 1) {
+                        val p0 = pts[(i - 1).coerceAtLeast(0)]
+                        val p1 = pts[i]
+                        val p2 = pts[i + 1]
+                        val p3 = pts[(i + 2).coerceAtMost(n - 1)]
+                        path.cubicTo(
+                            p1.x + (p2.x - p0.x) / 6f, p1.y + (p2.y - p0.y) / 6f,
+                            p2.x - (p3.x - p1.x) / 6f, p2.y - (p3.y - p1.y) / 6f,
+                            p2.x, p2.y
+                        )
                     }
-                    path.lineTo(pts[n - 1].x, pts[n - 1].y)
+                    // 底部半透明填充：曲线下方到基线 mid
+                    val fill = Path().apply {
+                        addPath(path)
+                        lineTo(pts[n - 1].x, mid)
+                        lineTo(pts[0].x, mid)
+                        close()
+                    }
+                    drawPath(path = fill, color = accent.copy(alpha = 0.10f))
+                    // 三叠发光描边
                     drawPath(path = path, color = accent.copy(alpha = 0.15f), style = Stroke(width = 14.dp.toPx(), cap = StrokeCap.Round))
                     drawPath(path = path, color = accent.copy(alpha = 0.4f), style = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round))
                     drawPath(path = path, color = accent.copy(alpha = 0.95f), style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
