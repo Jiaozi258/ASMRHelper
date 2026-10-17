@@ -352,4 +352,45 @@
     <string name="trigger_independent">Independent</string>
     <string name="trigger_parallel">Parallel</string>
     <string name="trigger_add">Add</string>
+
+    <!-- Image slideshow -->
+    <string name="slideshow_album_created">Created album "%s"</string>
+    <string name="slideshow_album_deleted">Deleted album "%s"</string>
+    <string name="slideshow_imported">Imported %d images</string>
+    <string name="slideshow_import_none">No images imported</string>
+    <string name="slideshow_image_deleted">Deleted</string>
+    <string name="slideshow_all_images">All images</string>
+    <string name="slideshow_delete_album">Delete album</string>
+    <string name="slideshow_new_album">New album</string>
+    <string name="slideshow_import_images">Import images</string>
+    <string name="slideshow_delete_current_image">Delete current image</string>
+    <string name="slideshow_image_desc">Slideshow image</string>
+    <string name="slideshow_album_empty">"%s" is empty</string>
+    <string name="slideshow_no_images">No images</string>
+    <string name="slideshow_import_images_prompt">+ Import images</string>
+    <string name="slideshow_mode_manual">Manual</string>
+    <string name="slideshow_mode_auto">Auto</string>
+    <string name="slideshow_mode_timed">Timed</string>
+    <string name="slideshow_interval">Interval: %d sec</string>
+    <string name="slideshow_add_current_time">+ Current time (%s)</string>
+    <string name="slideshow_prev">Previous</string>
+    <string name="slideshow_next">Next</string>
+    <string name="slideshow_enter_album_name">Enter album name</string>
+    <string name="slideshow_delete_image_title">Delete image</string>
+    <string name="slideshow_delete_image_confirm">Delete the current image? This cannot be undone.</string>
+
+    <!-- Background gallery -->
+    <string name="gallery_added">Background added</string>
+    <string name="gallery_save_failed">Failed to save image, please retry</string>
+    <string name="gallery_add_failed">Add failed: %s</string>
+    <string name="gallery_title">Background gallery</string>
+    <string name="gallery_empty">No backgrounds, tap + to add</string>
+    <string name="gallery_applied">Background applied: %s</string>
+    <string name="gallery_add">Add background</string>
+    <string name="gallery_delete_title">Confirm delete</string>
+    <string name="gallery_delete_confirm">This cannot be undone. Delete "%s"?</string>
+    <string name="gallery_bind_title">Bind audio to "%s"</string>
+    <string name="gallery_no_audio">No audio available</string>
+    <string name="gallery_bound">Bound</string>
+    <string name="gallery_bind">Bind</string>
 </resources>

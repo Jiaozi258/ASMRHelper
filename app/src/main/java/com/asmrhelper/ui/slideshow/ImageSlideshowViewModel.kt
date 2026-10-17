@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.asmrhelper.R
 import com.asmrhelper.data.local.db.entity.ImageAlbumEntity
 import com.asmrhelper.data.local.db.entity.ImageLibraryEntity
 import com.asmrhelper.data.repository.ImageAlbumRepositoryImpl
@@ -99,7 +100,7 @@ class ImageSlideshowViewModel @Inject constructor(
             val newId = albumRepository.insert(ImageAlbumEntity(name = name.trim()))
             if (newId > 0) {
                 selectAlbum(newId)
-                _toastMessage.emit("已创建合集「${name.trim()}」")
+                _toastMessage.emit(context.getString(R.string.slideshow_album_created, name.trim()))
             }
         }
     }
@@ -110,7 +111,7 @@ class ImageSlideshowViewModel @Inject constructor(
             if (_state.value.selectedAlbumId == album.id) {
                 selectAlbum(0)
             }
-            _toastMessage.emit("已删除合集「${album.name}」")
+            _toastMessage.emit(context.getString(R.string.slideshow_album_deleted, album.name))
         }
     }
 
@@ -139,7 +140,7 @@ class ImageSlideshowViewModel @Inject constructor(
                 } catch (_: Exception) { }
             }
             _state.value = _state.value.copy(isImporting = false)
-            _toastMessage.emit(if (count > 0) "已导入 $count 张图片" else "未导入任何图片")
+            _toastMessage.emit(if (count > 0) context.getString(R.string.slideshow_imported, count) else context.getString(R.string.slideshow_import_none))
         }
     }
 
@@ -148,7 +149,7 @@ class ImageSlideshowViewModel @Inject constructor(
         viewModelScope.launch {
             File(img.filePath).delete()
             repository.deleteById(img.id)
-            _toastMessage.emit("已删除")
+            _toastMessage.emit(context.getString(R.string.slideshow_image_deleted))
         }
     }
 

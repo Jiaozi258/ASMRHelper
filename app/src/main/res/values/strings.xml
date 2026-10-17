@@ -352,4 +352,45 @@
     <string name="trigger_independent">独立模式</string>
     <string name="trigger_parallel">并行模式</string>
     <string name="trigger_add">添加</string>
+
+    <!-- 图片幻灯片 -->
+    <string name="slideshow_album_created">已创建合集「%s」</string>
+    <string name="slideshow_album_deleted">已删除合集「%s」</string>
+    <string name="slideshow_imported">已导入 %d 张图片</string>
+    <string name="slideshow_import_none">未导入任何图片</string>
+    <string name="slideshow_image_deleted">已删除</string>
+    <string name="slideshow_all_images">全部图片</string>
+    <string name="slideshow_delete_album">删除合集</string>
+    <string name="slideshow_new_album">新建合集</string>
+    <string name="slideshow_import_images">导入图片</string>
+    <string name="slideshow_delete_current_image">删除当前图片</string>
+    <string name="slideshow_image_desc">幻灯片图片</string>
+    <string name="slideshow_album_empty">「%s」为空</string>
+    <string name="slideshow_no_images">暂无图片</string>
+    <string name="slideshow_import_images_prompt">+ 导入图片</string>
+    <string name="slideshow_mode_manual">手动</string>
+    <string name="slideshow_mode_auto">自动</string>
+    <string name="slideshow_mode_timed">时间点</string>
+    <string name="slideshow_interval">间隔: %d秒</string>
+    <string name="slideshow_add_current_time">+ 当前时间 (%s)</string>
+    <string name="slideshow_prev">上一张</string>
+    <string name="slideshow_next">下一张</string>
+    <string name="slideshow_enter_album_name">输入合集名称</string>
+    <string name="slideshow_delete_image_title">删除图片</string>
+    <string name="slideshow_delete_image_confirm">确定要删除当前图片吗？此操作不可撤销。</string>
+
+    <!-- 背景图库 -->
+    <string name="gallery_added">背景图已添加</string>
+    <string name="gallery_save_failed">图片保存失败，请重试</string>
+    <string name="gallery_add_failed">添加失败: %s</string>
+    <string name="gallery_title">背景图库</string>
+    <string name="gallery_empty">暂无背景图，点击 + 添加</string>
+    <string name="gallery_applied">背景已应用: %s</string>
+    <string name="gallery_add">添加背景图</string>
+    <string name="gallery_delete_title">确认删除</string>
+    <string name="gallery_delete_confirm">删除后将无法恢复，确定要删除"%s"吗？</string>
+    <string name="gallery_bind_title">绑定音频到"%s"</string>
+    <string name="gallery_no_audio">暂无可用音频</string>
+    <string name="gallery_bound">已绑定</string>
+    <string name="gallery_bind">绑定</string>
 </resources>

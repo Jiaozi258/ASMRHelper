@@ -55,12 +55,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.BackgroundImage
 import com.asmrhelper.ui.theme.LocalAccentColor
@@ -110,12 +112,12 @@ fun BackgroundGalleryScreen(
                 }
                 if (destFile.exists() && destFile.length() > 0) {
                     viewModel.addImage(fileName, destFile.absolutePath)
-                    Toast.makeText(context, "背景图已添加", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.gallery_added), Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(context, "图片保存失败，请重试", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.gallery_save_failed), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "添加失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.gallery_add_failed, e.message), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -149,12 +151,12 @@ fun BackgroundGalleryScreen(
                 IconButton(onClick = onBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回",
+                        contentDescription = stringResource(R.string.common_back),
                         tint = TextPrimary
                     )
                 }
                 Text(
-                    text = "背景图库",
+                    text = stringResource(R.string.gallery_title),
                     style = MaterialTheme.typography.titleLarge,
                     color = TextPrimary,
                     modifier = Modifier.weight(1f)
@@ -170,7 +172,7 @@ fun BackgroundGalleryScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "暂无背景图，点击 + 添加",
+                        text = stringResource(R.string.gallery_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         color = TextHint
                     )
@@ -197,7 +199,7 @@ fun BackgroundGalleryScreen(
                             },
                             onClick = {
                                 viewModel.setCurrentBgImage(image.filePath)
-                                Toast.makeText(context, "背景已应用: ${image.name}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.gallery_applied, image.name), Toast.LENGTH_SHORT).show()
                             }
                         )
                     }
@@ -217,7 +219,7 @@ fun BackgroundGalleryScreen(
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
-                contentDescription = "添加背景图"
+                contentDescription = stringResource(R.string.gallery_add)
             )
         }
     }
@@ -233,14 +235,14 @@ fun BackgroundGalleryScreen(
             },
             title = {
                 Text(
-                    text = "确认删除",
+                    text = stringResource(R.string.gallery_delete_title),
                     color = TextPrimary,
                     style = MaterialTheme.typography.titleMedium
                 )
             },
             text = {
                 Text(
-                    text = "删除后将无法恢复，确定要删除\"${targetImage!!.name}\"吗？",
+                    text = stringResource(R.string.gallery_delete_confirm, targetImage!!.name),
                     color = TextSecondary,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -251,7 +253,7 @@ fun BackgroundGalleryScreen(
                     showDeleteDialog = false
                     targetImage = null
                 }) {
-                    Text("删除", color = ErrorRed)
+                    Text(stringResource(R.string.common_delete), color = ErrorRed)
                 }
             },
             dismissButton = {
@@ -259,7 +261,7 @@ fun BackgroundGalleryScreen(
                     showDeleteDialog = false
                     targetImage = null
                 }) {
-                    Text("取消", color = TextSecondary)
+                    Text(stringResource(R.string.common_cancel), color = TextSecondary)
                 }
             },
             containerColor = DarkSurface,
@@ -358,7 +360,7 @@ private fun BackgroundImageCard(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Close,
-                    contentDescription = "删除",
+                    contentDescription = stringResource(R.string.common_delete),
                     tint = ErrorRed,
                     modifier = Modifier.size(18.dp)
                 )
@@ -385,7 +387,7 @@ private fun BindAudioDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "绑定音频到\"${image.name}\"",
+                text = stringResource(R.string.gallery_bind_title, image.name),
                 color = TextPrimary,
                 style = MaterialTheme.typography.titleMedium
             )
@@ -393,7 +395,7 @@ private fun BindAudioDialog(
         text = {
             if (allAudio.isEmpty()) {
                 Text(
-                    text = "暂无可用音频",
+                    text = stringResource(R.string.gallery_no_audio),
                     color = TextHint,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -445,14 +447,14 @@ private fun BindAudioDialog(
                             if (isBound) {
                                 Icon(
                                     imageVector = Icons.Filled.Done,
-                                    contentDescription = "已绑定",
+                                    contentDescription = stringResource(R.string.gallery_bound),
                                     tint = LocalAccentColor.current,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                             }
                             Text(
-                                text = if (isBound) "已绑定" else "绑定",
+                                text = if (isBound) stringResource(R.string.gallery_bound) else stringResource(R.string.gallery_bind),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = if (isBound) LocalAccentColor.current else TextSecondary
                             )
@@ -465,7 +467,7 @@ private fun BindAudioDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("关闭", color = TextSecondary)
+                Text(stringResource(R.string.common_close), color = TextSecondary)
             }
         },
         containerColor = DarkSurface,
