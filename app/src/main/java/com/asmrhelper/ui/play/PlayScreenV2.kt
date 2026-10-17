@@ -534,6 +534,9 @@ fun PlayScreenV2(
         // 用真实状态而非本地 remember(1f)：否则重开对话框会复位到 1.0x
         val playbackSpeed by viewModel.playbackSpeed.collectAsStateWithLifecycle()
         val playbackPitch by viewModel.playbackPitch.collectAsStateWithLifecycle()
+        val thresholdMode by viewModel.volumeThresholdMode.collectAsStateWithLifecycle()
+        val minThresholdDb by viewModel.minThresholdDb.collectAsStateWithLifecycle()
+        val maxThresholdDb by viewModel.maxThresholdDb.collectAsStateWithLifecycle()
 
         AlertDialog(
             onDismissRequest = { showEffectsDialog = false },
@@ -566,16 +569,57 @@ fun PlayScreenV2(
                         }
                     }
 
-                    // 响度（音量阈值 - 响度模式）
+                    // 音量阈值（响度模式 / 阈值模式）
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
-                    Text("响度 ${if (loudness == 0) "关闭" else "+${loudness / 100}.${(loudness % 100) / 10}dB"}", color = TextSecondary, fontSize = 13.sp)
-                    Slider(
-                        value = loudness.toFloat(),
-                        onValueChange = { viewModel.setLoudnessGain(it.toInt()) },
-                        valueRange = 0f..1000f,
-                        steps = 9,
-                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
-                    )
+                    Text("音量阈值", color = TextSecondary, fontSize = 13.sp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("响度模式", "阈值模式").forEachIndexed { i, label ->
+                            val selected = thresholdMode == i
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (selected) LocalAccentColor.current.copy(alpha = 0.2f) else DarkSurfaceVariant)
+                                    .clickable { viewModel.setVolumeThresholdMode(i) }
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(label, color = if (selected) LocalAccentColor.current else TextSecondary, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                    if (thresholdMode == 0) {
+                        Text("响度 ${if (loudness == 0) "关闭" else "+${loudness / 100}.${(loudness % 100) / 10}dB"}", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+                        Slider(
+                            value = loudness.toFloat(),
+                            onValueChange = { viewModel.setLoudnessGain(it.toInt()) },
+                            valueRange = 0f..1000f,
+                            steps = 9,
+                            colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                        )
+                    } else {
+                        Text("最大阈值：${maxThresholdDb} dB（限制过响部分）", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+                        Slider(
+                            value = maxThresholdDb.toFloat(),
+                            onValueChange = { viewModel.setMaxThresholdDb(it.toInt()) },
+                            valueRange = -40f..0f,
+                            steps = 39,
+                            colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                        )
+                        Text("最小阈值：${minThresholdDb} dB（抑制过弱噪声）", color = TextSecondary, fontSize = 13.sp)
+                        Slider(
+                            value = minThresholdDb.toFloat(),
+                            onValueChange = { viewModel.setMinThresholdDb(it.toInt()) },
+                            valueRange = -60f..0f,
+                            steps = 59,
+                            colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                        )
+                    }
 
                     // 变速变调
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))

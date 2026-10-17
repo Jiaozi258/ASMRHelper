@@ -32,7 +32,8 @@ class PlayerManager @Inject constructor(
     @BackgroundPlayer private val backgroundPlayer: ExoPlayer,
     @ApplicationContext private val context: Context,
     private val playHistoryRepository: com.asmrhelper.data.repository.PlayHistoryRepositoryImpl,
-    private val audioFocusManager: AudioFocusManager
+    private val audioFocusManager: AudioFocusManager,
+    private val audioDeviceMonitor: AudioDeviceMonitor
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -45,6 +46,8 @@ class PlayerManager @Inject constructor(
     // 音频焦点丢失前的播放状态，用于重新获得焦点后恢复
     private var resumeMainOnFocus = false
     private var resumeBackgroundOnFocus = false
+    // 因设备断开而暂停（连接耳机时按设置续播）
+    private var pausedByDeviceDisconnect = false
 
     // External state change listener (e.g., for MediaService notification updates)
     private var onStateChanged: ((PlayerState) -> Unit)? = null
@@ -64,6 +67,10 @@ class PlayerManager @Inject constructor(
     private fun isRememberPlaybackEnabled(): Boolean = settingsPrefs.getBoolean("remember_playback", true)
     private fun isAmbientFadeEnabled(): Boolean = settingsPrefs.getBoolean("ambient_fade", false)
     private fun getFadeOutMode(): Int = settingsPrefs.getInt("fade_out_mode", 0)
+    // 其他应用播放音频时是否暂停（关闭则降音而非暂停）
+    private fun isPauseOnOtherAudioEnabled(): Boolean = settingsPrefs.getBoolean("pause_on_other_audio", true)
+    // 播放渐强 / 暂停渐弱的时长（0=关闭）
+    private fun getVolumeFadeMs(): Int = settingsPrefs.getInt("volume_fade_ms", 0)
 
     /** Save last-played audio so the service can resume after restart.
      *  Respects the "remember playback" setting — disabled means no memory. */
@@ -179,11 +186,17 @@ class PlayerManager @Inject constructor(
     init {
         // ── 音频焦点：统一管理主播放器与环境音的暂停/恢复 ──
         audioFocusManager.onFocusLost = {
-            resumeMainOnFocus = mainPlayer.isPlaying
-            resumeBackgroundOnFocus = backgroundPlayer.isPlaying
-            mainPlayer.pause()
-            backgroundPlayer.pause()
-            _state.update { it.copy(isPlaying = false, isBackgroundPlaying = false) }
+            if (isPauseOnOtherAudioEnabled()) {
+                resumeMainOnFocus = mainPlayer.isPlaying
+                resumeBackgroundOnFocus = backgroundPlayer.isPlaying
+                mainPlayer.pause()
+                backgroundPlayer.pause()
+                _state.update { it.copy(isPlaying = false, isBackgroundPlaying = false) }
+            } else {
+                // 设置关闭：不暂停，仅降音，待其它应用结束再恢复
+                mainPlayer.volume = 0.2f
+                backgroundPlayer.volume = 0.2f
+            }
         }
         audioFocusManager.onFocusDuck = {
             mainPlayer.volume = 0.2f
@@ -202,6 +215,26 @@ class PlayerManager @Inject constructor(
                 backgroundPlayer.play()
             }
         }
+
+        // ── 设备接入/移除：断开设备停止播放，连接耳机续播 ──
+        audioDeviceMonitor.onDeviceDisconnected = {
+            if (mainPlayer.isPlaying || backgroundPlayer.isPlaying) {
+                pausedByDeviceDisconnect = true
+                mainPlayer.pause()
+                backgroundPlayer.pause()
+                _state.update { it.copy(isPlaying = false, isBackgroundPlaying = false) }
+            }
+        }
+        audioDeviceMonitor.onDeviceConnected = {
+            if (pausedByDeviceDisconnect) {
+                pausedByDeviceDisconnect = false
+                if (_state.value.currentAudio != null && mainPlayer.playbackState != Player.STATE_IDLE) {
+                    if (mainPlayer.playbackState == Player.STATE_ENDED) mainPlayer.seekTo(0)
+                    mainPlayer.play()
+                }
+            }
+        }
+        audioDeviceMonitor.start()
 
         // ── 记忆播放：恢复上次的播放队列 + 位置 ──
         // 修复"假保留"问题：之前只恢复单曲、丢弃了整个播放队列，导致重启后
@@ -369,7 +402,7 @@ class PlayerManager @Inject constructor(
         when (event) {
             is PlayerEvent.Play -> play(event.audio, event.playlist)
             PlayerEvent.Pause -> {
-                mainPlayer.pause()
+                pauseWithVolumeFade()
                 audioFocusManager.abandonFocus()
             }
             PlayerEvent.Resume -> {
@@ -378,7 +411,7 @@ class PlayerManager @Inject constructor(
                 if (mainPlayer.playbackState == Player.STATE_ENDED) {
                     mainPlayer.seekTo(0)
                 }
-                mainPlayer.play()
+                playWithVolumeFade()
             }
             PlayerEvent.Next -> skipToNext()
             PlayerEvent.Previous -> skipToPrevious()
@@ -435,6 +468,44 @@ class PlayerManager @Inject constructor(
 
     /** Returns the audio session ID for attaching audio effects. */
     fun getAudioSessionId(): Int = mainPlayer.audioSessionId
+
+    private var volumeFadeJob: Job? = null
+
+    /** 播放时渐强（volumeFadeMs=0 时立即播放）。 */
+    private fun playWithVolumeFade() {
+        val ms = getVolumeFadeMs()
+        if (ms <= 0) { mainPlayer.volume = 1f; mainPlayer.play(); return }
+        volumeFadeJob?.cancel()
+        mainPlayer.volume = 0f
+        mainPlayer.play()
+        volumeFadeJob = scope.launch {
+            val steps = 20
+            val stepMs = (ms.toLong() / steps).coerceAtLeast(1L)
+            for (i in 1..steps) {
+                mainPlayer.volume = i.toFloat() / steps
+                delay(stepMs)
+            }
+            mainPlayer.volume = 1f
+        }
+    }
+
+    /** 暂停时渐弱（volumeFadeMs=0 时立即暂停）。 */
+    private fun pauseWithVolumeFade() {
+        val ms = getVolumeFadeMs()
+        if (ms <= 0) { mainPlayer.pause(); return }
+        volumeFadeJob?.cancel()
+        volumeFadeJob = scope.launch {
+            val start = mainPlayer.volume
+            val steps = 20
+            val stepMs = (ms.toLong() / steps).coerceAtLeast(1L)
+            for (i in steps downTo 1) {
+                mainPlayer.volume = start * i.toFloat() / steps
+                delay(stepMs)
+            }
+            mainPlayer.pause()
+            mainPlayer.volume = 1f
+        }
+    }
 
     private fun play(audio: Audio, playlist: List<Audio>) {
         crossfadeJob?.cancel()
@@ -670,6 +741,7 @@ class PlayerManager @Inject constructor(
 
     fun release() {
         scope.cancel()
+        audioDeviceMonitor.stop()
         mainPlayer.release()
         backgroundPlayer.release()
     }

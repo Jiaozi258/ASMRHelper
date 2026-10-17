@@ -1347,7 +1347,7 @@ private fun LyricsSettingsScreen(
 }
 
 // ═══════════════════════════════════════════════════════════
-//  8. 音频特效（可视化 + 音量触发 + 音量阈值 + 催眠）
+//  8. 音频特效（可视化 + 音量触发 + 催眠）
 // ═══════════════════════════════════════════════════════════
 
 @Composable
@@ -1363,9 +1363,6 @@ private fun AudioEffectsSettingsScreen(
     val triggerAnimType by viewModel.volumeTriggerAnimType.collectAsStateWithLifecycle()
     val triggerParticleCount by viewModel.triggerParticleCount.collectAsStateWithLifecycle()
     val triggerCooldownMs by viewModel.triggerCooldownMs.collectAsStateWithLifecycle()
-    val thresholdMode by viewModel.volumeThresholdMode.collectAsStateWithLifecycle()
-    val minThresholdDb by viewModel.minThresholdDb.collectAsStateWithLifecycle()
-    val maxThresholdDb by viewModel.maxThresholdDb.collectAsStateWithLifecycle()
     val hypnosisEnabled by viewModel.hypnosisModeEnabled.collectAsStateWithLifecycle()
     val hypnosisBgType by viewModel.hypnosisBgType.collectAsStateWithLifecycle()
     val playEffectsEnabled by viewModel.playEffectsEnabled.collectAsStateWithLifecycle()
@@ -1582,63 +1579,6 @@ private fun AudioEffectsSettingsScreen(
                             activeTrackColor = LocalAccentColor.current,
                             inactiveTrackColor = DarkSurfaceVariant
                         )
-                    )
-                }
-            }
-        }
-
-        SectionSpacer()
-
-        SectionHeader(icon = Icons.Filled.GraphicEq, title = "音量阈值")
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf("响度模式", "阈值模式").forEachIndexed { i, label ->
-                        val selected = thresholdMode == i
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (selected) LocalAccentColor.current.copy(alpha = 0.2f) else DarkSurfaceVariant)
-                                .clickable { viewModel.setVolumeThresholdMode(i) }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(label, color = if (selected) LocalAccentColor.current else TextSecondary, fontSize = 13.sp)
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                if (thresholdMode == 0) {
-                    Text("响度模式：通过 LoudnessEnhancer 调整目标响度（在音效器中调节）", color = TextHint, fontSize = 12.sp)
-                } else {
-                    Text("最大阈值：${maxThresholdDb} dB（限制过响部分）", color = TextPrimary, fontSize = 14.sp)
-                    Slider(
-                        value = maxThresholdDb.toFloat(),
-                        onValueChange = { viewModel.setMaxThresholdDb(it.toInt()) },
-                        valueRange = -40f..0f,
-                        steps = 39,
-                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
-                    )
-                    Text("最小阈值：${minThresholdDb} dB（抑制过弱噪声）", color = TextPrimary, fontSize = 14.sp)
-                    Slider(
-                        value = minThresholdDb.toFloat(),
-                        onValueChange = { viewModel.setMinThresholdDb(it.toInt()) },
-                        valueRange = -60f..0f,
-                        steps = 59,
-                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                     )
                 }
             }

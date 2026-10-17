@@ -40,6 +40,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -47,6 +48,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -808,6 +810,35 @@ class PlayViewModel @Inject constructor(
 
     fun applySceneEffect(scene: SceneEffect) = sceneEffectsController.applyScene(scene)
     fun setLoudnessGain(gainDbX100: Int) = sceneEffectsController.setLoudnessGain(gainDbX100)
+
+    // ── 音量阈值（响度模式 / 阈值模式）────────────────────
+    // 响度模式由 sceneEffectsController.setLoudnessGain 实现；
+    // 阈值模式的压缩器 DSP 尚未落地，仅持久化设置供 UI 与未来扩展。
+    val volumeThresholdMode: StateFlow<Int> = settingsRepository.getVolumeThresholdMode()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val minThresholdDb: StateFlow<Int> = settingsRepository.getMinThresholdDb()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), -40)
+    val maxThresholdDb: StateFlow<Int> = settingsRepository.getMaxThresholdDb()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), -10)
+
+    fun setVolumeThresholdMode(mode: Int) {
+        viewModelScope.launch {
+            settingsRepository.setVolumeThresholdMode(mode)
+            sceneEffectsController.setThresholdMode(mode)
+        }
+    }
+    fun setMinThresholdDb(db: Int) {
+        viewModelScope.launch {
+            settingsRepository.setMinThresholdDb(db)
+            sceneEffectsController.setMinThreshold(db)
+        }
+    }
+    fun setMaxThresholdDb(db: Int) {
+        viewModelScope.launch {
+            settingsRepository.setMaxThresholdDb(db)
+            sceneEffectsController.setMaxThreshold(db)
+        }
+    }
 
     // ── 立体声高级调节 ────────────────────────────────────
     val stereoBalance: StateFlow<Float> = spatialAudioController.balanceValue
