@@ -43,6 +43,7 @@ import kotlinx.coroutines.launch
 fun AsmrNavHost(modifier: Modifier = Modifier) {
     var playSubScreen by remember { mutableStateOf<SubScreen?>(null) }
     var libraryInitialTab by remember { mutableStateOf(0) }
+    var settingsFromProfile by remember { mutableStateOf(false) }
     val pagerState = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -51,6 +52,24 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
     fun openSubScreen(sub: SubScreen?) {
         playSubScreen = sub
         if (sub != null) scope.launch { pagerState.scrollToPage(0) }
+    }
+
+    // 从播放页菜单打开设置：退出时留在播放页
+    fun openSettingsFromPlay() {
+        settingsFromProfile = false
+        openSubScreen(SubScreen.Settings)
+    }
+
+    // 从个人页打开设置：退出时回到个人页
+    fun openSettingsFromProfile() {
+        settingsFromProfile = true
+        openSubScreen(SubScreen.Settings)
+    }
+
+    // 设置页退出：按来源回到播放页或个人页
+    fun backFromSettings() {
+        playSubScreen = null
+        if (settingsFromProfile) scope.launch { pagerState.scrollToPage(2) }
     }
 
     // Observe share intents and auto-navigate to video audio tab
@@ -108,14 +127,16 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
                 playViewModel = playViewModel,
                 playUiState = playUiState,
                 onOpenSubScreen = ::openSubScreen,
-                onSetLibraryTab = { libraryInitialTab = it }
+                onSetLibraryTab = { libraryInitialTab = it },
+                onOpenSettings = { openSettingsFromPlay() },
+                onBackFromSettings = { backFromSettings() }
             )
 
             // ── 发现页 ──────────────────────────────────
             1 -> DiscoverScreen(modifier = Modifier.fillMaxSize())
 
             // ── 主页 ────────────────────────────────────
-            2 -> ProfileScreen(onNavigateToSettings = { openSubScreen(SubScreen.Settings) })
+            2 -> ProfileScreen(onNavigateToSettings = { openSettingsFromProfile() })
         }
     }
 
@@ -137,7 +158,9 @@ private fun PlayPage(
     playViewModel: PlayViewModel,
     playUiState: com.asmrhelper.ui.play.PlayUiState,
     onOpenSubScreen: (SubScreen?) -> Unit,
-    onSetLibraryTab: (Int) -> Unit
+    onSetLibraryTab: (Int) -> Unit,
+    onOpenSettings: () -> Unit,
+    onBackFromSettings: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -152,7 +175,7 @@ private fun PlayPage(
                         onOpenSubScreen(SubScreen.Library)
                     },
                     onNavigateToBackground = { onOpenSubScreen(SubScreen.BackgroundGallery) },
-                    onNavigateToSettings = { onOpenSubScreen(SubScreen.Settings) },
+                    onNavigateToSettings = onOpenSettings,
                     onNavigateToSlideshow = { onOpenSubScreen(SubScreen.Slideshow) },
                     onNavigateToTriggerPad = { onOpenSubScreen(SubScreen.TriggerPad) },
                     onNavigateToSleepJournal = { onOpenSubScreen(SubScreen.SleepJournal) }
@@ -276,7 +299,7 @@ private fun PlayPage(
         SubScreen.Slideshow -> ImageSlideshowContent(onBack = { onOpenSubScreen(null) })
 
         SubScreen.Settings -> SettingsScreen(
-            onBack = { onOpenSubScreen(null) },
+            onBack = onBackFromSettings,
             onNavigateToHistory = { onOpenSubScreen(SubScreen.History) }
         )
 
