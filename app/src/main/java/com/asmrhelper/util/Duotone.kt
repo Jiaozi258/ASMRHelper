@@ -23,3 +23,6 @@ object Duotone {
         return (a.toLong() shl 24) or (b.toLong() shl 16) or (g.toLong() shl 8) or r.toLong()
     }
 }
+
+/** 把 24 位 RGB 补全为不透明的 32 位 ARGB（Long）。 */
+fun opaqueArgb(rgb: Int): Long = 0xFF000000L or (rgb.toLong() and 0xFFFFFFL)

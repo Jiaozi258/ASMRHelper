@@ -35,7 +35,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -248,6 +250,8 @@ fun FloatingControls(
     modifier: Modifier = Modifier
 ) {
     val accent = LocalAccentColor.current
+    var dragValue by remember { mutableStateOf<Float?>(null) }
+    val shownValue = dragValue ?: progress.coerceIn(0f, 1f)
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
@@ -255,8 +259,12 @@ fun FloatingControls(
     ) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
             Slider(
-                value = progress.coerceIn(0f, 1f),
-                onValueChange = { onSeek((it * durationMs).toLong()) },
+                value = shownValue,
+                onValueChange = { dragValue = it },
+                onValueChangeFinished = {
+                    dragValue?.let { onSeek((it * durationMs).toLong()) }
+                    dragValue = null
+                },
                 valueRange = 0f..1f,
                 colors = SliderDefaults.colors(
                     thumbColor = accent,

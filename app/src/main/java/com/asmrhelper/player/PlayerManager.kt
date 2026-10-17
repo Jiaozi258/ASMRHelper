@@ -78,6 +78,7 @@ class PlayerManager @Inject constructor(
     private fun saveLastPlayback(audio: Audio) {
         if (!isRememberPlaybackEnabled()) return
         prefs.edit()
+            .putLong("last_id", audio.id)
             .putString("last_file_path", audio.filePath)
             .putString("last_title", audio.title)
             .putString("last_artist", audio.artist)
@@ -112,8 +113,9 @@ class PlayerManager @Inject constructor(
         val duration = prefs.getLong("last_duration_ms", 0L)
         val coverUrl = prefs.getString("last_cover_url", "")?.takeIf { it.isNotBlank() }
         val sourceId = prefs.getString("last_source_id", "") ?: ""
+        val id = prefs.getLong("last_id", 0L)
         return Audio(
-            id = 0L,
+            id = id,
             title = title,
             artist = artist,
             filePath = path,

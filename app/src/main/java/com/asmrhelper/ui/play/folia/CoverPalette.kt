@@ -7,6 +7,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.palette.graphics.Palette
 import coil.Coil
 import coil.request.ImageRequest
+import com.asmrhelper.util.opaqueArgb
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -29,7 +30,7 @@ fun rememberCoverDominantColor(coverUrl: String?, fallback: Long): Long {
                 val drawable = loader.execute(request).drawable
                 val bitmap = drawable?.toBitmap()
                 val swatch = bitmap?.let { Palette.from(it).generate().dominantSwatch }
-                (swatch?.rgb?.toLong()?.and(0xFFFFFFFFL)) ?: fallback
+                swatch?.rgb?.let { opaqueArgb(it) } ?: fallback
             } catch (_: Exception) {
                 fallback
             }

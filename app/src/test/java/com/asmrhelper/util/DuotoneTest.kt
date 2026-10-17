@@ -20,4 +20,11 @@ class DuotoneTest {
         assertEquals(0xFF1C3854L, c.primary)
         assertEquals(0xFF996633L, c.secondary)
     }
+
+    @Test
+    fun opaqueArgbSetsFullAlpha() {
+        assertEquals(0xFF336699L, opaqueArgb(0x336699))
+        assertEquals(0xFF000000L, opaqueArgb(0x000000))
+        assertEquals(0xFFFFFFFFL, opaqueArgb(0xFFFFFF))
+    }
 }

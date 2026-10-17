@@ -73,7 +73,21 @@
       "PowerShell(gh *)",
       "Bash(./gradlew :app:compileDebugKotlin)",
       "PowerShell(.\\\\gradlew.bat :app:assembleDebug)",
-      "PowerShell(\\(Get-Item \"app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\"\\).Length / 1MB; \\(Get-Item \"app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\"\\).LastWriteTime)"
+      "PowerShell(\\(Get-Item \"app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\"\\).Length / 1MB; \\(Get-Item \"app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\"\\).LastWriteTime)",
+      "Bash(echo \"exit:$?\")",
+      "PowerShell(.\\\\gradlew.bat :app:compileDebugKotlin --console=plain)",
+      "PowerShell(.\\\\gradlew.bat :app:assembleDebug --console=plain)",
+      "PowerShell(.\\\\android-sdk\\\\platform-tools\\\\adb.exe devices)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(./gradlew.bat :app:compileDebugKotlin --console=plain)",
+      "PowerShell(npm view *)",
+      "PowerShell(npm *)",
+      "PowerShell(Write-Output \"=== ~/.claude.json ===\"; if \\(Test-Path \"$env:USERPROFILE\\\\.claude.json\"\\) { \"EXISTS\" } else { \"absent\" }; Write-Output \"=== project .mcp.json ===\"; if \\(Test-Path \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\\\\.mcp.json\"\\) { \"EXISTS\" } else { \"absent\" }; Write-Output \"=== project .claude dir ===\"; if \\(Test-Path \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\\\\.claude\"\\) { Get-ChildItem \"E:\\\\My_Documents\\\\github\\\\github_Project_7-ASMRHelper\\\\.claude\" -Force | Select-Object Name } else { \"absent\" }; Write-Output \"=== user .claude dir ===\"; if \\(Test-Path \"$env:USERPROFILE\\\\.claude\"\\) { Get-ChildItem \"$env:USERPROFILE\\\\.claude\" -Force | Select-Object Name } else { \"absent\" })",
+      "PowerShell(npx -y rea-agents@latest setup --client claude_code --dry-run)",
+      "PowerShell(npx -y rea-agents@latest setup --client claude_code --yes)",
+      "PowerShell(claude mcp *)",
+      "PowerShell(.\\\\gradlew.bat :app:compileDebugKotlin --console=plain -q)",
+      "Bash(./gradlew.bat :app:compileDebugKotlin --console=plain -q)"
     ]
   }
 }
