@@ -22,6 +22,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.asmrhelper.ui.theme.LocalAccentColor
@@ -44,6 +49,7 @@ fun MiniPlayer(
         targetValue = if (isPlaying) LocalAccentColor.current.copy(alpha = 0.08f) else DarkSurface,
         animationSpec = tween(300)
     )
+    val playPauseDescription = if (isPlaying) "暂停" else "播放"
 
     Box(
         modifier = modifier
@@ -67,12 +73,17 @@ fun MiniPlayer(
             Box(
                 modifier = Modifier
                     .size(36.dp)
+                    .semantics {
+                        role = Role.Button
+                        contentDescription = playPauseDescription
+                        onClick(label = playPauseDescription) { onPlayPause(); true }
+                    }
                     .pressScale { onPlayPause() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = if (isPlaying) "暂停" else "播放",
+                    contentDescription = null,
                     tint = TextPrimary,
                     modifier = Modifier.size(22.dp)
                 )

@@ -38,7 +38,7 @@ fun HistoryScreen(
     Column(modifier = modifier.fillMaxSize().background(DarkBackground)) {
         // Header
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {

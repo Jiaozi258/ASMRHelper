@@ -11,6 +11,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.asmrhelper.ui.theme.ControlWhite
 import com.asmrhelper.ui.theme.LocalAccentColor
@@ -22,10 +27,17 @@ fun PlayPauseButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val description = if (isPlaying) "暂停" else "播放"
+    val onClickAction = onClick
     Box(
         modifier = modifier
             .size(96.dp)
             .background(LocalAccentColor.current, CircleShape)
+            .semantics {
+                role = Role.Button
+                contentDescription = description
+                onClick(label = description) { onClickAction(); true }
+            }
             .pressScale { onClick() },
         contentAlignment = Alignment.Center
     ) {
