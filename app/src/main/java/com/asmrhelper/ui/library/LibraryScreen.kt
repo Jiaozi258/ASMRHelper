@@ -59,6 +59,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -71,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.AccentPurpleVariant
@@ -114,7 +116,7 @@ fun LibraryScreen(
     LaunchedEffect(initialTabIndex) {
         selectedTabIndex = initialTabIndex
     }
-    val tabTitles = listOf("全部音频", "我的收藏", "文件管理", "视频音频")
+    val tabTitles = listOf(stringResource(R.string.library_tab_all), stringResource(R.string.library_tab_favorites), stringResource(R.string.library_tab_files), stringResource(R.string.library_tab_video))
 
     // Video audio state
     val videoAudioViewModel: VideoAudioViewModel = hiltViewModel()
@@ -155,7 +157,7 @@ fun LibraryScreen(
         if (granted) {
             viewModel.scanAndImport()
         } else {
-            Toast.makeText(context, "需要音频权限才能扫描本地音频文件", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, context.getString(R.string.library_permission_needed), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -201,12 +203,12 @@ fun LibraryScreen(
                 IconButton(onClick = onBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回",
+                        contentDescription = stringResource(R.string.common_back),
                         tint = TextPrimary
                     )
                 }
                 Text(
-                    text = "音频库",
+                    text = stringResource(R.string.library_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = TextPrimary,
                     modifier = Modifier.weight(1f)
@@ -239,7 +241,7 @@ fun LibraryScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Add,
-                        contentDescription = "浏览导入音频",
+                        contentDescription = stringResource(R.string.library_browse_import),
                         tint = if (isScanning) TextHint else LocalAccentColor.current
                     )
                 }
@@ -250,7 +252,7 @@ fun LibraryScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Refresh,
-                        contentDescription = "扫描本地音频",
+                        contentDescription = stringResource(R.string.library_scan),
                         tint = if (isScanning) TextHint else LocalAccentColor.current
                     )
                 }
@@ -330,7 +332,7 @@ fun LibraryScreen(
                     },
                     onDeleteAudio = { va, deleteFile ->
                         videoAudioViewModel.deleteVideoAudio(va, deleteFile)
-                        Toast.makeText(context, "已移除", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.common_removed), Toast.LENGTH_SHORT).show()
                     },
                     onToggleFavorite = { id, fav ->
                         videoAudioViewModel.toggleFavorite(id, fav)
@@ -355,7 +357,7 @@ fun LibraryScreen(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
-                    contentDescription = "提取视频音频"
+                    contentDescription = stringResource(R.string.library_extract_video_audio)
                 )
             }
         }
@@ -391,14 +393,14 @@ fun LibraryScreen(
                 },
                 title = {
                     Text(
-                        text = "删除音频",
+                        text = stringResource(R.string.library_delete_title),
                         color = TextPrimary,
                         style = MaterialTheme.typography.titleMedium
                     )
                 },
                 text = {
                     Text(
-                        text = "确定要移除\"${audioToDelete!!.title}\"吗？仅在该应用中移除，不会删除本地文件。",
+                        text = stringResource(R.string.library_delete_confirm, audioToDelete!!.title),
                         color = TextSecondary,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -406,11 +408,11 @@ fun LibraryScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         audioToDelete?.let { viewModel.deleteAudio(it) }
-                        Toast.makeText(context, "已移除", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.common_removed), Toast.LENGTH_SHORT).show()
                         showDeleteDialog = false
                         audioToDelete = null
                     }) {
-                        Text("移除", color = ErrorRed)
+                        Text(stringResource(R.string.common_remove), color = ErrorRed)
                     }
                 },
                 dismissButton = {
@@ -418,7 +420,7 @@ fun LibraryScreen(
                         showDeleteDialog = false
                         audioToDelete = null
                     }) {
-                        Text("取消", color = TextSecondary)
+                        Text(stringResource(R.string.common_cancel), color = TextSecondary)
                     }
                 },
                 containerColor = DarkSurface,
@@ -443,7 +445,7 @@ fun LibraryScreen(
                 },
                 title = {
                     Text(
-                        text = "添加歌词 - ${lyricsAudio!!.title}",
+                        text = stringResource(R.string.library_add_lyrics_title, lyricsAudio!!.title),
                         color = TextPrimary,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -452,7 +454,7 @@ fun LibraryScreen(
                     androidx.compose.material3.OutlinedTextField(
                         value = lyricsText,
                         onValueChange = { lyricsText = it },
-                        placeholder = { Text("粘贴或输入歌词，支持 [00:00.00] 时间标签", color = TextHint) },
+                        placeholder = { Text(stringResource(R.string.library_lyrics_placeholder), color = TextHint) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(220.dp),
@@ -465,17 +467,17 @@ fun LibraryScreen(
                         val text = lyricsText
                         // 校验：非空但解析不出任何时间标签时，提示格式错误而不是静默保存
                         if (text.isNotBlank() && com.asmrhelper.util.LrcParser.parse(text).isEmpty()) {
-                            Toast.makeText(context, "未识别到有效时间标签，请按 [mm:ss.xx] 歌词 的格式填写", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, context.getString(R.string.library_lyrics_invalid), Toast.LENGTH_LONG).show()
                         } else {
                             scope.launch(Dispatchers.IO) {
                                 com.asmrhelper.util.LyricsStore.saveLyrics(context, path, text)
                             }
-                            Toast.makeText(context, "歌词已保存", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.library_lyrics_saved), Toast.LENGTH_SHORT).show()
                             showLyricsDialog = false
                             lyricsAudio = null
                         }
                     }) {
-                        Text("保存", color = LocalAccentColor.current)
+                        Text(stringResource(R.string.common_save), color = LocalAccentColor.current)
                     }
                 },
                 dismissButton = {
@@ -483,7 +485,7 @@ fun LibraryScreen(
                         showLyricsDialog = false
                         lyricsAudio = null
                     }) {
-                        Text("取消", color = TextSecondary)
+                        Text(stringResource(R.string.common_cancel), color = TextSecondary)
                     }
                 },
                 containerColor = DarkSurface,
@@ -508,7 +510,7 @@ private fun AllAudioTab(
     onAddLyrics: (Audio) -> Unit = {}
 ) {
     if (audios.isEmpty()) {
-        EmptyState(message = "暂无音频，请点击右上角扫描按钮")
+        EmptyState(message = stringResource(R.string.library_empty_all))
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -545,7 +547,7 @@ private fun FavoritesTab(
     onAddLyrics: (Audio) -> Unit = {}
 ) {
     if (favorites.isEmpty()) {
-        EmptyState(message = "暂无收藏")
+        EmptyState(message = stringResource(R.string.library_empty_favorites))
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -636,7 +638,7 @@ private fun AudioItemCard(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = audio.artist.ifEmpty { "未知艺术家" },
+                    text = audio.artist.ifEmpty { stringResource(R.string.library_unknown_artist) },
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary,
                     maxLines = 1,
@@ -657,7 +659,7 @@ private fun AudioItemCard(
                 onClick = onAddLyrics,
                 modifier = Modifier.height(36.dp)
             ) {
-                Text("歌词", color = TextHint, fontSize = 12.sp)
+                Text(stringResource(R.string.library_lyrics), color = TextHint, fontSize = 12.sp)
             }
 
             // 收藏切换按钮
@@ -667,7 +669,7 @@ private fun AudioItemCard(
             ) {
                 Icon(
                     imageVector = if (audio.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription = if (audio.isFavorite) "取消收藏" else "添加收藏",
+                    contentDescription = if (audio.isFavorite) stringResource(R.string.library_remove_favorite) else stringResource(R.string.library_add_favorite),
                     tint = if (audio.isFavorite) ErrorRed else TextHint,
                     modifier = Modifier.size(22.dp)
                 )
@@ -680,7 +682,7 @@ private fun AudioItemCard(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Delete,
-                    contentDescription = "移除音频",
+                    contentDescription = stringResource(R.string.library_remove_audio),
                     tint = TextHint,
                     modifier = Modifier.size(20.dp)
                 )

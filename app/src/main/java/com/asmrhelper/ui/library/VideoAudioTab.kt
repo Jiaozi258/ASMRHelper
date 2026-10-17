@@ -43,10 +43,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.VideoAudio
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
@@ -73,7 +75,7 @@ fun VideoAudioTab(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                "暂无视频音频，点击右下角 + 提取",
+                stringResource(R.string.video_empty),
                 color = TextHint,
                 style = MaterialTheme.typography.bodyLarge
             )
@@ -107,7 +109,7 @@ fun VideoAudioTab(
             },
             title = {
                 Text(
-                    "确认删除",
+                    stringResource(R.string.video_delete_title),
                     color = TextPrimary,
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -115,7 +117,7 @@ fun VideoAudioTab(
             text = {
                 Column {
                     Text(
-                        "确定要移除\"${audioToDelete!!.title}\"吗？",
+                        stringResource(R.string.video_delete_confirm, audioToDelete!!.title),
                         color = TextSecondary,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -131,7 +133,7 @@ fun VideoAudioTab(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "同时删除本地缓存文件",
+                            stringResource(R.string.video_delete_cache),
                             color = TextSecondary,
                             fontSize = 14.sp
                         )
@@ -144,7 +146,7 @@ fun VideoAudioTab(
                     showDeleteDialog = false
                     audioToDelete = null
                 }) {
-                    Text("移除", color = ErrorRed)
+                    Text(stringResource(R.string.common_remove), color = ErrorRed)
                 }
             },
             dismissButton = {
@@ -152,7 +154,7 @@ fun VideoAudioTab(
                     showDeleteDialog = false
                     audioToDelete = null
                 }) {
-                    Text("取消", color = TextSecondary)
+                    Text(stringResource(R.string.common_cancel), color = TextSecondary)
                 }
             },
             containerColor = DarkSurface,
@@ -241,7 +243,7 @@ private fun VideoAudioCard(
             IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
                 Icon(
                     imageVector = Icons.Filled.Delete,
-                    contentDescription = "移除",
+                    contentDescription = stringResource(R.string.common_remove),
                     tint = TextHint,
                     modifier = Modifier.size(20.dp)
                 )

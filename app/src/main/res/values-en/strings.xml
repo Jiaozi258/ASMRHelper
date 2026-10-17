@@ -238,4 +238,72 @@
     <string name="play_next_track">Next</string>
     <string name="play_pause">Pause</string>
     <string name="play_play">Play</string>
+
+    <!-- Common -->
+    <string name="common_remove">Remove</string>
+    <string name="common_removed">Removed</string>
+    <string name="common_save">Save</string>
+    <string name="common_unknown">Unknown</string>
+    <string name="common_back">Back</string>
+    <string name="common_retry">Retry</string>
+
+    <!-- Library -->
+    <string name="library_title">Audio Library</string>
+    <string name="library_tab_all">All Audio</string>
+    <string name="library_tab_favorites">Favorites</string>
+    <string name="library_tab_files">Files</string>
+    <string name="library_tab_video">Video Audio</string>
+    <string name="library_permission_needed">Audio permission is required to scan local audio files</string>
+    <string name="library_browse_import">Browse &amp; import audio</string>
+    <string name="library_scan">Scan local audio</string>
+    <string name="library_extract_video_audio">Extract video audio</string>
+    <string name="library_delete_title">Delete audio</string>
+    <string name="library_delete_confirm">Remove "%s"? It will only be removed from this app, not from local files.</string>
+    <string name="library_add_lyrics_title">Add lyrics - %s</string>
+    <string name="library_lyrics_placeholder">Paste or type lyrics, supports [00:00.00] time tags</string>
+    <string name="library_lyrics_invalid">No valid time tags found. Use the [mm:ss.xx] lyrics format.</string>
+    <string name="library_lyrics_saved">Lyrics saved</string>
+    <string name="library_empty_all">No audio yet. Tap the scan button at the top right.</string>
+    <string name="library_empty_favorites">No favorites yet</string>
+    <string name="library_unknown_artist">Unknown artist</string>
+    <string name="library_lyrics">Lyrics</string>
+    <string name="library_remove_favorite">Remove from favorites</string>
+    <string name="library_add_favorite">Add to favorites</string>
+    <string name="library_remove_audio">Remove audio</string>
+    <string name="library_pick_audio_title">Select audio file</string>
+    <string name="library_pick_empty">No audio yet. Scan local files first.</string>
+    <string name="library_scan_no_files">No audio files found. Try "Browse &amp; import" to manually pick a private space or other folder.</string>
+    <string name="library_scan_imported_skipped">Imported %1$d audio files, skipped %2$d deleted</string>
+    <string name="library_scan_imported">Imported %d audio files</string>
+    <string name="library_scan_failed">Scan failed: %s</string>
+    <string name="library_import_success">Successfully imported %d audio files</string>
+    <string name="library_import_no_files">Could not import any audio. Ensure the format is mp3/m4a/ogg/wav.</string>
+    <string name="library_import_failed">Import failed: %s</string>
+
+    <!-- File browser -->
+    <string name="file_empty_dir">This directory is empty</string>
+    <string name="file_back_up">Go up</string>
+    <string name="file_root">Root</string>
+    <string name="file_parent_dir">.. (parent directory)</string>
+
+    <!-- Video audio -->
+    <string name="video_empty">No video audio yet. Tap + at the bottom right to extract.</string>
+    <string name="video_delete_title">Confirm delete</string>
+    <string name="video_delete_confirm">Remove "%s"?</string>
+    <string name="video_delete_cache">Also delete the local cache file</string>
+
+    <!-- Download -->
+    <string name="download_platform_auto">Auto</string>
+    <string name="download_platform_bilibili">Bilibili</string>
+    <string name="download_platform_douyin">Douyin</string>
+    <string name="download_platform_youtube">YouTube</string>
+    <string name="download_extracting">Extracting audio</string>
+    <string name="download_extract_action">Extract audio</string>
+    <string name="download_url_hint">Paste video link (Bilibili/YouTube/Douyin...)</string>
+    <string name="download_status_requesting">Requesting extraction service...</string>
+    <string name="download_status_fetching">Fetching video info...</string>
+    <string name="download_status_downloading">Downloading audio %s</string>
+    <string name="download_status_saving">Saving...</string>
+    <string name="download_status_success">Extraction complete</string>
+    <string name="download_status_failed">Extraction failed: %s</string>
 </resources>

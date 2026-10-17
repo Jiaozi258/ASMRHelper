@@ -19,11 +19,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.TextHint
@@ -48,7 +50,7 @@ fun AudioFilePickerDialog(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "选择音频文件",
+                    text = stringResource(R.string.library_pick_audio_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = TextPrimary
                 )
@@ -56,7 +58,7 @@ fun AudioFilePickerDialog(
 
                 if (allAudio.isEmpty()) {
                     Text(
-                        text = "暂无音频，请先扫描本地文件",
+                        text = stringResource(R.string.library_pick_empty),
                         color = TextHint,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(vertical = 16.dp)
@@ -81,7 +83,7 @@ fun AudioFilePickerDialog(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = audio.artist.ifEmpty { "未知" },
+                                        text = audio.artist.ifEmpty { stringResource(R.string.common_unknown) },
                                         style = MaterialTheme.typography.bodySmall,
                                         color = TextSecondary
                                     )
@@ -99,7 +101,7 @@ fun AudioFilePickerDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
                 TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                    Text("取消", color = TextSecondary)
+                    Text(stringResource(R.string.common_cancel), color = TextSecondary)
                 }
             }
         }

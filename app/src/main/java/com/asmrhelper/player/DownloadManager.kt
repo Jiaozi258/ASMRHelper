@@ -13,10 +13,13 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
+enum class DownloadStatus { IDLE, REQUESTING, DOWNLOADING, SAVING, SUCCESS, FAILED }
+
 data class DownloadState(
     val isDownloading: Boolean = false,
     val progress: Float = 0f,
-    val statusText: String = ""
+    val status: DownloadStatus = DownloadStatus.IDLE,
+    val errorDetail: String = ""
 )
 
 @Singleton
@@ -34,20 +37,17 @@ class DownloadManager @Inject constructor(
         if (_state.value.isDownloading) return
         downloadJob = scope.launch {
             extractor.selectedPlatform = platform
-            _state.value = DownloadState(true, 0f, "正在请求提取服务...")
+            _state.value = DownloadState(true, 0f, DownloadStatus.REQUESTING)
 
             val result = extractor.extractAudio(url) { progress ->
                 _state.value = _state.value.copy(
                     progress = progress,
-                    statusText = if (progress > 0f)
-                        "正在下载音频 ${(progress * 100).toInt()}%"
-                    else
-                        "正在获取视频信息..."
+                    status = DownloadStatus.DOWNLOADING
                 )
             }
 
             if (result != null) {
-                _state.value = DownloadState(true, 1f, "正在保存...")
+                _state.value = DownloadState(true, 1f, DownloadStatus.SAVING)
                 val videoAudio = VideoAudio(
                     title = result.title,
                     platform = result.platform,
@@ -57,12 +57,11 @@ class DownloadManager @Inject constructor(
                     fileSizeBytes = result.fileSizeBytes
                 )
                 repository.insert(videoAudio)
-                _state.value = DownloadState(false, 0f, "提取完成")
+                _state.value = DownloadState(false, 0f, DownloadStatus.SUCCESS)
                 onComplete(videoAudio)
             } else {
-                val detail = extractor.getLastError().lines().firstOrNull()
-                    ?.take(150) ?: "请检查链接是否有效"
-                _state.value = DownloadState(false, 0f, "提取失败: $detail")
+                val detail = extractor.getLastError().lines().firstOrNull()?.take(150) ?: ""
+                _state.value = DownloadState(false, 0f, DownloadStatus.FAILED, errorDetail = detail)
                 extractor.resetInit()
                 onComplete(null)
             }
@@ -75,6 +74,6 @@ class DownloadManager @Inject constructor(
         // 主动断开下载 socket，使阻塞的 HttpURLConnection.read() 中断，
         // 否则取消只取消协程、下载仍会继续到完成。
         extractor.cancelActiveDownload()
-        _state.value = DownloadState(false, 0f, "")
+        _state.value = DownloadState()
     }
 }

@@ -32,13 +32,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.asmrhelper.R
 import com.asmrhelper.player.DownloadState
+import com.asmrhelper.player.DownloadStatus
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.ControlWhite
 import com.asmrhelper.ui.theme.DarkSurface
@@ -50,15 +53,15 @@ import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 
 data class PlatformOption(
-    val key: String,    // "bilibili" | "youtube" | "douyin"
-    val label: String   // Display name
+    val key: String,      // "bilibili" | "youtube" | "douyin"
+    val labelRes: Int     // Localized display name resource
 )
 
 private val PLATFORMS = listOf(
-    PlatformOption("auto", "自动"),
-    PlatformOption("bilibili", "B站"),
-    PlatformOption("youtube", "YouTube"),
-    PlatformOption("douyin", "抖音"),
+    PlatformOption("auto", R.string.download_platform_auto),
+    PlatformOption("bilibili", R.string.download_platform_bilibili),
+    PlatformOption("youtube", R.string.download_platform_youtube),
+    PlatformOption("douyin", R.string.download_platform_douyin),
 )
 
 @Composable
@@ -94,7 +97,7 @@ fun DownloadDialog(
         title = {
             Column {
                 Text(
-                    text = if (downloadState.isDownloading) "正在提取音频" else "提取视频音频",
+                    text = if (downloadState.isDownloading) stringResource(R.string.download_extracting) else stringResource(R.string.library_extract_video_audio),
                     color = TextPrimary,
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -126,7 +129,7 @@ fun DownloadDialog(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = platform.label,
+                                    text = stringResource(platform.labelRes),
                                     color = if (isSelected) LocalAccentColor.current else TextSecondary,
                                     fontSize = 13.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
@@ -150,7 +153,7 @@ fun DownloadDialog(
                     ) {
                         if (url.isEmpty()) {
                             Text(
-                                "粘贴视频链接 (B站/YouTube/抖音...)",
+                                stringResource(R.string.download_url_hint),
                                 color = TextHint,
                                 fontSize = 14.sp
                             )
@@ -166,12 +169,21 @@ fun DownloadDialog(
                 }
 
                 // Status / error / progress
-                if (downloadState.statusText.isNotEmpty()) {
+                if (downloadState.status != DownloadStatus.IDLE) {
                     Spacer(Modifier.height(12.dp))
-                    val isError = !downloadState.isDownloading && downloadState.progress == 0f
-                    val isSuccess = downloadState.statusText == "提取完成"
+                    val isSuccess = downloadState.status == DownloadStatus.SUCCESS
+                    val isError = downloadState.status == DownloadStatus.FAILED
                     Text(
-                        text = downloadState.statusText,
+                        text = when (downloadState.status) {
+                            DownloadStatus.REQUESTING -> stringResource(R.string.download_status_requesting)
+                            DownloadStatus.DOWNLOADING ->
+                                if (downloadState.progress > 0f) stringResource(R.string.download_status_downloading, "${(downloadState.progress * 100).toInt()}%")
+                                else stringResource(R.string.download_status_fetching)
+                            DownloadStatus.SAVING -> stringResource(R.string.download_status_saving)
+                            DownloadStatus.SUCCESS -> stringResource(R.string.download_status_success)
+                            DownloadStatus.FAILED -> stringResource(R.string.download_status_failed, downloadState.errorDetail)
+                            DownloadStatus.IDLE -> ""
+                        },
                         color = when {
                             isSuccess -> SuccessGreen
                             isError -> ErrorRed
@@ -202,19 +214,19 @@ fun DownloadDialog(
             when {
                 downloadState.isDownloading -> {
                     TextButton(onClick = onCancel) {
-                        Text("取消", color = ErrorRed)
+                        Text(stringResource(R.string.common_cancel), color = ErrorRed)
                     }
                 }
-                downloadState.statusText == "提取完成" -> {
+                downloadState.status == DownloadStatus.SUCCESS -> {
                     TextButton(onClick = onDismiss) {
-                        Text("完成", color = SuccessGreen)
+                        Text(stringResource(R.string.common_done), color = SuccessGreen)
                     }
                 }
-                downloadState.statusText.isNotEmpty() && !downloadState.isDownloading -> {
+                downloadState.status == DownloadStatus.FAILED -> {
                     // Error state — show retry + close
                     Row {
                         TextButton(onClick = onDismiss) {
-                            Text("关闭", color = TextSecondary)
+                            Text(stringResource(R.string.common_close), color = TextSecondary)
                         }
                         TextButton(
                             onClick = {
@@ -225,7 +237,7 @@ fun DownloadDialog(
                             },
                             enabled = url.isNotBlank()
                         ) {
-                            Text("重试", color = if (url.isNotBlank()) LocalAccentColor.current else TextHint)
+                            Text(stringResource(R.string.common_retry), color = if (url.isNotBlank()) LocalAccentColor.current else TextHint)
                         }
                     }
                 }
@@ -240,7 +252,7 @@ fun DownloadDialog(
                         enabled = url.isNotBlank()
                     ) {
                         Text(
-                            "提取音频",
+                            stringResource(R.string.download_extract_action),
                             color = if (url.isNotBlank()) LocalAccentColor.current else TextHint
                         )
                     }
@@ -250,7 +262,7 @@ fun DownloadDialog(
         dismissButton = {
             if (!downloadState.isDownloading) {
                 TextButton(onClick = onDismiss) {
-                    Text("取消", color = TextSecondary)
+                    Text(stringResource(R.string.common_cancel), color = TextSecondary)
                 }
             }
         },

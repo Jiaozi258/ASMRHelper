@@ -40,9 +40,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
@@ -128,7 +130,7 @@ fun FileBrowserScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "此目录为空",
+                    text = stringResource(R.string.file_empty_dir),
                     style = MaterialTheme.typography.bodyLarge,
                     color = TextHint
                 )
@@ -203,7 +205,7 @@ private fun PathBreadcrumb(
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "返回上级",
+                contentDescription = stringResource(R.string.file_back_up),
                 tint = if (parent != null) TextSecondary else TextHint,
                 modifier = Modifier.size(20.dp)
             )
@@ -212,7 +214,7 @@ private fun PathBreadcrumb(
         Spacer(modifier = Modifier.width(4.dp))
 
         // 解析路径为层级列表
-        val pathSegments = buildPathSegments(currentDir.absolutePath)
+        val pathSegments = buildPathSegments(currentDir.absolutePath, stringResource(R.string.file_root))
 
         pathSegments.forEachIndexed { index, (name, file) ->
             if (index > 0) {
@@ -238,10 +240,10 @@ private fun PathBreadcrumb(
  * 将路径拆解为 (显示名, File) 的层级列表
  * 例如 /storage/emulated/0/Music → [(根目录, /), (storage, /storage), ...]
  */
-private fun buildPathSegments(path: String): List<Pair<String, File>> {
+private fun buildPathSegments(path: String, rootLabel: String): List<Pair<String, File>> {
     val segments = mutableListOf<Pair<String, File>>()
     val root = File("/")
-    segments.add("根目录" to root)
+    segments.add(rootLabel to root)
 
     var current: File? = null
     for (part in path.trim('/').split("/")) {
@@ -285,7 +287,7 @@ private fun ParentDirectoryRow(
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
-            text = ".. (上级目录)",
+            text = stringResource(R.string.file_parent_dir),
             style = MaterialTheme.typography.bodyMedium,
             color = LocalAccentColor.current,
             fontWeight = FontWeight.Medium

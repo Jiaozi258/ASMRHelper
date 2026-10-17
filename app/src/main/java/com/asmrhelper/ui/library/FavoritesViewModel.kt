@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.asmrhelper.R
 import com.asmrhelper.data.local.scanner.AudioScanner
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.repository.AudioRepository
@@ -86,18 +87,18 @@ class FavoritesViewModel @Inject constructor(
             try {
                 val scanned = audioScanner.scanMediaStore()
                 if (scanned.isEmpty()) {
-                    _scanResult.emit("未找到音频文件，请尝试使用「浏览导入」手动选取隐私空间或其它文件夹")
+                    _scanResult.emit(context.getString(R.string.library_scan_no_files))
                 } else {
                     val newAudios = scanned.filter { it.filePath !in deletedPaths }
                     newAudios.forEach { audio -> audioRepository.addAudio(audio) }
                     val skipped = scanned.size - newAudios.size
                     val msg = if (skipped > 0)
-                        "已导入 ${newAudios.size} 首音频，跳过 ${skipped} 首已删除"
-                    else "已导入 ${newAudios.size} 首音频"
+                        context.getString(R.string.library_scan_imported_skipped, newAudios.size, skipped)
+                    else context.getString(R.string.library_scan_imported, newAudios.size)
                     _scanResult.emit(msg)
                 }
             } catch (e: Exception) {
-                _scanResult.emit("扫描失败: ${e.message}")
+                _scanResult.emit(context.getString(R.string.library_scan_failed, e.message))
             } finally {
                 _isScanning.value = false
             }
@@ -125,11 +126,11 @@ class FavoritesViewModel @Inject constructor(
                 }
 
                 _scanResult.emit(
-                    if (imported > 0) "成功导入 $imported 首音频"
-                    else "未能导入任何音频，请确认文件格式为 mp3/m4a/ogg/wav"
+                    if (imported > 0) context.getString(R.string.library_import_success, imported)
+                    else context.getString(R.string.library_import_no_files)
                 )
             } catch (e: Exception) {
-                _scanResult.emit("导入失败: ${e.message}")
+                _scanResult.emit(context.getString(R.string.library_import_failed, e.message))
             } finally {
                 _isScanning.value = false
             }
