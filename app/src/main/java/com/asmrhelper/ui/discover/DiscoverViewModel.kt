@@ -147,5 +147,6 @@ fun RemoteSong.toAudio(streamUrl: String): Audio = Audio(
     filePath = streamUrl,
     durationMs = durationMs,
     coverUrl = coverUrl,
-    sourceId = sourceId
+    sourceId = sourceId,
+    sourceSongId = id
 )

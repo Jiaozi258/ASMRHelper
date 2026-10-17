@@ -8,5 +8,5 @@ import com.asmrhelper.util.LrcLine
 fun RemoteLyric.toLrcLines(): List<LrcLine> =
     lines.map { LrcLine(it.timeMs, it.text) }.sortedBy { it.timeMs }
 
-/** 是否为可拉取在线歌词的远程歌曲：有来源且 id 为正数。 */
-fun Audio.isRemoteSong(): Boolean = sourceId.isNotBlank() && id > 0L
+/** 是否为可拉取在线歌词的远程歌曲：有来源，且 id 为正数或带字符串平台 id（QQ 的非数字 songmid）。 */
+fun Audio.isRemoteSong(): Boolean = sourceId.isNotBlank() && (id > 0L || !sourceSongId.isNullOrBlank())

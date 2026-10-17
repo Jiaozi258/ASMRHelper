@@ -31,4 +31,14 @@ class RemoteLyricMapperTest {
         assertFalse(Audio(id = 0L, title = "x", filePath = "u", sourceId = "netease").isRemoteSong())
         assertFalse(Audio(id = 1L, title = "x", filePath = "u", sourceId = "").isRemoteSong())
     }
+
+    @Test
+    fun isRemoteSongTrueForQqStringMid() {
+        assertTrue(Audio(id = 0L, title = "x", filePath = "u", sourceId = "qq", sourceSongId = "0035GveV3i9dBM").isRemoteSong())
+    }
+
+    @Test
+    fun isRemoteSongFalseForLocal() {
+        assertFalse(Audio(id = 0L, title = "x", filePath = "u").isRemoteSong())
+    }
 }

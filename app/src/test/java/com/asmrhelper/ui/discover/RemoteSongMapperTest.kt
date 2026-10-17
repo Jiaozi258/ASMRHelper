@@ -22,4 +22,11 @@ class RemoteSongMapperTest {
         assertEquals("netease", audio.sourceId)
         assertEquals(42L, audio.id)
     }
+
+    @Test
+    fun mapsStringMidToSourceSongId() {
+        val audio = RemoteSong("0035GveV3i9dBM", "小苹果", "人", sourceId = "qq").toAudio("https://s/1.mp3")
+        assertEquals(0L, audio.id)
+        assertEquals("0035GveV3i9dBM", audio.sourceSongId)
+    }
 }

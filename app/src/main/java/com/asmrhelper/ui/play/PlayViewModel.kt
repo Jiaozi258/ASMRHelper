@@ -441,7 +441,7 @@ class PlayViewModel @Inject constructor(
                 return@launch
             }
             if (audio.isRemoteSong()) {
-                musicSourceManager.activeSource.value.getLyric(audio.id.toString()).collect { remote ->
+                musicSourceManager.activeSource.value.getLyric(audio.sourceSongId ?: audio.id.toString()).collect { remote ->
                     val lines = remote.toLrcLines()
                     _lyrics.value = lines
                     _hasLyrics.value = lines.isNotEmpty()

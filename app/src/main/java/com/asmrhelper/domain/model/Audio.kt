@@ -9,5 +9,6 @@ data class Audio(
     val isFavorite: Boolean = false,
     val addedAt: Long = System.currentTimeMillis(),
     val coverUrl: String? = null,
-    val sourceId: String = ""
+    val sourceId: String = "",
+    val sourceSongId: String? = null
 )
