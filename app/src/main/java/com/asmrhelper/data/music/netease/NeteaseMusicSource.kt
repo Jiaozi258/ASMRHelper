@@ -40,15 +40,35 @@ class NeteaseMusicSource(
         emit(NeteaseJson.parseSearch(weapiPost("/weapi/cloudsearch/get/web", body)))
     }
 
-    // ── 后续任务实现 ─────────────────────────────────────
+    override fun getSongUrl(songId: String, quality: String): Flow<String> = flow {
+        val body = json(mapOf(
+            "ids" to "[$songId]",
+            "level" to "standard",
+            "encodeType" to "aac"
+        ))
+        emit(NeteaseJson.parseSongUrl(weapiPost("/weapi/song/enhance/player/url/v1", body)))
+    }
 
-    override fun getSongUrl(songId: String, quality: String): Flow<String> = flow { emit("") }
-    override fun getLyric(songId: String): Flow<RemoteLyric> = flow { emit(RemoteLyric()) }
+    override fun getLyric(songId: String): Flow<RemoteLyric> = flow {
+        val body = json(mapOf("id" to songId, "lv" to "-1", "tv" to "-1"))
+        emit(NeteaseJson.parseLyric(weapiPost("/weapi/song/lyric", body)))
+    }
+
     override fun getCoverUrl(songId: String): Flow<String> = flow { emit("") }
     override fun getSongDetail(songId: String): Flow<RemoteSong> = flow {}
     override fun getPlaylist(playlistId: String): Flow<RemotePlaylist> = flow { emit(RemotePlaylist("", "")) }
-    override fun getRecommendations(): Flow<List<RemoteSong>> = flow { emit(emptyList()) }
-    override fun getCharts(): Flow<List<RemoteChart>> = flow { emit(emptyList()) }
+
+    override fun getRecommendations(): Flow<List<RemoteSong>> = flow {
+        val body = json(mapOf("limit" to "30"))
+        emit(NeteaseJson.parseRecommend(weapiPost("/weapi/personalized/newsong", body)))
+    }
+
+    override fun getCharts(): Flow<List<RemoteChart>> = flow {
+        emit(NeteaseJson.parseCharts(weapiPost("/weapi/toplist", "{}")))
+    }
+
+    // ── 后续任务实现 ─────────────────────────────────────
+
     override fun loginAccount(username: String, password: String): Flow<Result<Unit>> =
         flow { emit(Result.failure(IllegalStateException("未实现"))) }
     override fun loginQr(): Flow<QrLoginState> = flow { emit(QrLoginState.Failed("未实现")) }
