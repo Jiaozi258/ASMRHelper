@@ -108,6 +108,15 @@ class SettingsRepositoryImpl @Inject constructor(
         _playbackMode.value = mode
     }
 
+    // ── 应用语言 ───────────────────────────────────────
+
+    private val _appLanguage = MutableStateFlow(prefs.getInt("app_language", 0))
+    override fun getAppLanguage(): Flow<Int> = _appLanguage
+    override suspend fun setAppLanguage(mode: Int) {
+        prefs.edit().putInt("app_language", mode).apply()
+        _appLanguage.value = mode
+    }
+
     override fun getBgColorIndex(): Flow<Int> = _bgColorIndex
 
     override suspend fun setBgColorIndex(index: Int) {

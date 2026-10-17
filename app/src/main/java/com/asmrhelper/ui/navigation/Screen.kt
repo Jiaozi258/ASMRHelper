@@ -1,5 +1,6 @@
 package com.asmrhelper.ui.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Person
@@ -8,6 +9,7 @@ import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.asmrhelper.R
 
 /**
  * 顶层三页：播放 / 发现 / 主页。
@@ -15,13 +17,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
  */
 sealed class Screen(
     val route: String,
-    val label: String,
+    @StringRes val labelRes: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    data object Play : Screen("play", "播放", Icons.Filled.PlayArrow, Icons.Outlined.PlayArrow)
-    data object Discover : Screen("discover", "发现", Icons.Filled.Explore, Icons.Outlined.Explore)
-    data object Profile : Screen("profile", "主页", Icons.Filled.Person, Icons.Outlined.Person)
+    data object Play : Screen("play", R.string.nav_play, Icons.Filled.PlayArrow, Icons.Outlined.PlayArrow)
+    data object Discover : Screen("discover", R.string.nav_discover, Icons.Filled.Explore, Icons.Outlined.Explore)
+    data object Profile : Screen("profile", R.string.nav_profile, Icons.Filled.Person, Icons.Outlined.Person)
 }
 
 /**

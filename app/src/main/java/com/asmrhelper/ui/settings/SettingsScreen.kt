@@ -8,6 +8,7 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.animation.animateColorAsState
@@ -81,6 +82,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -88,6 +90,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.ui.components.HypnosisBgType
 import com.asmrhelper.ui.theme.LocalAccentColor
@@ -121,19 +124,19 @@ private fun LoopMode.displayName(): String = when (this) {
 // ── 设置分类 ─────────────────────────────────────────────
 
 private enum class SettingsCategory(
-    val label: String,
-    val subtitle: String,
+    @StringRes val labelRes: Int,
+    @StringRes val subtitleRes: Int,
     val icon: ImageVector
 ) {
-    PERSONAL("个人偏好", "隐私、通知与锁屏", Icons.Filled.Lock),
-    PLAYBACK("播放设置", "循环、淡出、记忆播放等", Icons.Filled.Loop),
-    EQUALIZER("均衡器", "10 段频段调节与预设", Icons.Filled.GraphicEq),
-    APPEARANCE("外观与主题", "背景颜色与主题色彩", Icons.Filled.Palette),
-    STORAGE("存储管理", "缓存清理与数据库统计", Icons.Filled.Storage),
-    AMBIENT("环境音管理", "导入与管理环境音", Icons.Filled.MusicNote),
-    LYRICS("歌词设置", "字体、行距、对齐与显示", Icons.Filled.MusicNote),
-    AUDIO_EFFECTS("音频特效", "可视化、音量触发、催眠", Icons.Filled.AutoAwesome),
-    ABOUT("关于", "版本信息与开源许可", Icons.Filled.Info),
+    PERSONAL(R.string.category_personal, R.string.category_personal_sub, Icons.Filled.Lock),
+    PLAYBACK(R.string.category_playback, R.string.category_playback_sub, Icons.Filled.Loop),
+    EQUALIZER(R.string.category_equalizer, R.string.category_equalizer_sub, Icons.Filled.GraphicEq),
+    APPEARANCE(R.string.category_appearance, R.string.category_appearance_sub, Icons.Filled.Palette),
+    STORAGE(R.string.category_storage, R.string.category_storage_sub, Icons.Filled.Storage),
+    AMBIENT(R.string.category_ambient, R.string.category_ambient_sub, Icons.Filled.MusicNote),
+    LYRICS(R.string.category_lyrics, R.string.category_lyrics_sub, Icons.Filled.MusicNote),
+    AUDIO_EFFECTS(R.string.category_audio_effects, R.string.category_audio_effects_sub, Icons.Filled.AutoAwesome),
+    ABOUT(R.string.category_about, R.string.category_about_sub, Icons.Filled.Info),
 }
 
 // ── 入口 ──────────────────────────────────────────────────
@@ -176,7 +179,7 @@ private fun SettingsHub(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("设置") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, "返回", tint = TextPrimary)
@@ -198,10 +201,10 @@ private fun SettingsHub(
                 .padding(bottom = 24.dp)
         ) {
             SettingsCategory.entries.forEach { cat ->
-                SettingsEntryRow(icon = cat.icon, title = cat.label, subtitle = cat.subtitle) { onOpen(cat) }
+                SettingsEntryRow(icon = cat.icon, titleRes = cat.labelRes, subtitleRes = cat.subtitleRes) { onOpen(cat) }
                 HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 20.dp))
             }
-            SettingsEntryRow(icon = Icons.Filled.Info, title = "播放历史", subtitle = "查看播放记录") { onNavigateToHistory() }
+            SettingsEntryRow(icon = Icons.Filled.Info, titleRes = R.string.history_title, subtitleRes = R.string.history_subtitle) { onNavigateToHistory() }
         }
     }
 }
@@ -924,7 +927,7 @@ private fun AppearanceSettingsScreen(
             ) {
                 Text("主题模式", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Text(
-                    "跟随系统 / 浅色 / 深色（默认跟随系统）",
+                    stringResource(R.string.theme_mode_desc),
                     color = TextHint,
                     fontSize = 12.sp
                 )
@@ -933,7 +936,11 @@ private fun AppearanceSettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf("跟随系统", "浅色", "深色").forEachIndexed { index, label ->
+                    listOf(
+                        stringResource(R.string.theme_follow_system),
+                        stringResource(R.string.theme_light),
+                        stringResource(R.string.theme_dark)
+                    ).forEachIndexed { index, label ->
                         val selected = index == themeMode
                         Box(
                             modifier = Modifier
@@ -1720,8 +1727,8 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
 
-    SubScreenScaffold(title = "关于", onBack = onBack) {
-        SectionHeader(icon = Icons.Filled.Info, title = "关于")
+    SubScreenScaffold(title = stringResource(R.string.category_about), onBack = onBack) {
+        SectionHeader(icon = Icons.Filled.Info, title = stringResource(R.string.category_about))
 
         Card(
             modifier = Modifier
@@ -1828,8 +1835,8 @@ private fun compareVersions(a: String, b: String): Int {
 @Composable
 private fun SettingsEntryRow(
     icon: ImageVector,
-    title: String,
-    subtitle: String,
+    @StringRes titleRes: Int,
+    @StringRes subtitleRes: Int,
     onClick: () -> Unit
 ) {
     Row(
@@ -1850,8 +1857,8 @@ private fun SettingsEntryRow(
         }
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            Text(subtitle, color = TextHint, fontSize = 12.sp)
+            Text(stringResource(titleRes), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Text(stringResource(subtitleRes), color = TextHint, fontSize = 12.sp)
         }
         Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
     }

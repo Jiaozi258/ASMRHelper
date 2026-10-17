@@ -14,4 +14,51 @@
 
     <!-- Widget -->
     <string name="widget_description">ASMRHelper 桌面快捷播放控制</string>
+
+    <!-- 导航三页 -->
+    <string name="nav_play">播放</string>
+    <string name="nav_discover">发现</string>
+    <string name="nav_profile">主页</string>
+
+    <!-- 菜单 -->
+    <string name="menu_title">菜单</string>
+
+    <!-- 设置首页 -->
+    <string name="settings_title">设置</string>
+    <string name="history_title">播放历史</string>
+    <string name="history_subtitle">查看播放记录</string>
+
+    <!-- 设置分类 -->
+    <string name="category_personal">个人偏好</string>
+    <string name="category_personal_sub">隐私、通知与锁屏</string>
+    <string name="category_playback">播放设置</string>
+    <string name="category_playback_sub">循环、淡出、记忆播放等</string>
+    <string name="category_equalizer">均衡器</string>
+    <string name="category_equalizer_sub">10 段频段调节与预设</string>
+    <string name="category_appearance">外观与主题</string>
+    <string name="category_appearance_sub">背景颜色与主题色彩</string>
+    <string name="category_storage">存储管理</string>
+    <string name="category_storage_sub">缓存清理与数据库统计</string>
+    <string name="category_ambient">环境音管理</string>
+    <string name="category_ambient_sub">导入与管理环境音</string>
+    <string name="category_lyrics">歌词设置</string>
+    <string name="category_lyrics_sub">字体、行距、对齐与显示</string>
+    <string name="category_audio_effects">音频特效</string>
+    <string name="category_audio_effects_sub">可视化、音量触发、催眠</string>
+    <string name="category_about">关于</string>
+    <string name="category_about_sub">版本信息与开源许可</string>
+
+    <!-- 外观 -->
+    <string name="theme_mode">主题模式</string>
+    <string name="theme_mode_desc">跟随系统 / 浅色 / 深色（默认跟随系统）</string>
+    <string name="theme_follow_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+
+    <!-- 个人主页 -->
+    <string name="profile_title">我的</string>
+
+    <!-- 发现 -->
+    <string name="discover_title">发现</string>
+    <string name="discover_placeholder">搜索 / 推荐 / 榜单（即将上线）</string>
 </resources>

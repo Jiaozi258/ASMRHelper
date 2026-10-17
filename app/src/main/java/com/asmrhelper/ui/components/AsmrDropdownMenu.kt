@@ -32,11 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.asmrhelper.R
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
@@ -59,7 +61,7 @@ fun AsmrDropdownMenu(
         IconButton(onClick = { expanded = true }) {
             Icon(
                 Icons.Filled.MoreVert,
-                contentDescription = "菜单",
+                contentDescription = stringResource(R.string.menu_title),
                 tint = TextPrimary
             )
         }
@@ -102,7 +104,7 @@ fun AsmrDropdownMenu(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "菜单",
+                                text = stringResource(R.string.menu_title),
                                 color = TextHint,
                                 style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Medium

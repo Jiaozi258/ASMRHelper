@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ASMRHelper</string>
+
+    <!-- App shortcuts -->
+    <string name="shortcut_resume">Resume playback</string>
+    <string name="shortcut_resume_long">Resume the last audio</string>
+    <string name="shortcut_timer30">30-minute timer</string>
+    <string name="shortcut_timer30_long">Start playing after a 30-minute timer</string>
+    <string name="shortcut_favorites">Favorites</string>
+    <string name="shortcut_favorites_long">View favorite audio</string>
+    <string name="shortcut_history">Recent plays</string>
+    <string name="shortcut_history_long">View playback history</string>
+
+    <!-- Widget -->
+    <string name="widget_description">ASMRHelper quick playback control</string>
+
+    <!-- Navigation -->
+    <string name="nav_play">Play</string>
+    <string name="nav_discover">Discover</string>
+    <string name="nav_profile">Home</string>
+
+    <!-- Menu -->
+    <string name="menu_title">Menu</string>
+
+    <!-- Settings hub -->
+    <string name="settings_title">Settings</string>
+    <string name="history_title">Playback History</string>
+    <string name="history_subtitle">View playback history</string>
+
+    <!-- Settings categories -->
+    <string name="category_personal">Personal</string>
+    <string name="category_personal_sub">Privacy, notifications &amp; lock screen</string>
+    <string name="category_playback">Playback</string>
+    <string name="category_playback_sub">Loop, fade-out, resume &amp; more</string>
+    <string name="category_equalizer">Equalizer</string>
+    <string name="category_equalizer_sub">10-band adjustment &amp; presets</string>
+    <string name="category_appearance">Appearance</string>
+    <string name="category_appearance_sub">Background &amp; accent colors</string>
+    <string name="category_storage">Storage</string>
+    <string name="category_storage_sub">Cache cleanup &amp; database stats</string>
+    <string name="category_ambient">Ambient Sounds</string>
+    <string name="category_ambient_sub">Import &amp; manage ambient sounds</string>
+    <string name="category_lyrics">Lyrics</string>
+    <string name="category_lyrics_sub">Font, spacing, alignment &amp; display</string>
+    <string name="category_audio_effects">Audio Effects</string>
+    <string name="category_audio_effects_sub">Visualizer, volume trigger, hypnosis</string>
+    <string name="category_about">About</string>
+    <string name="category_about_sub">Version &amp; open-source licenses</string>
+
+    <!-- Appearance -->
+    <string name="theme_mode">Theme mode</string>
+    <string name="theme_mode_desc">Follow system / Light / Dark (defaults to follow system)</string>
+    <string name="theme_follow_system">Follow system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+
+    <!-- Profile -->
+    <string name="profile_title">My</string>
+
+    <!-- Discover -->
+    <string name="discover_title">Discover</string>
+    <string name="discover_placeholder">Search / Recommendations / Charts (coming soon)</string>
+</resources>

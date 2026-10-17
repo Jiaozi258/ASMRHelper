@@ -59,11 +59,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.asmrhelper.R
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
@@ -93,7 +95,7 @@ fun ProfileScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("我的") },
+                title = { Text(stringResource(R.string.profile_title)) },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Filled.Settings, "设置", tint = TextPrimary)

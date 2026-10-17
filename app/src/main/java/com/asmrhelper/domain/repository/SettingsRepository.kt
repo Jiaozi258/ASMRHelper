@@ -20,6 +20,9 @@ interface SettingsRepository {
     // 播放模式：0 = ASMR（默认），1 = MUSIC
     fun getPlaybackMode(): Flow<Int>
     suspend fun setPlaybackMode(mode: Int)
+    // 应用语言：0 = 跟随系统（默认），1 = 中文，2 = 英文
+    fun getAppLanguage(): Flow<Int>
+    suspend fun setAppLanguage(mode: Int)
     fun getBgColorIndex(): Flow<Int>
     suspend fun setBgColorIndex(index: Int)
     fun getCurrentBgImagePath(): Flow<String?>
