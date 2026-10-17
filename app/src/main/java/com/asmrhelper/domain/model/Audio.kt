@@ -7,5 +7,7 @@ data class Audio(
     val filePath: String,
     val durationMs: Long = 0L,
     val isFavorite: Boolean = false,
-    val addedAt: Long = System.currentTimeMillis()
+    val addedAt: Long = System.currentTimeMillis(),
+    val coverUrl: String? = null,
+    val sourceId: String = ""
 )

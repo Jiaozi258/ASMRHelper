@@ -13,4 +13,13 @@ class RemoteSongMapperTest {
         assertEquals("https://s/1.mp3", audio.filePath)
         assertEquals(3000L, audio.durationMs)
     }
+
+    @Test
+    fun mapsCoverAndSourceId() {
+        val audio = RemoteSong("42", "歌", "人", coverUrl = "https://c/1.jpg", sourceId = "netease")
+            .toAudio("https://s/1.mp3")
+        assertEquals("https://c/1.jpg", audio.coverUrl)
+        assertEquals("netease", audio.sourceId)
+        assertEquals(42L, audio.id)
+    }
 }

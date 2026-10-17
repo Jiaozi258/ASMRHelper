@@ -9,6 +9,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.domain.model.PlayerState
+import com.asmrhelper.util.PlaylistStateCodec
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -81,6 +82,8 @@ class PlayerManager @Inject constructor(
             .putString("last_title", audio.title)
             .putString("last_artist", audio.artist)
             .putLong("last_duration_ms", audio.durationMs)
+            .putString("last_cover_url", audio.coverUrl ?: "")
+            .putString("last_source_id", audio.sourceId)
             .apply()
     }
 
@@ -107,13 +110,17 @@ class PlayerManager @Inject constructor(
         val title = prefs.getString("last_title", "") ?: "未知"
         val artist = prefs.getString("last_artist", "") ?: ""
         val duration = prefs.getLong("last_duration_ms", 0L)
+        val coverUrl = prefs.getString("last_cover_url", "")?.takeIf { it.isNotBlank() }
+        val sourceId = prefs.getString("last_source_id", "") ?: ""
         return Audio(
             id = 0L,
             title = title,
             artist = artist,
             filePath = path,
             durationMs = duration,
-            isFavorite = false
+            isFavorite = false,
+            coverUrl = coverUrl,
+            sourceId = sourceId
         )
     }
 
@@ -121,19 +128,8 @@ class PlayerManager @Inject constructor(
     private fun savePlaylistState() {
         if (!isRememberPlaybackEnabled()) return
         if (currentPlaylist.isEmpty() || currentIndex < 0) return
-        val arr = org.json.JSONArray()
-        currentPlaylist.forEach { a ->
-            arr.put(org.json.JSONObject().apply {
-                put("id", a.id)
-                put("title", a.title)
-                put("artist", a.artist)
-                put("filePath", a.filePath)
-                put("durationMs", a.durationMs)
-                put("isFavorite", a.isFavorite)
-            })
-        }
         prefs.edit()
-            .putString("playlist_json", arr.toString())
+            .putString("playlist_json", PlaylistStateCodec.encode(currentPlaylist))
             .putInt("playlist_index", currentIndex)
             .putString("loop_mode", _state.value.loopMode.name)
             .apply()
@@ -141,20 +137,7 @@ class PlayerManager @Inject constructor(
 
     private fun loadPlaylistState(): List<Audio> {
         val json = prefs.getString("playlist_json", null) ?: return emptyList()
-        return try {
-            val arr = org.json.JSONArray(json)
-            (0 until arr.length()).map { i ->
-                val o = arr.getJSONObject(i)
-                Audio(
-                    id = o.optLong("id", 0L),
-                    title = o.optString("title", "未知"),
-                    artist = o.optString("artist", ""),
-                    filePath = o.optString("filePath", ""),
-                    durationMs = o.optLong("durationMs", 0L),
-                    isFavorite = o.optBoolean("isFavorite", false)
-                )
-            }
-        } catch (_: Exception) { emptyList() }
+        return PlaylistStateCodec.decode(json)
     }
 
     /** 恢复保存的完整播放队列，返回应定位到的当前曲目；无队列则回退到单曲。 */
