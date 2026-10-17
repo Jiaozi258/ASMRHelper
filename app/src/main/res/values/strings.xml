@@ -79,6 +79,10 @@
     <string name="visualizer_style">可视化风格</string>
     <string name="visualizer_bar">柱状</string>
     <string name="visualizer_wave">波形</string>
+    <string name="visualizer_dots">点阵</string>
+    <string name="visualizer_radial">环形</string>
+    <string name="visualizer_mirror">对称</string>
+    <string name="visualizer_glow">光晕</string>
     <string name="more">更多</string>
     <string name="menu_timer">⏱ 定时</string>
     <string name="menu_lyrics_edit">🎵 歌词编辑</string>

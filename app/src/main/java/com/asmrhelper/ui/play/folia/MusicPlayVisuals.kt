@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
@@ -73,11 +74,14 @@ import com.asmrhelper.util.LyricMode
 import com.asmrhelper.util.MusicVisualizerMath
 import com.asmrhelper.util.currentLineIndex
 import com.asmrhelper.util.scrollAnchorIndex
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 private const val VISIBLE_LINES = 9
 
-/** 可视化风格：柱状频谱 / 波形。 */
-enum class VisualizerStyle { BAR, WAVE }
+/** 可视化风格：柱状频谱 / 波形 / 点阵 / 环形 / 对称 / 光晕曲线。 */
+enum class VisualizerStyle { BAR, WAVE, DOTS, RADIAL, MIRROR, GLOW }
 
 /** 全屏双色调背景：模糊封面 + 由封面主色派生的双色渐变 + 缓慢缩放流动。 */
 @Composable
@@ -141,6 +145,10 @@ fun MusicVisualizer(
         when (style) {
             VisualizerStyle.BAR -> MusicVisualizerMath.barsFromFft(fft, 24)
             VisualizerStyle.WAVE -> MusicVisualizerMath.barsFromWaveform(waveform, 32)
+            VisualizerStyle.DOTS -> MusicVisualizerMath.barsFromFft(fft, 16)
+            VisualizerStyle.RADIAL -> MusicVisualizerMath.barsFromFft(fft, 36)
+            VisualizerStyle.MIRROR -> MusicVisualizerMath.barsFromFft(fft, 24)
+            VisualizerStyle.GLOW -> MusicVisualizerMath.barsFromFft(fft, 24)
         }
     }
     Canvas(modifier = modifier) {
@@ -176,6 +184,79 @@ fun MusicVisualizer(
                         if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
                     }
                     drawPath(path = path, color = accent.copy(alpha = 0.9f), style = Stroke(width = 3f))
+                }
+            }
+            VisualizerStyle.DOTS -> {
+                val n = heights.size.coerceAtLeast(1)
+                val step = w / n
+                heights.forEachIndexed { i, v ->
+                    val cx = i * step + step / 2f
+                    val r = 2.dp.toPx() + v * 6.dp.toPx()
+                    drawCircle(
+                        color = accent.copy(alpha = 0.3f + 0.6f * v),
+                        radius = r,
+                        center = Offset(cx, mid)
+                    )
+                }
+            }
+            VisualizerStyle.RADIAL -> {
+                val n = heights.size.coerceAtLeast(1)
+                val cx = w / 2f
+                val cy = h / 2f
+                val maxR = minOf(w, h) * 0.42f
+                val inner = maxR * 0.16f
+                heights.forEachIndexed { i, v ->
+                    val angle = (i.toFloat() / n) * 2f * PI.toFloat()
+                    val dirX = cos(angle)
+                    val dirY = sin(angle)
+                    val len = inner + v * (maxR - inner)
+                    drawLine(
+                        color = accent.copy(alpha = 0.35f + 0.6f * v),
+                        start = Offset(cx + dirX * inner, cy + dirY * inner),
+                        end = Offset(cx + dirX * len, cy + dirY * len),
+                        strokeWidth = 4.dp.toPx(),
+                        cap = StrokeCap.Round
+                    )
+                }
+            }
+            VisualizerStyle.MIRROR -> {
+                val barWidth = w / heights.size.coerceAtLeast(1)
+                heights.forEachIndexed { i, v ->
+                    val bh = v * h * 0.45f
+                    val left = i * barWidth + barWidth * 0.2f
+                    val wd = barWidth * 0.6f
+                    drawRoundRect(
+                        color = accent.copy(alpha = 0.85f),
+                        topLeft = Offset(left, mid - bh),
+                        size = Size(wd, bh.coerceAtLeast(2f)),
+                        cornerRadius = CornerRadius(wd / 2f)
+                    )
+                    drawRoundRect(
+                        color = accent.copy(alpha = 0.85f),
+                        topLeft = Offset(left, mid),
+                        size = Size(wd, bh.coerceAtLeast(2f)),
+                        cornerRadius = CornerRadius(wd / 2f)
+                    )
+                }
+            }
+            VisualizerStyle.GLOW -> {
+                if (heights.size > 1) {
+                    val n = heights.size
+                    val step = w / (n - 1)
+                    val amp = h * 0.45f
+                    val pts = heights.mapIndexed { i, v -> Offset(i * step, mid - v * amp) }
+                    // 二次贝塞尔过中点：平滑穿过采样点
+                    val path = Path()
+                    path.moveTo(pts[0].x, pts[0].y)
+                    for (i in 1 until n) {
+                        val prev = pts[i - 1]
+                        val cur = pts[i]
+                        path.quadraticTo(prev.x, prev.y, (prev.x + cur.x) / 2f, (prev.y + cur.y) / 2f)
+                    }
+                    path.lineTo(pts[n - 1].x, pts[n - 1].y)
+                    drawPath(path = path, color = accent.copy(alpha = 0.15f), style = Stroke(width = 14.dp.toPx(), cap = StrokeCap.Round))
+                    drawPath(path = path, color = accent.copy(alpha = 0.4f), style = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round))
+                    drawPath(path = path, color = accent.copy(alpha = 0.95f), style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
                 }
             }
         }

@@ -79,6 +79,10 @@
     <string name="visualizer_style">Visualizer style</string>
     <string name="visualizer_bar">Bars</string>
     <string name="visualizer_wave">Wave</string>
+    <string name="visualizer_dots">Dots</string>
+    <string name="visualizer_radial">Radial</string>
+    <string name="visualizer_mirror">Mirror</string>
+    <string name="visualizer_glow">Glow</string>
     <string name="more">More</string>
     <string name="menu_timer">⏱ Timer</string>
     <string name="menu_lyrics_edit">🎵 Edit lyrics</string>
