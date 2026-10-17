@@ -47,6 +47,8 @@
     <string name="category_audio_effects_sub">可视化、音量触发、催眠</string>
     <string name="category_about">关于</string>
     <string name="category_about_sub">版本信息与开源许可</string>
+    <string name="music_source_settings_title">音源设置</string>
+    <string name="music_source_settings_sub">在线音乐平台音源地址</string>
 
     <!-- 外观 -->
     <string name="theme_mode">主题模式</string>

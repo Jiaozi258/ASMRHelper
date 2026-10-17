@@ -144,6 +144,7 @@ private enum class SettingsCategory(
 @Composable
 fun SettingsScreen(
     onNavigateToHistory: () -> Unit = {},
+    onNavigateToMusicSources: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
     onBack: () -> Unit = {}
@@ -153,6 +154,7 @@ fun SettingsScreen(
         null -> SettingsHub(
             onOpen = { category = it },
             onNavigateToHistory = onNavigateToHistory,
+            onNavigateToMusicSources = onNavigateToMusicSources,
             onBack = onBack
         )
         SettingsCategory.PERSONAL -> PersonalPreferenceScreen(onBack = { category = null }, viewModel = viewModel)
@@ -174,6 +176,7 @@ fun SettingsScreen(
 private fun SettingsHub(
     onOpen: (SettingsCategory) -> Unit,
     onNavigateToHistory: () -> Unit,
+    onNavigateToMusicSources: () -> Unit,
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -204,6 +207,8 @@ private fun SettingsHub(
                 SettingsEntryRow(icon = cat.icon, titleRes = cat.labelRes, subtitleRes = cat.subtitleRes) { onOpen(cat) }
                 HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 20.dp))
             }
+            SettingsEntryRow(icon = Icons.Filled.MusicNote, titleRes = R.string.music_source_settings_title, subtitleRes = R.string.music_source_settings_sub) { onNavigateToMusicSources() }
+            HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 20.dp))
             SettingsEntryRow(icon = Icons.Filled.Info, titleRes = R.string.history_title, subtitleRes = R.string.history_subtitle) { onNavigateToHistory() }
         }
     }

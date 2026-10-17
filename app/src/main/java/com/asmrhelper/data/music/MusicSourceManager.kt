@@ -36,6 +36,7 @@ class MusicSourceManager @Inject constructor(
     val sources: StateFlow<List<SourceConfig>> = _sources.asStateFlow()
 
     private val _activeSourceId = MutableStateFlow("netease")
+    val activeSourceId: StateFlow<String> = _activeSourceId.asStateFlow()
 
     /** 活动音源；未配置 baseUrl 时为 null（供 UI 显示空态）。 */
     val activeSource: StateFlow<MusicSource?> =

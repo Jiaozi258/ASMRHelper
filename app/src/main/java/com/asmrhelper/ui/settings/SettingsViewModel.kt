@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.Coil
+import com.asmrhelper.data.music.MusicSourceManager
 import com.asmrhelper.domain.model.LoopMode
+import com.asmrhelper.domain.music.SourceConfig
 import com.asmrhelper.domain.repository.AudioRepository
 import com.asmrhelper.domain.repository.PlaylistRepository
 import com.asmrhelper.domain.repository.SettingsRepository
@@ -29,6 +31,7 @@ class SettingsViewModel @Inject constructor(
     private val playlistRepository: PlaylistRepository,
     private val equalizerController: EqualizerController,
     private val sceneEffectsController: SceneEffectsController,
+    private val musicSourceManager: MusicSourceManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -391,6 +394,27 @@ class SettingsViewModel @Inject constructor(
     fun applyEqPreset(preset: EqPreset) = equalizerController.applyPreset(preset)
     fun saveCustomEqPreset(name: String) = equalizerController.saveCustomPreset(name)
     fun loadCustomEqPreset(): EqPreset? = equalizerController.loadCustomPreset()
+
+    // ── 音源管理 ──────────────────────────────────────────
+
+    val musicSources: StateFlow<List<SourceConfig>> = musicSourceManager.sources
+    val activeSourceId: StateFlow<String> = musicSourceManager.activeSourceId
+
+    fun setActiveSource(id: String) {
+        viewModelScope.launch { musicSourceManager.setActive(id) }
+    }
+
+    fun addCustomSource(displayName: String, baseUrl: String) {
+        viewModelScope.launch { musicSourceManager.addCustomSource(displayName, baseUrl) }
+    }
+
+    fun updateSource(config: SourceConfig) {
+        viewModelScope.launch { musicSourceManager.updateSource(config) }
+    }
+
+    fun removeSource(id: String) {
+        viewModelScope.launch { musicSourceManager.removeSource(id) }
+    }
 
     // ── 遮罩工具 ──────────────────────────────────────────
 

@@ -47,6 +47,8 @@
     <string name="category_audio_effects_sub">Visualizer, volume trigger, hypnosis</string>
     <string name="category_about">About</string>
     <string name="category_about_sub">Version &amp; open-source licenses</string>
+    <string name="music_source_settings_title">Music sources</string>
+    <string name="music_source_settings_sub">Online music platform source URLs</string>
 
     <!-- Appearance -->
     <string name="theme_mode">Theme mode</string>

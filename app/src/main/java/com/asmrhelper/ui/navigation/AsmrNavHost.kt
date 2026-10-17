@@ -36,6 +36,7 @@ import com.asmrhelper.ui.play.PlayScreenV2
 import com.asmrhelper.ui.play.PlayViewModel
 import com.asmrhelper.ui.playlist.PlaylistScreen
 import com.asmrhelper.ui.profile.ProfileScreen
+import com.asmrhelper.ui.settings.MusicSourceSettingsScreen
 import com.asmrhelper.ui.settings.SettingsScreen
 import com.asmrhelper.ui.slideshow.ImageSlideshowContent
 import com.asmrhelper.ui.sleep.SleepJournalScreen
@@ -348,7 +349,12 @@ private fun PlayPage(
 
         SubScreen.Settings -> SettingsScreen(
             onBack = onBackFromSettings,
-            onNavigateToHistory = { onOpenSubScreen(SubScreen.History) }
+            onNavigateToHistory = { onOpenSubScreen(SubScreen.History) },
+            onNavigateToMusicSources = { onOpenSubScreen(SubScreen.MusicSources) }
+        )
+
+        SubScreen.MusicSources -> MusicSourceSettingsScreen(
+            onBack = { onOpenSubScreen(SubScreen.Settings) }
         )
 
         SubScreen.History -> HistoryScreen(
