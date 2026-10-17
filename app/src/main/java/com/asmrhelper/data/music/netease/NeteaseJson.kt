@@ -25,6 +25,9 @@ object NeteaseJson {
         ""
     }
 
+    /** 播放地址兜底：网易云免费歌外链，302 跳转到真实 mp3，免登录可用。 */
+    fun fallbackSongUrl(id: String): String = "https://music.163.com/song/media/outer/url?id=$id.mp3"
+
     fun parseLyric(json: String): RemoteLyric = try {
         val raw = JSONObject(json).optJSONObject("lrc")?.optString("lyric") ?: ""
         val lines = mutableListOf<RemoteLyricLine>()
@@ -86,26 +89,8 @@ object NeteaseJson {
         ""
     }
 
-    fun parseQrKey(json: String): String = try {
-        JSONObject(json).optJSONObject("data")?.optString("unikey") ?: ""
-    } catch (_: Exception) {
-        ""
-    }
-
-    fun parseQrImg(json: String): String = try {
-        JSONObject(json).optJSONObject("data")?.optString("qrimg") ?: ""
-    } catch (_: Exception) {
-        ""
-    }
-
     fun parseQrCookie(json: String): String = try {
         JSONObject(json).optString("cookie")
-    } catch (_: Exception) {
-        ""
-    }
-
-    fun parseQrNickname(json: String): String = try {
-        JSONObject(json).optString("nickname")
     } catch (_: Exception) {
         ""
     }

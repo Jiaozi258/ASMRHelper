@@ -48,6 +48,14 @@ class NeteaseJsonTest {
         assertEquals("", NeteaseJson.parseSongUrl("not json"))
     }
 
+    @Test
+    fun fallbackSongUrlBuildsOuterUrl() {
+        assertEquals(
+            "https://music.163.com/song/media/outer/url?id=123.mp3",
+            NeteaseJson.fallbackSongUrl("123")
+        )
+    }
+
     // ── 歌词 ────────────────────────────────────────────
 
     @Test

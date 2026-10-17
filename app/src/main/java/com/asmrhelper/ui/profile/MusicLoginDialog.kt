@@ -1,15 +1,14 @@
 package com.asmrhelper.ui.profile
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.util.Base64
+import android.webkit.CookieManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -32,12 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.asmrhelper.domain.model.music.QrLoginState
+import androidx.compose.ui.viewinterop.AndroidView
 import com.asmrhelper.domain.music.MusicSource
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -45,15 +43,14 @@ import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
-import com.asmrhelper.util.QrImageBase64
+import com.asmrhelper.util.Cookies
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** 扫码登录「过期后应重建 key 重试」的单一事实点。 */
-object QrLoginReducer {
-    fun shouldRestart(state: QrLoginState): Boolean = state is QrLoginState.Expired
-}
+private const val LOGIN_URL = "https://music.163.com/#/login"
+private const val COOKIE_DOMAIN = "https://music.163.com"
 
-/** 在线音乐平台登录对话框：账号密码 + 扫码两种方式。 */
+/** 在线音乐平台登录对话框：账号密码 + 扫码（WebView 打开网易云登录页）两种方式。 */
 @Composable
 fun MusicLoginDialog(source: MusicSource, onDismiss: () -> Unit) {
     var tab by remember { mutableIntStateOf(0) }
@@ -77,7 +74,7 @@ fun MusicLoginDialog(source: MusicSource, onDismiss: () -> Unit) {
         },
         text = {
             if (tab == 0) AccountLoginPanel(source, onDismiss)
-            else QrLoginPanel(source, onDismiss)
+            else QrWebLoginPanel(source, onDismiss)
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("取消", color = TextSecondary) }
@@ -162,83 +159,47 @@ private fun AccountLoginPanel(source: MusicSource, onDone: () -> Unit) {
 }
 
 @Composable
-private fun QrLoginPanel(source: MusicSource, onDone: () -> Unit) {
+private fun QrWebLoginPanel(source: MusicSource, onDone: () -> Unit) {
     val context = LocalContext.current
-    var qrState by remember { mutableStateOf<QrLoginState?>(null) }
-    var restart by remember { mutableIntStateOf(0) }
+    var status by remember { mutableStateOf("正在加载登录页…") }
 
-    LaunchedEffect(restart) {
-        source.loginQr().collect { state ->
-            qrState = state
-            when (state) {
-                is QrLoginState.Confirmed -> {
-                    Toast.makeText(context, "登录成功", Toast.LENGTH_SHORT).show()
-                    onDone()
-                }
-                is QrLoginState.Expired -> {
-                    if (QrLoginReducer.shouldRestart(state)) restart++
-                }
-                is QrLoginState.Failed ->
-                    Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
-                else -> Unit
+    // 轮询 WebView cookie，检测到 MUSIC_U 即完成登录。
+    LaunchedEffect(Unit) {
+        while (true) {
+            val all = CookieManager.getInstance().getCookie(COOKIE_DOMAIN) ?: ""
+            if (all.contains("MUSIC_U")) {
+                source.importLogin(Cookies.select(all, setOf("MUSIC_U", "__csrf")), "")
+                Toast.makeText(context, "登录成功", Toast.LENGTH_SHORT).show()
+                onDone()
+                break
             }
+            delay(800)
         }
     }
 
     Column(
-        modifier = Modifier.width(260.dp),
+        modifier = Modifier
+            .width(300.dp)
+            .height(360.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        when (val s = qrState) {
-            is QrLoginState.Waiting -> {
-                val bitmap = remember(s.qrImageBase64) { decodeQrBitmap(s.qrImageBase64) }
-                if (bitmap != null) {
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = "登录二维码",
-                        modifier = Modifier.size(220.dp)
-                    )
+        AndroidView(
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            super.onPageFinished(view, url)
+                            status = "请使用网易云音乐 App 扫码登录"
+                        }
+                    }
+                    loadUrl(LOGIN_URL)
                 }
-                Spacer(Modifier.height(12.dp))
-                Text("请使用 App 扫码登录", color = TextSecondary, fontSize = 13.sp)
-            }
-            is QrLoginState.Scanned -> {
-                Spacer(Modifier.height(40.dp))
-                Text("已扫码，请在手机上确认", color = LocalAccentColor.current, fontSize = 14.sp)
-                Spacer(Modifier.height(40.dp))
-            }
-            is QrLoginState.Expired -> {
-                Spacer(Modifier.height(40.dp))
-                Text("二维码已过期，正在刷新…", color = TextHint, fontSize = 13.sp)
-                Spacer(Modifier.height(40.dp))
-            }
-            is QrLoginState.Failed -> {
-                Spacer(Modifier.height(40.dp))
-                Text(s.message, color = TextSecondary, fontSize = 13.sp)
-                Spacer(Modifier.height(40.dp))
-            }
-            is QrLoginState.Confirmed -> {
-                // 已在 LaunchedEffect 触发 onDone 关闭对话框，此处兜底占位
-                Spacer(Modifier.height(40.dp))
-                Text("登录成功", color = LocalAccentColor.current, fontSize = 14.sp)
-                Spacer(Modifier.height(40.dp))
-            }
-            null -> {
-                Spacer(Modifier.height(40.dp))
-                Text("正在加载二维码…", color = TextHint, fontSize = 13.sp)
-                Spacer(Modifier.height(40.dp))
-            }
-        }
-    }
-}
-
-/** 网易云返回的二维码图片串（可能带 data URI 前缀）→ Bitmap；失败返回 null。 */
-private fun decodeQrBitmap(raw: String?): Bitmap? {
-    val payload = QrImageBase64.payload(raw) ?: return null
-    return try {
-        val bytes = Base64.decode(payload, Base64.DEFAULT)
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-    } catch (_: Exception) {
-        null
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(status, color = TextSecondary, fontSize = 13.sp)
     }
 }

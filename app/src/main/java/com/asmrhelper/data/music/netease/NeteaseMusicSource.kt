@@ -1,14 +1,13 @@
 package com.asmrhelper.data.music.netease
 
 import com.asmrhelper.data.music.neteaselib.Weapi
-import com.asmrhelper.domain.model.music.QrLoginState
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
 import com.asmrhelper.domain.music.MusicSource
+import com.asmrhelper.util.Cookies
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,12 +47,10 @@ class NeteaseMusicSource(
     }
 
     override fun getSongUrl(songId: String, quality: String): Flow<String> = flow {
-        val body = json(mapOf(
-            "ids" to "[$songId]",
-            "level" to "standard",
-            "encodeType" to "aac"
-        ))
-        emit(NeteaseJson.parseSongUrl(weapiPost("/weapi/song/enhance/player/url/v1", body)))
+        // 旧接口免登录可拿免费歌地址；拿不到再退回外链兜底。
+        val body = json(mapOf("ids" to "[$songId]", "br" to "320000"))
+        val url = NeteaseJson.parseSongUrl(weapiPost("/weapi/song/enhance/player/url", body))
+        emit(url.ifBlank { NeteaseJson.fallbackSongUrl(songId) })
     }
 
     override fun getLyric(songId: String): Flow<RemoteLyric> = flow {
@@ -107,38 +104,12 @@ class NeteaseMusicSource(
         }
     }
 
-    override fun loginQr(): Flow<QrLoginState> = flow {
-        val keyResp = weapiPostRaw("/weapi/login/qr/key", """{"type":"1"}""")
-        val key = NeteaseJson.parseQrKey(keyResp.body)
-        if (key.isBlank()) {
-            emit(QrLoginState.Failed("获取二维码失败"))
-            return@flow
-        }
-        val createResp = weapiPostRaw("/weapi/login/qr/create?qrimg=true", """{"key":"$key","qrimg":true}""")
-        val qrimg = NeteaseJson.parseQrImg(createResp.body)
-        if (qrimg.isBlank()) {
-            emit(QrLoginState.Failed("生成二维码失败"))
-            return@flow
-        }
-        emit(QrLoginState.Waiting(key, qrimg))
-
-        while (true) {
-            delay(2000L)
-            val checkResp = weapiPostRaw("/weapi/login/qr/check", """{"key":"$key","type":"1"}""")
-            when (NeteaseJson.parseCode(checkResp.body)) {
-                800 -> { emit(QrLoginState.Expired(key)); break }
-                801 -> Unit // 未扫码，继续轮询
-                802 -> emit(QrLoginState.Scanned(key))
-                803 -> {
-                    cookie = checkResp.cookie.ifBlank { NeteaseJson.parseQrCookie(checkResp.body) }
-                    nickname = NeteaseJson.parseQrNickname(checkResp.body)
-                    _isLoggedIn.value = true
-                    onLoginChanged(cookie, nickname)
-                    emit(QrLoginState.Confirmed(nickname))
-                    break
-                }
-            }
-        }
+    /** 从 WebView 登录页拿到的 cookie 注入登录态。 */
+    override fun importLogin(cookie: String, nickname: String) {
+        this.cookie = cookie
+        this.nickname = nickname
+        _isLoggedIn.value = cookie.contains("MUSIC_U")
+        onLoginChanged(cookie, nickname)
     }
 
     override fun logout() {
@@ -155,7 +126,19 @@ class NeteaseMusicSource(
     private suspend fun weapiPost(path: String, jsonBody: String): String =
         weapiPostRaw(path, jsonBody).body
 
-    private suspend fun weapiPostRaw(path: String, jsonBody: String): WeapiResp =
+    private suspend fun weapiPostRaw(path: String, jsonBody: String): WeapiResp {
+        if (cookie.isBlank() && path != ANON_PATH) ensureAnonymousCookie()
+        return postOnce(path, jsonBody)
+    }
+
+    /** 免登录也要一个游客 cookie（`MUSIC_A`），否则搜索/播放常返回空。 */
+    private suspend fun ensureAnonymousCookie() {
+        val raw = postOnce(ANON_PATH, "{}").body
+        val anon = Cookies.select(NeteaseJson.parseQrCookie(raw), setOf("MUSIC_A"))
+        if (anon.isNotBlank()) cookie = anon
+    }
+
+    private suspend fun postOnce(path: String, jsonBody: String): WeapiResp =
         withContext(Dispatchers.IO) {
             try {
                 val form = Weapi.encrypt(jsonBody)
@@ -199,6 +182,7 @@ class NeteaseMusicSource(
     }
 
     companion object {
+        private const val ANON_PATH = "/weapi/register/anonimous"
         private const val USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }

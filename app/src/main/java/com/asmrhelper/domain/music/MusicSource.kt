@@ -1,6 +1,5 @@
 package com.asmrhelper.domain.music
 
-import com.asmrhelper.domain.model.music.QrLoginState
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemotePlaylist
@@ -27,6 +26,6 @@ interface MusicSource {
     fun getCharts(): Flow<List<RemoteChart>>
 
     fun loginAccount(username: String, password: String): Flow<Result<Unit>>
-    fun loginQr(): Flow<QrLoginState>
+    fun importLogin(cookie: String, nickname: String)
     fun logout()
 }
