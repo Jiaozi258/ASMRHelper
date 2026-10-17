@@ -894,7 +894,7 @@ private fun AppearanceSettingsScreen(
 ) {
     val bgColorIndex by viewModel.bgColorIndex.collectAsStateWithLifecycle()
     val themePresetOrdinal by viewModel.themePresetOrdinal.collectAsStateWithLifecycle()
-    val darkTheme by viewModel.darkTheme.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
     SubScreenScaffold(title = "外观与主题", onBack = onBack) {
         SectionHeader(icon = Icons.Filled.Palette, title = "外观设置")
@@ -906,31 +906,45 @@ private fun AppearanceSettingsScreen(
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = DarkSurface)
         ) {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("深色模式", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    Text(
-                        if (darkTheme) "沉浸式深色（助眠推荐）" else "Apple 浅色",
-                        color = TextHint,
-                        fontSize = 12.sp
-                    )
-                }
-                Switch(
-                    checked = darkTheme,
-                    onCheckedChange = { viewModel.setDarkTheme(it) },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = LocalAccentColor.current,
-                        checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f),
-                        uncheckedThumbColor = TextSecondary,
-                        uncheckedTrackColor = DarkSurfaceVariant
-                    )
+                Text("主题模式", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    "跟随系统 / 浅色 / 深色（默认跟随系统）",
+                    color = TextHint,
+                    fontSize = 12.sp
                 )
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("跟随系统", "浅色", "深色").forEachIndexed { index, label ->
+                        val selected = index == themeMode
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (selected) LocalAccentColor.current.copy(alpha = 0.15f)
+                                    else DarkSurfaceVariant
+                                )
+                                .clickable { viewModel.setThemeMode(index) }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                label,
+                                color = if (selected) LocalAccentColor.current else TextHint,
+                                fontSize = 13.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
             }
         }
 

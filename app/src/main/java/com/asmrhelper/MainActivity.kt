@@ -10,6 +10,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -19,6 +20,8 @@ import androidx.core.view.WindowCompat
 import com.asmrhelper.domain.repository.SettingsRepository
 import com.asmrhelper.ui.navigation.AsmrNavHost
 import com.asmrhelper.ui.theme.ASMRHelperTheme
+import com.asmrhelper.ui.theme.ThemeMode
+import com.asmrhelper.ui.theme.resolveDark
 import com.asmrhelper.ui.theme.ThemePreset
 import com.asmrhelper.util.ShareReceiver
 import com.asmrhelper.util.ShortcutReceiver
@@ -57,14 +60,15 @@ class MainActivity : ComponentActivity() {
 
         val prefs = getSharedPreferences("asmr_settings", MODE_PRIVATE)
         val presetOrdinal = prefs.getInt("theme_preset", 0)
-        val darkThemeDefault = prefs.getBoolean("dark_theme", true)
 
         setContent {
             val ordinal by settingsRepository.getThemePresetOrdinal()
                 .collectAsState(initial = presetOrdinal)
             val preset = ThemePreset.fromOrdinalOrDefault(ordinal)
-            val darkTheme by settingsRepository.getDarkTheme()
-                .collectAsState(initial = darkThemeDefault)
+            val themeModeOrdinal by settingsRepository.getThemeMode()
+                .collectAsState(initial = 0)
+            val darkTheme = ThemeMode.entries.getOrElse(themeModeOrdinal) { ThemeMode.FOLLOW_SYSTEM }
+                .resolveDark(isSystemInDarkTheme())
 
             // 浅色模式下系统状态栏/导航栏图标需切为深色，否则白图标压在浅灰背景上不可见
             val view = LocalView.current

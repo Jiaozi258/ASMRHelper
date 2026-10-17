@@ -17,6 +17,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import org.json.JSONArray
 import com.asmrhelper.R
+import com.asmrhelper.ui.theme.migrateDarkThemeToThemeMode
 
 @Singleton
 class SettingsRepositoryImpl @Inject constructor(
@@ -27,7 +28,11 @@ class SettingsRepositoryImpl @Inject constructor(
     private val prefs = context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
     private val _privacyMode = MutableStateFlow(prefs.getBoolean("privacy_mode", false))
     private val _themePresetOrdinal = MutableStateFlow(migrateThemePreset(prefs))
-    private val _darkTheme = MutableStateFlow(prefs.getBoolean("dark_theme", true))
+    private val _themeMode = MutableStateFlow(
+        migrateDarkThemeToThemeMode(
+            if (prefs.contains("dark_theme")) prefs.getBoolean("dark_theme", true) else null
+        ).ordinal
+    )
     private val _bgColorIndex = MutableStateFlow(prefs.getInt("bg_color_index", 0))
     private val _visualizerEnabled = MutableStateFlow(prefs.getBoolean("audio_visualizer", false))
     private val _triggerEnabled = MutableStateFlow(prefs.getBoolean("volume_trigger", false))
@@ -87,11 +92,11 @@ class SettingsRepositoryImpl @Inject constructor(
         _themePresetOrdinal.value = ordinal
     }
 
-    override fun getDarkTheme(): Flow<Boolean> = _darkTheme
+    override fun getThemeMode(): Flow<Int> = _themeMode
 
-    override suspend fun setDarkTheme(enabled: Boolean) {
-        prefs.edit().putBoolean("dark_theme", enabled).apply()
-        _darkTheme.value = enabled
+    override suspend fun setThemeMode(mode: Int) {
+        prefs.edit().putInt("theme_mode", mode).apply()
+        _themeMode.value = mode
     }
 
     // ── 播放模式 ───────────────────────────────────────

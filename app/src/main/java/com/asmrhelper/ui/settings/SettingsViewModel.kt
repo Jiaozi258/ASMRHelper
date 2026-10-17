@@ -94,14 +94,14 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // ── 浅色 / 深色模式 ────────────────────────────────
+    // ── 主题模式（跟随系统/浅色/深色） ─────────────────
 
-    val darkTheme: StateFlow<Boolean> = settingsRepository.getDarkTheme()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val themeMode: StateFlow<Int> = settingsRepository.getThemeMode()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    fun setDarkTheme(enabled: Boolean) {
+    fun setThemeMode(mode: Int) {
         viewModelScope.launch {
-            settingsRepository.setDarkTheme(enabled)
+            settingsRepository.setThemeMode(mode)
         }
     }
 

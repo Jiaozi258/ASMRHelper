@@ -14,8 +14,9 @@ interface SettingsRepository {
     suspend fun setPrivacyMode(enabled: Boolean)
     fun getThemePresetOrdinal(): Flow<Int>
     suspend fun setThemePresetOrdinal(ordinal: Int)
-    fun getDarkTheme(): Flow<Boolean>
-    suspend fun setDarkTheme(enabled: Boolean)
+    // 主题模式：0 = 跟随系统（默认），1 = 浅色，2 = 深色
+    fun getThemeMode(): Flow<Int>
+    suspend fun setThemeMode(mode: Int)
     // 播放模式：0 = ASMR（默认），1 = MUSIC
     fun getPlaybackMode(): Flow<Int>
     suspend fun setPlaybackMode(mode: Int)
