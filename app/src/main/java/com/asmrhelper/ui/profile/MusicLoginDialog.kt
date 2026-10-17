@@ -1,5 +1,8 @@
 package com.asmrhelper.ui.profile
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Base64
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -42,7 +45,7 @@ import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
-import com.asmrhelper.util.QrCodeRenderer
+import com.asmrhelper.util.QrImageBase64
 import kotlinx.coroutines.launch
 
 /** 扫码登录「过期后应重建 key 重试」的单一事实点。 */
@@ -107,7 +110,7 @@ private fun AccountLoginPanel(source: MusicSource, onDone: () -> Unit) {
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
-            label = { Text("账号") },
+            label = { Text("手机号/邮箱") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             colors = fieldColors,
@@ -188,7 +191,7 @@ private fun QrLoginPanel(source: MusicSource, onDone: () -> Unit) {
     ) {
         when (val s = qrState) {
             is QrLoginState.Waiting -> {
-                val bitmap = remember(s.qrContent) { QrCodeRenderer.render(s.qrContent, 512) }
+                val bitmap = remember(s.qrImageBase64) { decodeQrBitmap(s.qrImageBase64) }
                 if (bitmap != null) {
                     Image(
                         bitmap = bitmap.asImageBitmap(),
@@ -226,5 +229,16 @@ private fun QrLoginPanel(source: MusicSource, onDone: () -> Unit) {
                 Spacer(Modifier.height(40.dp))
             }
         }
+    }
+}
+
+/** 网易云返回的二维码图片串（可能带 data URI 前缀）→ Bitmap；失败返回 null。 */
+private fun decodeQrBitmap(raw: String?): Bitmap? {
+    val payload = QrImageBase64.payload(raw) ?: return null
+    return try {
+        val bytes = Base64.decode(payload, Base64.DEFAULT)
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    } catch (_: Exception) {
+        null
     }
 }

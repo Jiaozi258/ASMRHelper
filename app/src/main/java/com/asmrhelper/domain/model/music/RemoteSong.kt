@@ -37,7 +37,7 @@ data class RemoteChart(
 
 /** 扫码登录状态机。 */
 sealed class QrLoginState {
-    data class Waiting(val key: String, val qrContent: String) : QrLoginState()
+    data class Waiting(val key: String, val qrImageBase64: String?) : QrLoginState()
     data class Scanned(val key: String) : QrLoginState()
     data class Confirmed(val username: String) : QrLoginState()
     data class Expired(val key: String) : QrLoginState()

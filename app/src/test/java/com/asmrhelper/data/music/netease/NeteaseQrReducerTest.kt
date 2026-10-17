@@ -1,6 +1,7 @@
 package com.asmrhelper.data.music.netease
 
 import com.asmrhelper.domain.model.music.QrLoginState
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -12,8 +13,10 @@ class NeteaseQrReducerTest {
     }
 
     @Test
-    fun code801IsWaiting() {
-        assertTrue(NeteaseQr.stateFor(801) is QrLoginState.Waiting)
+    fun code801IsWaitingWithNullImage() {
+        val state = NeteaseQr.stateFor(801)
+        assertTrue(state is QrLoginState.Waiting)
+        assertNull((state as QrLoginState.Waiting).qrImageBase64)
     }
 
     @Test

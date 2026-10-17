@@ -7,7 +7,7 @@ object NeteaseQr {
 
     fun stateFor(code: Int, key: String = "", username: String = ""): QrLoginState = when (code) {
         800 -> QrLoginState.Expired(key)
-        801 -> QrLoginState.Waiting(key, "")
+        801 -> QrLoginState.Waiting(key, null)
         802 -> QrLoginState.Scanned(key)
         803 -> QrLoginState.Confirmed(username)
         else -> QrLoginState.Failed("未知登录状态 code=$code")

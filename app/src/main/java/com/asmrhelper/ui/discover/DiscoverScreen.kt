@@ -62,7 +62,6 @@ fun DiscoverScreen(
     onPlayRequested: () -> Unit = {},
     viewModel: DiscoverViewModel = hiltViewModel()
 ) {
-    val activeSource by viewModel.activeSource.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val searching by viewModel.searching.collectAsStateWithLifecycle()
     val searchResults by viewModel.searchResults.collectAsStateWithLifecycle()
@@ -100,7 +99,6 @@ fun DiscoverScreen(
         )
 
         when {
-            activeSource == null -> EmptyState(stringResource(R.string.discover_empty_source))
             query.isNotBlank() -> SearchResults(
                 searching = searching,
                 results = searchResults,
