@@ -216,7 +216,10 @@ private fun PlayPage(
                                 onNavigateToSlideshow = navigateToSlideshow,
                                 onNavigateToTriggerPad = navigateToTriggerPad,
                                 onNavigateToSleepJournal = navigateToSleepJournal,
-                                onToggleMode = { playViewModel.setPlaybackMode(PlaybackMode.ASMR.ordinal) }
+                                onToggleMode = {
+                                    val next = (PlaybackMode.MUSIC.ordinal + 1) % PlaybackMode.entries.size
+                                    playViewModel.setPlaybackMode(next)
+                                }
                             )
                         }
                     }

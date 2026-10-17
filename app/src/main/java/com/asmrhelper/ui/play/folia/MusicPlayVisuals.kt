@@ -198,7 +198,9 @@ fun CenteredLyrics(
     LaunchedEffect(currentIndex, mode, lines) {
         if (lines.isEmpty()) return@LaunchedEffect
         val anchor = scrollAnchorIndex(currentIndex, mode, VISIBLE_LINES)
-        listState.animateScrollToItem(anchor.coerceIn(0, (lines.size - 1).coerceAtLeast(0)))
+            .coerceIn(0, (lines.size - 1).coerceAtLeast(0))
+        // 跳转模式瞬时定位，滚动模式平滑滚动
+        if (mode == LyricMode.JUMP) listState.scrollToItem(anchor) else listState.animateScrollToItem(anchor)
     }
 
     Column(modifier = modifier) {

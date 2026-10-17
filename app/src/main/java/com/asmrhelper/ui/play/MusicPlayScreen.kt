@@ -307,12 +307,12 @@ fun MusicPlayScreen(
                         }
                     )
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
-                    MoreRow("⏱ 定时", "") { showMoreDialog = false; showTimerDialog = true }
-                    MoreRow("🎵 歌词编辑", "") { showMoreDialog = false; showLyricsDialog = true }
-                    MoreRow("📃 歌单", "") { showMoreDialog = false; showPlaylistDialog = true }
-                    MoreRow("🧰 工具箱", "") { showMoreDialog = false; showToolboxDialog = true }
-                    MoreRow("🎚 音效器", "") { showMoreDialog = false; showEffectsDialog = true }
-                    MoreRow("✂ 切片", "") { showMoreDialog = false; showSliceDialog = true }
+                    MoreRow(stringResource(R.string.menu_timer), "") { showMoreDialog = false; showTimerDialog = true }
+                    MoreRow(stringResource(R.string.menu_lyrics_edit), "") { showMoreDialog = false; showLyricsDialog = true }
+                    MoreRow(stringResource(R.string.menu_playlist), "") { showMoreDialog = false; showPlaylistDialog = true }
+                    MoreRow(stringResource(R.string.menu_toolbox), "") { showMoreDialog = false; showToolboxDialog = true }
+                    MoreRow(stringResource(R.string.menu_effects), "") { showMoreDialog = false; showEffectsDialog = true }
+                    MoreRow(stringResource(R.string.menu_slice), "") { showMoreDialog = false; showSliceDialog = true }
                 }
             },
             confirmButton = {},

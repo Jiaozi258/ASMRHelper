@@ -80,4 +80,10 @@
     <string name="visualizer_bar">Bars</string>
     <string name="visualizer_wave">Wave</string>
     <string name="more">More</string>
+    <string name="menu_timer">⏱ Timer</string>
+    <string name="menu_lyrics_edit">🎵 Edit lyrics</string>
+    <string name="menu_playlist">📃 Playlists</string>
+    <string name="menu_toolbox">🧰 Toolbox</string>
+    <string name="menu_effects">🎚 Effects</string>
+    <string name="menu_slice">✂ Slice</string>
 </resources>
