@@ -23,7 +23,7 @@ import javax.inject.Inject
 
 /**
  * 发现页状态机：搜索 / 推荐 / 排行榜 / 最近播放，以及在线流播放。
- * 活动音源未配置 baseUrl 时 [activeSource] 为 null，UI 据此显示友好空态。
+ * 活动音源由原生平台实现，恒可用。
  */
 @HiltViewModel
 class DiscoverViewModel @Inject constructor(
@@ -32,8 +32,8 @@ class DiscoverViewModel @Inject constructor(
     private val playerManager: PlayerManager
 ) : ViewModel() {
 
-    /** 活动音源；未配置地址时为 null（Review Focus #1）。 */
-    val activeSource: StateFlow<MusicSource?> = musicSourceManager.activeSource
+    /** 活动音源：原生源恒可用。 */
+    val activeSource: StateFlow<MusicSource> = musicSourceManager.activeSource
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
@@ -79,7 +79,7 @@ class DiscoverViewModel @Inject constructor(
     }
 
     fun search(query: String) {
-        val source = activeSource.value ?: return
+        val source = activeSource.value
         _searching.value = true
         viewModelScope.launch {
             source.search(query, 1).collect { list ->
@@ -90,7 +90,7 @@ class DiscoverViewModel @Inject constructor(
     }
 
     fun loadRecommendations() {
-        val source = activeSource.value ?: return
+        val source = activeSource.value
         viewModelScope.launch {
             source.getRecommendations().collect { list ->
                 _recommendations.value = list
@@ -99,7 +99,7 @@ class DiscoverViewModel @Inject constructor(
     }
 
     fun loadCharts() {
-        val source = activeSource.value ?: return
+        val source = activeSource.value
         viewModelScope.launch {
             source.getCharts().collect { list ->
                 _charts.value = list
@@ -109,7 +109,7 @@ class DiscoverViewModel @Inject constructor(
 
     /** 播放在线歌曲：拿不到流地址则提示，不把空串塞给 ExoPlayer（Review Focus #3）。 */
     fun play(song: RemoteSong) {
-        val source = activeSource.value ?: return
+        val source = activeSource.value
         viewModelScope.launch {
             source.getSongUrl(song.id).collect { url ->
                 if (url.isBlank()) {

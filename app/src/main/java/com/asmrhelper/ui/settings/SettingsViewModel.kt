@@ -404,18 +404,6 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { musicSourceManager.setActive(id) }
     }
 
-    fun addCustomSource(displayName: String, baseUrl: String) {
-        viewModelScope.launch { musicSourceManager.addCustomSource(displayName, baseUrl) }
-    }
-
-    fun updateSource(config: SourceConfig) {
-        viewModelScope.launch { musicSourceManager.updateSource(config) }
-    }
-
-    fun removeSource(id: String) {
-        viewModelScope.launch { musicSourceManager.removeSource(id) }
-    }
-
     // ── 遮罩工具 ──────────────────────────────────────────
 
     companion object {

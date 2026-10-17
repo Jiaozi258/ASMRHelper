@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * 音乐音源统一接口。唯一实现是 `HttpMusicSource`（通用 HTTP 适配器），
- * 把「音源地址」上的 HTTP/JSON 接口归一化为这些方法；加密/风控交给服务端完成。
+ * 音乐音源统一接口。由各平台的原生实现（如 `NeteaseMusicSource`）直接请求
+ * 官方接口（weapi 加密等）并归一化为这些方法。
  */
 interface MusicSource {
     val id: String

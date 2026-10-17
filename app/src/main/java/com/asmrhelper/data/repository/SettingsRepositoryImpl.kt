@@ -9,9 +9,6 @@ import com.asmrhelper.data.mapper.toDomain
 import com.asmrhelper.data.mapper.toEntity
 import com.asmrhelper.domain.model.BackgroundImage
 import com.asmrhelper.domain.model.music.MusicLogin
-import com.asmrhelper.data.music.MusicSourceJson
-import com.asmrhelper.domain.music.SourceConfig
-import com.asmrhelper.domain.music.SourcePresets
 import com.asmrhelper.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -45,7 +42,6 @@ class SettingsRepositoryImpl @Inject constructor(
     private val _ambientAudios = MutableStateFlow(loadAmbientList())
     private val _hypnosisEnabled = MutableStateFlow(prefs.getBoolean("hypnosis_mode", false))
     private val _hypnosisBgType = MutableStateFlow(prefs.getInt("hypnosis_bg_type", 0))
-    private val _musicSources = MutableStateFlow(loadMusicSources())
     private val _activeSourceId = MutableStateFlow(prefs.getString("music_active_source", "netease") ?: "netease")
 
     override fun getBackgroundImages(): Flow<List<BackgroundImage>> =
@@ -442,18 +438,6 @@ class SettingsRepositoryImpl @Inject constructor(
 
     // ── 音乐音源 ───────────────────────────────────────
 
-    private fun loadMusicSources(): List<SourceConfig> {
-        val json = prefs.getString("music_sources", null) ?: return SourcePresets.ALL
-        return MusicSourceJson.sourcesFromJson(json).ifEmpty { SourcePresets.ALL }
-    }
-
-    override fun getMusicSources(): Flow<List<SourceConfig>> = _musicSources
-
-    override suspend fun setMusicSources(sources: List<SourceConfig>) {
-        prefs.edit().putString("music_sources", MusicSourceJson.sourcesToJson(sources)).apply()
-        _musicSources.value = sources
-    }
-
     override fun getActiveSourceId(): Flow<String> = _activeSourceId
 
     override suspend fun setActiveSourceId(id: String) {
@@ -463,7 +447,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     // ── 音乐平台登录态 ───────────────────────────────────
 
-    override suspend fun getMusicLogin(sourceId: String): MusicLogin {
+    override fun getMusicLogin(sourceId: String): MusicLogin {
         val json = prefs.getString("music_login_$sourceId", null) ?: return MusicLogin()
         return try {
             val obj = org.json.JSONObject(json)
