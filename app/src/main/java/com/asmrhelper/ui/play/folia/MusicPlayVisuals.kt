@@ -1,11 +1,15 @@
 package com.asmrhelper.ui.play.folia
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -276,6 +280,20 @@ fun CenteredLyrics(
     val listState = rememberLazyListState()
     val currentIndex = remember(lines, progressMs) { lines.currentLineIndex(progressMs) }
 
+    // 当前行发光脉冲（有歌词时才启动，空闲省电）
+    val glowPulse = if (lines.isNotEmpty()) {
+        val transition = rememberInfiniteTransition(label = "lyricGlow")
+        transition.animateFloat(
+            initialValue = 0.55f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1200, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "glowPulse"
+        ).value
+    } else 0f
+
     LaunchedEffect(currentIndex, mode, lines) {
         if (lines.isEmpty()) return@LaunchedEffect
         val anchor = scrollAnchorIndex(currentIndex, mode, VISIBLE_LINES)
@@ -299,7 +317,7 @@ fun CenteredLyrics(
                                 fontSize = if (isCurrent) 20.sp else 15.sp,
                                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
                                 textAlign = TextAlign.Center,
-                                shadow = if (isCurrent) Shadow(color = accent.copy(alpha = 0.5f), blurRadius = 16f) else null
+                                shadow = if (isCurrent) Shadow(color = accent.copy(alpha = 0.5f * glowPulse), blurRadius = 16f * glowPulse) else null
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -319,7 +337,7 @@ fun CenteredLyrics(
     }
 }
 
-/** 底部悬浮控制条：进度 + 上一曲/播放暂停/下一曲 + 更多。 */
+/** 底部悬浮控制条：进度 + 上一曲/播放暂停/下一曲 + 更多。首次出现上滑淡入。 */
 @Composable
 fun FloatingControls(
     isPlaying: Boolean,
@@ -335,43 +353,52 @@ fun FloatingControls(
     val accent = LocalAccentColor.current
     var dragValue by remember { mutableStateOf<Float?>(null) }
     val shownValue = dragValue ?: progress.coerceIn(0f, 1f)
-    Surface(
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+    AnimatedVisibility(
+        visible = visible,
         modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        color = DarkSurfaceVariant.copy(alpha = 0.72f)
+        enter = slideInVertically(initialOffsetY = { it / 2 }, animationSpec = tween(320)) + fadeIn(tween(320)),
+        exit = ExitTransition.None
     ) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-            Slider(
-                value = shownValue,
-                onValueChange = { dragValue = it },
-                onValueChangeFinished = {
-                    dragValue?.let { onSeek((it * durationMs).toLong()) }
-                    dragValue = null
-                },
-                valueRange = 0f..1f,
-                colors = SliderDefaults.colors(
-                    thumbColor = accent,
-                    activeTrackColor = accent,
-                    inactiveTrackColor = DarkSurfaceVariant
-                )
-            )
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                IconButton(onClick = onPrevious) {
-                    Icon(Icons.Filled.SkipPrevious, contentDescription = "上一曲", tint = TextPrimary)
-                }
-                IconButton(onClick = onPlayPause, modifier = Modifier.weight(1f)) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        contentDescription = if (isPlaying) "暂停" else "播放",
-                        tint = TextPrimary,
-                        modifier = Modifier.size(40.dp)
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            color = DarkSurfaceVariant.copy(alpha = 0.72f)
+        ) {
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                Slider(
+                    value = shownValue,
+                    onValueChange = { dragValue = it },
+                    onValueChangeFinished = {
+                        dragValue?.let { onSeek((it * durationMs).toLong()) }
+                        dragValue = null
+                    },
+                    valueRange = 0f..1f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = accent,
+                        activeTrackColor = accent,
+                        inactiveTrackColor = DarkSurfaceVariant
                     )
-                }
-                IconButton(onClick = onNext) {
-                    Icon(Icons.Filled.SkipNext, contentDescription = "下一曲", tint = TextPrimary)
-                }
-                IconButton(onClick = onMore) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "更多", tint = TextSecondary)
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    IconButton(onClick = onPrevious) {
+                        Icon(Icons.Filled.SkipPrevious, contentDescription = "上一曲", tint = TextPrimary)
+                    }
+                    IconButton(onClick = onPlayPause, modifier = Modifier.weight(1f)) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            contentDescription = if (isPlaying) "暂停" else "播放",
+                            tint = TextPrimary,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                    IconButton(onClick = onNext) {
+                        Icon(Icons.Filled.SkipNext, contentDescription = "下一曲", tint = TextPrimary)
+                    }
+                    IconButton(onClick = onMore) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "更多", tint = TextSecondary)
+                    }
                 }
             }
         }
