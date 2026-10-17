@@ -5,6 +5,7 @@ import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
 import com.asmrhelper.domain.music.MusicSource
+import com.asmrhelper.domain.music.WebLoginConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,9 @@ class QqMusicSource(
 
     private val _isLoggedIn = MutableStateFlow(persistedCookie.contains("uin"))
     override val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    override val webLogin: WebLoginConfig =
+        WebLoginConfig("https://y.qq.com/", "https://y.qq.com", setOf("qm_keyst", "uin"))
 
     override fun search(keyword: String, page: Int): Flow<List<RemoteSong>> = flow {
         val param = JSONObject()

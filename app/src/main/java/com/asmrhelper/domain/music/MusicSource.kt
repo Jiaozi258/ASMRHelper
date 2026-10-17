@@ -11,10 +11,25 @@ import kotlinx.coroutines.flow.StateFlow
  * 音乐音源统一接口。由各平台的原生实现（如 `NeteaseMusicSource`）直接请求
  * 官方接口（weapi 加密等）并归一化为这些方法。
  */
+/** WebView 网页登录配置：登录页 URL、抓 Cookie 的域、判定登录态的鉴权键。 */
+data class WebLoginConfig(
+    val url: String,
+    val cookieDomain: String,
+    val cookieKeys: Set<String>
+)
+
 interface MusicSource {
     val id: String
     val displayName: String
     val isLoggedIn: StateFlow<Boolean>
+
+    /** 网页登录（WebView 抓 Cookie）配置；null 表示该源不支持网页登录。 */
+    val webLogin: WebLoginConfig?
+        get() = null
+
+    /** 是否支持账号密码 API 登录（否则仅提供网页登录）。 */
+    val supportsAccountLogin: Boolean
+        get() = false
 
     fun search(keyword: String, page: Int): Flow<List<RemoteSong>>
     fun getSongUrl(songId: String, quality: String = "standard"): Flow<String>

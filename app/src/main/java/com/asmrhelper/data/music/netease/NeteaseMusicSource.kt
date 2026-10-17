@@ -6,6 +6,7 @@ import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
 import com.asmrhelper.domain.music.MusicSource
+import com.asmrhelper.domain.music.WebLoginConfig
 import com.asmrhelper.util.Cookies
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +36,10 @@ class NeteaseMusicSource(
 
     private val _isLoggedIn = MutableStateFlow(cookie.contains("MUSIC_U"))
     override val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    override val supportsAccountLogin: Boolean = true
+    override val webLogin: WebLoginConfig =
+        WebLoginConfig("https://music.163.com/#/login", "https://music.163.com", setOf("MUSIC_U", "__csrf"))
 
     override fun search(keyword: String, page: Int): Flow<List<RemoteSong>> = flow {
         val body = json(mapOf(

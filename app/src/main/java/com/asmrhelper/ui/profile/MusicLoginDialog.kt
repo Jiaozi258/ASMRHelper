@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.asmrhelper.domain.music.MusicSource
+import com.asmrhelper.domain.music.WebLoginConfig
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.LocalAccentColor
@@ -47,13 +48,12 @@ import com.asmrhelper.util.Cookies
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private const val LOGIN_URL = "https://music.163.com/#/login"
-private const val COOKIE_DOMAIN = "https://music.163.com"
-
-/** 在线音乐平台登录对话框：账号密码 + 扫码（WebView 打开网易云登录页）两种方式。 */
+/** 在线音乐平台登录对话框：按音源声明的登录方式（账号密码 + WebView 网页登录）渲染。 */
 @Composable
 fun MusicLoginDialog(source: MusicSource, onDismiss: () -> Unit) {
+    val web = source.webLogin
     var tab by remember { mutableIntStateOf(0) }
+    val hasTabs = source.supportsAccountLogin && web != null
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -61,20 +61,28 @@ fun MusicLoginDialog(source: MusicSource, onDismiss: () -> Unit) {
         title = {
             Column {
                 Text(source.displayName, color = TextPrimary)
-                Spacer(Modifier.height(12.dp))
-                TabRow(
-                    selectedTabIndex = tab,
-                    containerColor = Color.Transparent,
-                    contentColor = LocalAccentColor.current
-                ) {
-                    Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("账号密码") })
-                    Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("扫码登录") })
+                if (hasTabs) {
+                    Spacer(Modifier.height(12.dp))
+                    TabRow(
+                        selectedTabIndex = tab,
+                        containerColor = Color.Transparent,
+                        contentColor = LocalAccentColor.current
+                    ) {
+                        Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("账号密码") })
+                        Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("扫码登录") })
+                    }
+                } else {
+                    Spacer(Modifier.height(4.dp))
+                    Text("网页登录", color = TextSecondary, fontSize = 13.sp)
                 }
             }
         },
         text = {
-            if (tab == 0) AccountLoginPanel(source, onDismiss)
-            else QrWebLoginPanel(source, onDismiss)
+            when {
+                web == null -> Text("该音源暂不支持登录", color = TextSecondary)
+                hasTabs && tab == 0 -> AccountLoginPanel(source, onDismiss)
+                else -> QrWebLoginPanel(source, web, onDismiss)
+            }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("取消", color = TextSecondary) }
@@ -159,16 +167,16 @@ private fun AccountLoginPanel(source: MusicSource, onDone: () -> Unit) {
 }
 
 @Composable
-private fun QrWebLoginPanel(source: MusicSource, onDone: () -> Unit) {
+private fun QrWebLoginPanel(source: MusicSource, config: WebLoginConfig, onDone: () -> Unit) {
     val context = LocalContext.current
     var status by remember { mutableStateOf("正在加载登录页…") }
 
-    // 轮询 WebView cookie，检测到 MUSIC_U 即完成登录。
-    LaunchedEffect(Unit) {
+    // 轮询 WebView cookie，检测到任一鉴权键即完成登录。
+    LaunchedEffect(config) {
         while (true) {
-            val all = CookieManager.getInstance().getCookie(COOKIE_DOMAIN) ?: ""
-            if (all.contains("MUSIC_U")) {
-                source.importLogin(Cookies.select(all, setOf("MUSIC_U", "__csrf")), "")
+            val all = CookieManager.getInstance().getCookie(config.cookieDomain) ?: ""
+            if (config.cookieKeys.any { all.contains(it) }) {
+                source.importLogin(Cookies.select(all, config.cookieKeys), "")
                 Toast.makeText(context, "登录成功", Toast.LENGTH_SHORT).show()
                 onDone()
                 break
@@ -191,10 +199,10 @@ private fun QrWebLoginPanel(source: MusicSource, onDone: () -> Unit) {
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
-                            status = "请使用网易云音乐 App 扫码登录"
+                            status = "请扫码或使用网页登录"
                         }
                     }
-                    loadUrl(LOGIN_URL)
+                    loadUrl(config.url)
                 }
             },
             modifier = Modifier.fillMaxSize()
