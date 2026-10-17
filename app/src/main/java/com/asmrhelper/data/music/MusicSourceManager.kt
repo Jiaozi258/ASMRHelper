@@ -1,6 +1,7 @@
 package com.asmrhelper.data.music
 
 import com.asmrhelper.data.music.netease.NeteaseMusicSource
+import com.asmrhelper.data.music.qq.QqMusicSource
 import com.asmrhelper.domain.model.music.MusicLogin
 import com.asmrhelper.domain.music.MusicSource
 import com.asmrhelper.domain.music.SourceConfig
@@ -56,16 +57,25 @@ class MusicSourceManager @Inject constructor(
     fun sourceFor(config: SourceConfig): MusicSource =
         sourceCache.getOrPut(config.id) {
             val login = settingsRepository.getMusicLogin(config.id)
-            NeteaseMusicSource(
-                client = okHttpClient,
-                persistedCookie = login.cookie,
-                persistedNickname = login.nickname,
-                onLoginChanged = { cookie, nickname ->
-                    scope.launch {
-                        settingsRepository.setMusicLogin(config.id, MusicLogin(cookie, nickname))
-                    }
+            val onLoginChanged: (String, String) -> Unit = { cookie, nickname ->
+                scope.launch {
+                    settingsRepository.setMusicLogin(config.id, MusicLogin(cookie, nickname))
                 }
-            )
+            }
+            when (config.id) {
+                "qq" -> QqMusicSource(
+                    client = okHttpClient,
+                    persistedCookie = login.cookie,
+                    persistedNickname = login.nickname,
+                    onLoginChanged = onLoginChanged
+                )
+                else -> NeteaseMusicSource(
+                    client = okHttpClient,
+                    persistedCookie = login.cookie,
+                    persistedNickname = login.nickname,
+                    onLoginChanged = onLoginChanged
+                )
+            }
         }
 
     suspend fun setActive(id: String) {
