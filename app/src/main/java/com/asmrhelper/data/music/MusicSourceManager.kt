@@ -54,6 +54,10 @@ class MusicSourceManager @Inject constructor(
         }
     }
 
+    /** 按平台 id 定位音源（用于按音频自身的 sourceId 拉取歌词/详情），未知 id 返回 null。 */
+    fun sourceForId(id: String): MusicSource? =
+        SourcePresets.ALL.firstOrNull { it.id == id }?.let { sourceFor(it) }
+
     fun sourceFor(config: SourceConfig): MusicSource =
         sourceCache.getOrPut(config.id) {
             val login = settingsRepository.getMusicLogin(config.id)

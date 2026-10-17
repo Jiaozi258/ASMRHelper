@@ -441,11 +441,18 @@ class PlayViewModel @Inject constructor(
                 return@launch
             }
             if (audio.isRemoteSong()) {
-                musicSourceManager.activeSource.value.getLyric(audio.sourceSongId ?: audio.id.toString()).collect { remote ->
-                    val lines = remote.toLrcLines()
-                    _lyrics.value = lines
-                    _hasLyrics.value = lines.isNotEmpty()
-                    _rawLyricsText.value = remote.rawText
+                val source = musicSourceManager.sourceForId(audio.sourceId)
+                if (source == null) {
+                    _lyrics.value = emptyList()
+                    _hasLyrics.value = false
+                    _rawLyricsText.value = ""
+                } else {
+                    source.getLyric(audio.sourceSongId ?: audio.id.toString()).collect { remote ->
+                        val lines = remote.toLrcLines()
+                        _lyrics.value = lines
+                        _hasLyrics.value = lines.isNotEmpty()
+                        _rawLyricsText.value = remote.rawText
+                    }
                 }
             } else {
                 val text = withContext(Dispatchers.IO) { LyricsStore.loadLyrics(context, audio.filePath) }

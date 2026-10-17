@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.asmrhelper.R
+import com.asmrhelper.data.music.isRemoteSong
 import com.asmrhelper.domain.model.PlaybackMode
 import com.asmrhelper.domain.model.isMenuItemVisible
 import com.asmrhelper.ui.components.AsmrDropdownMenu
@@ -308,7 +309,11 @@ fun MusicPlayScreen(
                     HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
                     MoreRow(stringResource(R.string.menu_timer), "") { showMoreDialog = false; showTimerDialog = true }
                     MoreRow(stringResource(R.string.menu_lyrics_edit), "") { showMoreDialog = false; showLyricsDialog = true }
-                    MoreRow(stringResource(R.string.menu_playlist), "") { showMoreDialog = false; showPlaylistDialog = true }
+                    // 本地播放列表按 Audio.id 索引，在线歌曲（QQ 非数字 mid / 网易云远程 id）
+                    // 无法加入本地歌单——隐藏入口，避免写入悬空的 audioId。
+                    if (state.playerState.currentAudio?.isRemoteSong() != true) {
+                        MoreRow(stringResource(R.string.menu_playlist), "") { showMoreDialog = false; showPlaylistDialog = true }
+                    }
                     MoreRow(stringResource(R.string.menu_toolbox), "") { showMoreDialog = false; showToolboxDialog = true }
                     MoreRow(stringResource(R.string.menu_effects), "") { showMoreDialog = false; showEffectsDialog = true }
                     MoreRow(stringResource(R.string.menu_slice), "") { showMoreDialog = false; showSliceDialog = true }

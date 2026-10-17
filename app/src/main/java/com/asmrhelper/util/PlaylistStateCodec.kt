@@ -18,6 +18,7 @@ object PlaylistStateCodec {
                 put("isFavorite", a.isFavorite)
                 put("coverUrl", a.coverUrl ?: "")
                 put("sourceId", a.sourceId)
+                put("sourceSongId", a.sourceSongId ?: "")
             })
         }
         return arr.toString()
@@ -35,7 +36,8 @@ object PlaylistStateCodec {
                 durationMs = o.optLong("durationMs", 0L),
                 isFavorite = o.optBoolean("isFavorite", false),
                 coverUrl = o.optString("coverUrl", "").takeIf { it.isNotBlank() },
-                sourceId = o.optString("sourceId", "")
+                sourceId = o.optString("sourceId", ""),
+                sourceSongId = o.optString("sourceSongId", "").takeIf { it.isNotBlank() }
             )
         }
     } catch (_: Exception) {

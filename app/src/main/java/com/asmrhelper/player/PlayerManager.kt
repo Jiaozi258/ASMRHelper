@@ -85,6 +85,7 @@ class PlayerManager @Inject constructor(
             .putLong("last_duration_ms", audio.durationMs)
             .putString("last_cover_url", audio.coverUrl ?: "")
             .putString("last_source_id", audio.sourceId)
+            .putString("last_source_song_id", audio.sourceSongId ?: "")
             .apply()
     }
 
@@ -113,6 +114,7 @@ class PlayerManager @Inject constructor(
         val duration = prefs.getLong("last_duration_ms", 0L)
         val coverUrl = prefs.getString("last_cover_url", "")?.takeIf { it.isNotBlank() }
         val sourceId = prefs.getString("last_source_id", "") ?: ""
+        val sourceSongId = prefs.getString("last_source_song_id", "")?.takeIf { it.isNotBlank() }
         val id = prefs.getLong("last_id", 0L)
         return Audio(
             id = id,
@@ -122,7 +124,8 @@ class PlayerManager @Inject constructor(
             durationMs = duration,
             isFavorite = false,
             coverUrl = coverUrl,
-            sourceId = sourceId
+            sourceId = sourceId,
+            sourceSongId = sourceSongId
         )
     }
 

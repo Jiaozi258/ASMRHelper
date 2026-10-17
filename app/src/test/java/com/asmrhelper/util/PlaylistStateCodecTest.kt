@@ -22,6 +22,14 @@ class PlaylistStateCodecTest {
     }
 
     @Test
+    fun roundTripsSourceSongId() {
+        val audio = Audio(id = 0L, title = "小苹果", filePath = "https://x/1.mp3",
+            sourceId = "qq", sourceSongId = "0035GveV3i9dBM")
+        val decoded = PlaylistStateCodec.decode(PlaylistStateCodec.encode(listOf(audio))).single()
+        assertEquals("0035GveV3i9dBM", decoded.sourceSongId)
+    }
+
+    @Test
     fun decodeEmptyAndMalformedReturnEmpty() {
         assertEquals(emptyList<Audio>(), PlaylistStateCodec.decode(""))
         assertEquals(emptyList<Audio>(), PlaylistStateCodec.decode("not json"))
