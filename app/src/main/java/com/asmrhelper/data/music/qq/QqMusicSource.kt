@@ -90,10 +90,10 @@ class QqMusicSource(
         emit(QqMusicJson.parseCharts(post("musicToplist.ToplistInfo", "GetAll", JSONObject())))
     }
 
-    // ── 登录（占位：QQ 扫码登录后续里程碑经 WebView 注入） ──
+    // ── 登录（账号密码走 QQ 网页登录页；WebView 抓 Cookie 后 importLogin） ──
 
     override fun loginAccount(username: String, password: String): Flow<Result<Unit>> = flow {
-        emit(Result.failure(IllegalStateException("QQ 扫码登录后续里程碑提供")))
+        emit(Result.failure(IllegalStateException("QQ 请使用网页登录")))
     }
 
     override fun importLogin(cookie: String, nickname: String) {
