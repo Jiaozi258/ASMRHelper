@@ -108,6 +108,17 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // ── 应用语言（跟随系统/中文/英文） ─────────────────
+
+    val appLanguage: StateFlow<Int> = settingsRepository.getAppLanguage()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun setAppLanguage(mode: Int) {
+        viewModelScope.launch {
+            settingsRepository.setAppLanguage(mode)
+        }
+    }
+
     // ── 缓存管理 ──────────────────────────────────────────
 
     fun clearImageCache(onResult: (Boolean) -> Unit = {}) {

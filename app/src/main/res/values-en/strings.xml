@@ -57,6 +57,12 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
 
+    <!-- Language -->
+    <string name="language_title">Language</string>
+    <string name="language_follow_system">Follow system</string>
+    <string name="language_zh">中文</string>
+    <string name="language_en">English</string>
+
     <!-- Profile -->
     <string name="profile_title">My</string>
 

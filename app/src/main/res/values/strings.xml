@@ -57,6 +57,12 @@
     <string name="theme_light">浅色</string>
     <string name="theme_dark">深色</string>
 
+    <!-- 语言 -->
+    <string name="language_title">语言</string>
+    <string name="language_follow_system">跟随系统</string>
+    <string name="language_zh">中文</string>
+    <string name="language_en">English</string>
+
     <!-- 个人主页 -->
     <string name="profile_title">我的</string>
 

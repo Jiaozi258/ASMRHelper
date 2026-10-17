@@ -914,6 +914,8 @@ private fun AppearanceSettingsScreen(
     val bgColorIndex by viewModel.bgColorIndex.collectAsStateWithLifecycle()
     val themePresetOrdinal by viewModel.themePresetOrdinal.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     SubScreenScaffold(title = "外观与主题", onBack = onBack) {
         SectionHeader(icon = Icons.Filled.Palette, title = "外观设置")
@@ -1049,6 +1051,55 @@ private fun AppearanceSettingsScreen(
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                 )
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                Text(stringResource(R.string.language_title), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(
+                        stringResource(R.string.language_follow_system),
+                        stringResource(R.string.language_zh),
+                        stringResource(R.string.language_en)
+                    ).forEachIndexed { index, label ->
+                        val selected = index == appLanguage
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (selected) LocalAccentColor.current.copy(alpha = 0.15f)
+                                    else DarkSurfaceVariant
+                                )
+                                .clickable {
+                                    if (index != appLanguage) {
+                                        viewModel.setAppLanguage(index)
+                                        (context as? android.app.Activity)?.recreate()
+                                    }
+                                }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                label,
+                                color = if (selected) LocalAccentColor.current else TextHint,
+                                fontSize = 13.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                            )
                         }
                     }
                 }
