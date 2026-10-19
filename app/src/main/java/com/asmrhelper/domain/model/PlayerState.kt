@@ -5,9 +5,11 @@ data class PlayerState(
     val currentAudio: Audio? = null,
     val progressMs: Long = 0L,
     val durationMs: Long = 0L,
-    val loopMode: LoopMode = LoopMode.NONE,
+    val loopMode: LoopMode = LoopMode.LIST,
     val isBackgroundPlaying: Boolean = false,
     val ambientLoopEnabled: Boolean = false,
     val isPrivacyMode: Boolean = false,
-    val crossfadeDurationMs: Int = 0  // 0=off, 3000, 5000, 10000
+    val crossfadeDurationMs: Int = 0,  // 0=off, 3000, 5000, 10000
+    val playlist: List<Audio> = emptyList(),
+    val playlistIndex: Int = -1
 )

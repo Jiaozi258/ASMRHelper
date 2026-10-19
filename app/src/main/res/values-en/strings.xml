@@ -100,6 +100,29 @@
     <string name="menu_toolbox">🧰 Toolbox</string>
     <string name="menu_effects">🎚 Effects</string>
     <string name="menu_slice">✂ Slice</string>
+    <string name="menu_song_info">🎵 Song info</string>
+    <string name="menu_lyric_offset">⏱ Lyric offset</string>
+    <string name="menu_queue">📃 Queue</string>
+    <string name="menu_background">🖼 Background</string>
+    <string name="menu_quality">🎚 Quality</string>
+    <string name="song_info_title">Song info</string>
+    <string name="song_info_artist">Artist</string>
+    <string name="song_info_album">Album</string>
+    <string name="song_info_source">Source</string>
+    <string name="song_info_publish">Released</string>
+    <string name="song_info_source_local">Local</string>
+    <string name="bg_blurred_cover">Blurred cover</string>
+    <string name="bg_folia_duotone">Folia duotone</string>
+    <string name="bg_system_solid">Solid (follow system)</string>
+    <string name="quality_standard">Standard</string>
+    <string name="quality_higher">Higher</string>
+    <string name="quality_excellent">Excellent</string>
+    <string name="quality_lossless">Lossless</string>
+    <string name="quality_hint">Quality change applies to the next song</string>
+    <string name="queue_empty">Queue is empty</string>
+    <string name="lyric_offset_title">Lyric offset</string>
+    <string name="lyric_offset_value">Offset: %+d ms</string>
+    <string name="lyric_offset_reset">Reset</string>
 
     <!-- Common -->
     <string name="common_cancel">Cancel</string>

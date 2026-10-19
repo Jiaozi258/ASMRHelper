@@ -8,7 +8,9 @@ data class RemoteSong(
     val album: String = "",
     val durationMs: Long = 0L,
     val coverUrl: String? = null,
-    val sourceId: String = ""
+    val sourceId: String = "",
+    /** 发行时间（毫秒时间戳，拿不到为 0）。 */
+    val publishTime: Long = 0L
 )
 
 /** 单行歌词。 */

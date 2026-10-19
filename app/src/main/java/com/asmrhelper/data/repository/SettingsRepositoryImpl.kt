@@ -467,4 +467,31 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun clearMusicLogin(sourceId: String) {
         prefs.edit().remove("music_login_$sourceId").apply()
     }
+
+    // ── 播放页背景 / 音质 / 歌词偏移 ─────────────────────
+
+    private val _playbackBackgroundMode = MutableStateFlow(
+        prefs.getString("playback_bg_mode", "BLURRED_COVER") ?: "BLURRED_COVER"
+    )
+    override fun getPlaybackBackgroundMode(): Flow<String> = _playbackBackgroundMode
+    override suspend fun setPlaybackBackgroundMode(mode: String) {
+        prefs.edit().putString("playback_bg_mode", mode).apply()
+        _playbackBackgroundMode.value = mode
+    }
+
+    private val _playbackQuality = MutableStateFlow(
+        prefs.getString("playback_quality", "excellent") ?: "excellent"
+    )
+    override fun getPlaybackQuality(): Flow<String> = _playbackQuality
+    override suspend fun setPlaybackQuality(quality: String) {
+        prefs.edit().putString("playback_quality", quality).apply()
+        _playbackQuality.value = quality
+    }
+
+    private val _lyricOffsetMs = MutableStateFlow(prefs.getInt("lyric_offset_ms", 0))
+    override fun getLyricOffsetMs(): Flow<Int> = _lyricOffsetMs
+    override suspend fun setLyricOffsetMs(offsetMs: Int) {
+        prefs.edit().putInt("lyric_offset_ms", offsetMs).apply()
+        _lyricOffsetMs.value = offsetMs
+    }
 }

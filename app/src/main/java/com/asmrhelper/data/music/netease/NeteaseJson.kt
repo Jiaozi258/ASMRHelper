@@ -200,6 +200,8 @@ object NeteaseJson {
             ?: s.optString("picUrl").takeIf { it.isNotBlank() })
             ?.let { https(it) }
         val duration = if (s.has("dt")) s.optLong("dt") else s.optLong("duration", 0L)
+        val publishTime = s.optLong("publishTime", 0L).takeIf { it > 0 }
+            ?: al?.optLong("publishTime", 0L) ?: 0L
         return RemoteSong(
             id = s.optLong("id").toString(),
             title = s.optString("name"),
@@ -207,7 +209,8 @@ object NeteaseJson {
             album = al?.optString("name") ?: "",
             durationMs = duration,
             coverUrl = cover,
-            sourceId = "netease"
+            sourceId = "netease",
+            publishTime = publishTime
         )
     }
 }

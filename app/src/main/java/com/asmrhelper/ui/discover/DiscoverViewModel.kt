@@ -11,6 +11,7 @@ import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
 import com.asmrhelper.domain.music.MusicSource
+import com.asmrhelper.domain.repository.SettingsRepository
 import com.asmrhelper.player.PlayerEvent
 import com.asmrhelper.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -31,7 +33,8 @@ import javax.inject.Inject
 class DiscoverViewModel @Inject constructor(
     private val musicSourceManager: MusicSourceManager,
     private val playHistoryRepository: PlayHistoryRepositoryImpl,
-    private val playerManager: PlayerManager
+    private val playerManager: PlayerManager,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     /** 活动音源：原生源恒可用。 */
@@ -212,7 +215,8 @@ class DiscoverViewModel @Inject constructor(
         _fetchingSongId.value = song.id
         viewModelScope.launch {
             try {
-                source.getSongUrl(song.id).collect { url ->
+                val quality = settingsRepository.getPlaybackQuality().first()
+                source.getSongUrl(song.id, quality).collect { url ->
                     if (url.isBlank()) {
                         _messageRes.value = R.string.discover_play_failed
                     } else {
@@ -252,5 +256,7 @@ fun RemoteSong.toAudio(streamUrl: String): Audio = Audio(
     durationMs = durationMs,
     coverUrl = coverUrl,
     sourceId = sourceId,
-    sourceSongId = id
+    sourceSongId = id,
+    album = album,
+    publishTime = publishTime
 )

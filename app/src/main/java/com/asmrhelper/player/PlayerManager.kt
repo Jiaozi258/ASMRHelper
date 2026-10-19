@@ -535,7 +535,9 @@ class PlayerManager @Inject constructor(
             mainPlayer.prepare()
             mainPlayer.play()
         }
-        _state.update { it.copy(currentAudio = audio) }
+        _state.update {
+            it.copy(currentAudio = audio, playlist = currentPlaylist, playlistIndex = currentIndex)
+        }
         saveLastPlayback(audio) // survive process death
         savePlaylistState()     // 持久化完整队列 + 索引 + 循环模式
         // Record playback history (fire-and-forget)

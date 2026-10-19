@@ -51,6 +51,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.asmrhelper.R
 import com.asmrhelper.data.music.isRemoteSong
 import com.asmrhelper.domain.model.PlaybackMode
+import com.asmrhelper.domain.model.PlaybackBackgroundMode
+import com.asmrhelper.domain.model.PlaybackQuality
 import com.asmrhelper.domain.model.isMenuItemVisible
 import com.asmrhelper.ui.components.AsmrDropdownMenu
 import com.asmrhelper.ui.components.MenuItem
@@ -96,6 +98,10 @@ fun MusicPlayScreen(
     val rawLyricsText by viewModel.rawLyricsText.collectAsStateWithLifecycle()
     val waveform by viewModel.waveformBytes.collectAsStateWithLifecycle()
     val fft by viewModel.fftMagnitudes.collectAsStateWithLifecycle()
+    val backgroundMode by viewModel.backgroundMode.collectAsStateWithLifecycle()
+    val playbackQuality by viewModel.playbackQuality.collectAsStateWithLifecycle()
+    val lyricOffsetMs by viewModel.lyricOffsetMs.collectAsStateWithLifecycle()
+    val currentFavorite by viewModel.currentFavorite.collectAsStateWithLifecycle()
 
     var showTimerDialog by remember { mutableStateOf(false) }
     var showLyricsDialog by remember { mutableStateOf(false) }
@@ -107,6 +113,11 @@ fun MusicPlayScreen(
     var showNoiseDialog by remember { mutableStateOf(false) }
     var showAmbientDialog by remember { mutableStateOf(false) }
     var showMoreDialog by remember { mutableStateOf(false) }
+    var showSongInfoDialog by remember { mutableStateOf(false) }
+    var showBackgroundDialog by remember { mutableStateOf(false) }
+    var showQualityDialog by remember { mutableStateOf(false) }
+    var showQueueDialog by remember { mutableStateOf(false) }
+    var showLyricOffsetDialog by remember { mutableStateOf(false) }
 
     // 模式按钮 2 秒无交互淡出；任意触摸递增 tick 重置计时（Review Focus #6）。
     var interactionTick by remember { mutableIntStateOf(0) }
@@ -131,7 +142,7 @@ fun MusicPlayScreen(
             .fillMaxSize()
             .pointerInput(Unit) { detectTapGestures { interactionTick++ } }
     ) {
-        AudioReactiveBackground(coverUrl, waveform, fft, Modifier.fillMaxSize())
+        AudioReactiveBackground(coverUrl, waveform, fft, backgroundMode, Modifier.fillMaxSize())
 
         Column(
             modifier = Modifier
@@ -145,7 +156,7 @@ fun MusicPlayScreen(
             // 居中逐词歌词（单行，无上下文）
             CenteredLyrics(
                 lines = lyrics,
-                progressMs = progressMs,
+                progressMs = (progressMs + lyricOffsetMs).coerceAtLeast(0L),
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -158,10 +169,14 @@ fun MusicPlayScreen(
                 isPlaying = state.playerState.isPlaying,
                 progress = if (durationMs > 0) progressMs.toFloat() / durationMs else 0f,
                 durationMs = durationMs,
+                isFavorite = currentFavorite,
+                loopMode = state.playerState.loopMode,
                 onPlayPause = { viewModel.togglePlayPause() },
                 onPrevious = { viewModel.previous() },
                 onNext = { viewModel.next() },
                 onSeek = { viewModel.seekTo(it) },
+                onToggleFavorite = { viewModel.toggleFavorite() },
+                onCycleLoopMode = { viewModel.cycleLoopMode() },
                 onMore = { showMoreDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -226,10 +241,15 @@ fun MusicPlayScreen(
             text = {
                 Column(
                     modifier = Modifier
-                        .height(360.dp)
+                        .height(520.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
                     MoreRow(stringResource(R.string.menu_timer), "") { showMoreDialog = false; showTimerDialog = true }
+                    MoreRow(stringResource(R.string.menu_song_info), "") { showMoreDialog = false; showSongInfoDialog = true }
+                    MoreRow(stringResource(R.string.menu_lyric_offset), "") { showMoreDialog = false; showLyricOffsetDialog = true }
+                    MoreRow(stringResource(R.string.menu_queue), "") { showMoreDialog = false; showQueueDialog = true }
+                    MoreRow(stringResource(R.string.menu_background), "") { showMoreDialog = false; showBackgroundDialog = true }
+                    MoreRow(stringResource(R.string.menu_quality), "") { showMoreDialog = false; showQualityDialog = true }
                     MoreRow(stringResource(R.string.menu_lyrics_edit), "") { showMoreDialog = false; showLyricsDialog = true }
                     // 本地播放列表按 Audio.id 索引，在线歌曲（QQ 非数字 mid / 网易云远程 id）
                     // 无法加入本地歌单——隐藏入口，避免写入悬空的 audioId。
@@ -244,6 +264,194 @@ fun MusicPlayScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showMoreDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 歌曲信息对话框 ─────────────────────────────────
+    if (showSongInfoDialog) {
+        val audio = state.playerState.currentAudio
+        val publishTime = audio?.publishTime ?: 0L
+        val sourceText = when (audio?.sourceId) {
+            "netease" -> stringResource(R.string.source_netease)
+            "qq" -> stringResource(R.string.source_qq)
+            else -> stringResource(R.string.song_info_source_local)
+        }
+        AlertDialog(
+            onDismissRequest = { showSongInfoDialog = false },
+            title = { Text(stringResource(R.string.song_info_title), color = TextPrimary) },
+            text = {
+                Column {
+                    SongInfoRow(stringResource(R.string.song_info_title), audio?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown))
+                    SongInfoRow(stringResource(R.string.song_info_artist), audio?.artist?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown))
+                    SongInfoRow(stringResource(R.string.song_info_album), audio?.album?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown))
+                    SongInfoRow(stringResource(R.string.song_info_source), sourceText)
+                    SongInfoRow(stringResource(R.string.song_info_publish), if (publishTime > 0L) formatDate(publishTime) else stringResource(R.string.common_unknown))
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showSongInfoDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 背景选择对话框 ─────────────────────────────────
+    if (showBackgroundDialog) {
+        AlertDialog(
+            onDismissRequest = { showBackgroundDialog = false },
+            title = { Text(stringResource(R.string.menu_background), color = TextPrimary) },
+            text = {
+                Column {
+                    listOf(
+                        PlaybackBackgroundMode.BLURRED_COVER to stringResource(R.string.bg_blurred_cover),
+                        PlaybackBackgroundMode.FOLIA_DUOTONE to stringResource(R.string.bg_folia_duotone),
+                        PlaybackBackgroundMode.SYSTEM_SOLID to stringResource(R.string.bg_system_solid)
+                    ).forEach { (mode, label) ->
+                        val selected = backgroundMode == mode
+                        TextButton(
+                            onClick = { viewModel.setBackgroundMode(mode); showBackgroundDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (selected) "▶ $label" else label,
+                                color = if (selected) LocalAccentColor.current else TextSecondary,
+                                fontSize = 14.sp,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showBackgroundDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 音质选择对话框 ─────────────────────────────────
+    if (showQualityDialog) {
+        AlertDialog(
+            onDismissRequest = { showQualityDialog = false },
+            title = { Text(stringResource(R.string.menu_quality), color = TextPrimary) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.quality_hint), color = TextHint, fontSize = 12.sp)
+                    Spacer(Modifier.height(6.dp))
+                    listOf(
+                        PlaybackQuality.STANDARD to stringResource(R.string.quality_standard),
+                        PlaybackQuality.HIGHER to stringResource(R.string.quality_higher),
+                        PlaybackQuality.EXCELLENT to stringResource(R.string.quality_excellent),
+                        PlaybackQuality.LOSSLESS to stringResource(R.string.quality_lossless)
+                    ).forEach { (quality, label) ->
+                        val selected = playbackQuality == quality
+                        TextButton(
+                            onClick = { viewModel.setPlaybackQuality(quality); showQualityDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (selected) "▶ $label" else label,
+                                color = if (selected) LocalAccentColor.current else TextSecondary,
+                                fontSize = 14.sp,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showQualityDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 当前播放队列对话框 ─────────────────────────────
+    if (showQueueDialog) {
+        val playlist = state.playerState.playlist
+        val currentIndex = state.playerState.playlistIndex
+        AlertDialog(
+            onDismissRequest = { showQueueDialog = false },
+            title = { Text(stringResource(R.string.menu_queue), color = TextPrimary) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .height(360.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    if (playlist.isEmpty()) {
+                        Text(stringResource(R.string.queue_empty), color = TextHint, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp))
+                    }
+                    playlist.forEachIndexed { index, audio ->
+                        val isCurrent = index == currentIndex
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .appleClickable { viewModel.playPlaylist(playlist.drop(index)) }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isCurrent) "▶ ${audio.title}" else audio.title,
+                                color = if (isCurrent) LocalAccentColor.current else TextPrimary,
+                                fontSize = 14.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            audio.artist.takeIf { it.isNotBlank() }?.let {
+                                Text(it, color = TextHint, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 8.dp))
+                            }
+                        }
+                        HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showQueueDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 歌词偏移校准对话框 ─────────────────────────────
+    if (showLyricOffsetDialog) {
+        AlertDialog(
+            onDismissRequest = { showLyricOffsetDialog = false },
+            title = { Text(stringResource(R.string.lyric_offset_title), color = TextPrimary) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.lyric_offset_value, lyricOffsetMs), color = TextSecondary, fontSize = 13.sp)
+                    Slider(
+                        value = lyricOffsetMs.toFloat(),
+                        onValueChange = { viewModel.setLyricOffsetMs(it.toInt()) },
+                        valueRange = -2000f..2000f,
+                        steps = 39,
+                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { viewModel.setLyricOffsetMs(0); showLyricOffsetDialog = false }) {
+                        Text(stringResource(R.string.lyric_offset_reset), color = TextSecondary)
+                    }
+                    TextButton(onClick = { showLyricOffsetDialog = false }) {
+                        Text(stringResource(R.string.common_close), color = TextSecondary)
+                    }
+                }
             },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)
@@ -898,9 +1106,26 @@ private fun MoreRow(label: String, value: String, onClick: () -> Unit) {
     }
 }
 
+/** 「歌曲信息」里的一行：左侧标签、右侧值。 */
+@Composable
+private fun SongInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(label, color = TextHint, fontSize = 13.sp, modifier = Modifier.width(72.dp))
+        Text(value, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f))
+    }
+}
+
 private fun formatTime(ms: Long): String {
     val totalSec = ms / 1000
     val min = totalSec / 60
     val sec = totalSec % 60
     return "%02d:%02d".format(min, sec)
 }
+
+private fun formatDate(ms: Long): String =
+    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(ms))

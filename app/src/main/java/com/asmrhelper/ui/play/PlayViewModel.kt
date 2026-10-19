@@ -7,7 +7,9 @@ import com.asmrhelper.domain.model.AmbientSource
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.BackgroundImage
 import com.asmrhelper.domain.model.LoopMode
+import com.asmrhelper.domain.model.PlaybackBackgroundMode
 import com.asmrhelper.domain.model.PlaybackMode
+import com.asmrhelper.domain.model.PlaybackQuality
 import com.asmrhelper.domain.model.PlayerState
 import com.asmrhelper.domain.repository.AudioRepository
 import com.asmrhelper.domain.repository.SettingsRepository
@@ -19,6 +21,7 @@ import com.asmrhelper.data.local.db.entity.SceneEntity
 import com.asmrhelper.data.repository.BookmarkRepository
 import com.asmrhelper.data.repository.SceneRepository
 import com.asmrhelper.data.music.MusicSourceManager
+import com.asmrhelper.data.music.RemoteFavoritesStore
 import com.asmrhelper.data.music.isRemoteSong
 import com.asmrhelper.data.music.toWordLyricLines
 import com.asmrhelper.player.AudioVisualizerController
@@ -127,7 +130,8 @@ class PlayViewModel @Inject constructor(
     private val bookmarkRepository: BookmarkRepository,
     private val equalizerController: EqualizerController,
     private val sceneEffectsController: SceneEffectsController,
-    private val musicSourceManager: MusicSourceManager
+    private val musicSourceManager: MusicSourceManager,
+    private val remoteFavoritesStore: RemoteFavoritesStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayUiState())
@@ -175,6 +179,32 @@ class PlayViewModel @Inject constructor(
 
     fun setPlaybackMode(mode: Int) {
         viewModelScope.launch { settingsRepository.setPlaybackMode(mode) }
+    }
+
+    // ── 播放页背景模式 ──────────────────────────────────
+    val backgroundMode: StateFlow<PlaybackBackgroundMode> = settingsRepository.getPlaybackBackgroundMode()
+        .map { runCatching { PlaybackBackgroundMode.valueOf(it) }.getOrDefault(PlaybackBackgroundMode.BLURRED_COVER) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlaybackBackgroundMode.BLURRED_COVER)
+
+    fun setBackgroundMode(mode: PlaybackBackgroundMode) {
+        viewModelScope.launch { settingsRepository.setPlaybackBackgroundMode(mode.name) }
+    }
+
+    // ── 音质（仅影响下一首） ────────────────────────────
+    val playbackQuality: StateFlow<PlaybackQuality> = settingsRepository.getPlaybackQuality()
+        .map { key -> PlaybackQuality.entries.firstOrNull { it.key == key } ?: PlaybackQuality.EXCELLENT }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlaybackQuality.EXCELLENT)
+
+    fun setPlaybackQuality(quality: PlaybackQuality) {
+        viewModelScope.launch { settingsRepository.setPlaybackQuality(quality.key) }
+    }
+
+    // ── 歌词偏移校准（±2000ms） ─────────────────────────
+    val lyricOffsetMs: StateFlow<Int> = settingsRepository.getLyricOffsetMs()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun setLyricOffsetMs(offsetMs: Int) {
+        viewModelScope.launch { settingsRepository.setLyricOffsetMs(offsetMs.coerceIn(-2000, 2000)) }
     }
 
     // ── 收藏 / 快进时间：必须在 init 之前声明 ──
@@ -422,7 +452,13 @@ class PlayViewModel @Inject constructor(
                 .map { it.currentAudio }
                 .distinctUntilChanged()
                 .collect { audio ->
-                    _currentFavorite.value = audio?.isFavorite ?: false
+                    _currentFavorite.value = when {
+                        audio == null -> false
+                        audio.isRemoteSong() -> remoteFavoritesStore.isFavorite(
+                            audio.sourceId, audio.sourceSongId ?: audio.id.toString()
+                        )
+                        else -> audio.isFavorite
+                    }
                 }
         }
 
@@ -543,7 +579,13 @@ class PlayViewModel @Inject constructor(
         val newFav = !_currentFavorite.value
         _currentFavorite.value = newFav
         viewModelScope.launch {
-            audioRepository.updateFavorite(audio.id, newFav)
+            if (audio.isRemoteSong()) {
+                remoteFavoritesStore.setFavorite(
+                    audio.sourceId, audio.sourceSongId ?: audio.id.toString(), newFav
+                )
+            } else {
+                audioRepository.updateFavorite(audio.id, newFav)
+            }
         }
     }
 
@@ -569,9 +611,9 @@ class PlayViewModel @Inject constructor(
 
     fun cycleLoopMode() {
         val nextMode = when (uiState.value.playerState.loopMode) {
-            LoopMode.NONE -> LoopMode.SINGLE
-            LoopMode.SINGLE -> LoopMode.LIST
-            LoopMode.LIST -> LoopMode.SHUFFLE
+            LoopMode.NONE -> LoopMode.LIST
+            LoopMode.LIST -> LoopMode.SINGLE
+            LoopMode.SINGLE -> LoopMode.SHUFFLE
             LoopMode.SHUFFLE -> LoopMode.NONE
         }
         playerManager.handleEvent(PlayerEvent.SetLoopMode(nextMode))

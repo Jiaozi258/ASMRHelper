@@ -57,15 +57,32 @@ class QqMusicSource(
 
     override fun getSongUrl(songId: String, quality: String): Flow<String> = flow {
         // 免登录可拿免费歌地址；VIP/绿钻歌返回 result=104003 → 空串。
-        val param = JSONObject()
-            .put("uin", "0")
-            .put("guid", "10000")
-            .put("songmid", JSONArray().put(songId))
-            .put("filename", JSONArray().put("M500$songId$songId.mp3"))
-            .put("songtype", JSONArray().put(0))
-            .put("loginflag", 1)
-            .put("platform", "20")
-        emit(QqMusicJson.parseSongUrl(post("music.vkey.GetVkey", "UrlGetVkey", param)))
+        // 音质档位 → QQ filename 前缀（M500=标准 mp3、M800=320k mp3、F000=flac），
+        // 首选档拿不到则逐档回退，最后退回标准 mp3。
+        val prefixes = buildList {
+            qualityPrefix(quality)?.let(::add)
+            add("M800"); add("M500"); add("F000")
+        }.distinct()
+        val result = prefixes.firstNotNullOfOrNull { prefix ->
+            val param = JSONObject()
+                .put("uin", "0")
+                .put("guid", "10000")
+                .put("songmid", JSONArray().put(songId))
+                .put("filename", JSONArray().put("$prefix$songId$songId.mp3"))
+                .put("songtype", JSONArray().put(0))
+                .put("loginflag", 1)
+                .put("platform", "20")
+            QqMusicJson.parseSongUrl(post("music.vkey.GetVkey", "UrlGetVkey", param)).ifBlank { null }
+        }
+        emit(result ?: "")
+    }
+
+    /** 音质档位 → QQ filename 前缀；未知档位返回 null（走默认回退链）。 */
+    private fun qualityPrefix(quality: String): String? = when (quality) {
+        "standard" -> "M500"
+        "higher", "excellent" -> "M800"
+        "lossless" -> "F000"
+        else -> null
     }
 
     override fun getLyric(songId: String): Flow<RemoteLyric> = flow {

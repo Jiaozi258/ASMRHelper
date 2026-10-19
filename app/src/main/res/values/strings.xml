@@ -100,6 +100,29 @@
     <string name="menu_toolbox">🧰 工具箱</string>
     <string name="menu_effects">🎚 音效器</string>
     <string name="menu_slice">✂ 切片</string>
+    <string name="menu_song_info">🎵 歌曲信息</string>
+    <string name="menu_lyric_offset">⏱ 歌词偏移</string>
+    <string name="menu_queue">📃 播放队列</string>
+    <string name="menu_background">🖼 背景</string>
+    <string name="menu_quality">🎚 音质</string>
+    <string name="song_info_title">歌曲信息</string>
+    <string name="song_info_artist">歌手</string>
+    <string name="song_info_album">专辑</string>
+    <string name="song_info_source">来源</string>
+    <string name="song_info_publish">发行时间</string>
+    <string name="song_info_source_local">本地</string>
+    <string name="bg_blurred_cover">模糊封面</string>
+    <string name="bg_folia_duotone">Folia 双色流动</string>
+    <string name="bg_system_solid">纯色（跟随系统）</string>
+    <string name="quality_standard">标准</string>
+    <string name="quality_higher">较高</string>
+    <string name="quality_excellent">极高</string>
+    <string name="quality_lossless">无损</string>
+    <string name="quality_hint">音质切换仅影响下一首</string>
+    <string name="queue_empty">播放队列为空</string>
+    <string name="lyric_offset_title">歌词偏移校准</string>
+    <string name="lyric_offset_value">偏移：%+d ms</string>
+    <string name="lyric_offset_reset">重置</string>
 
     <!-- 通用 -->
     <string name="common_cancel">取消</string>

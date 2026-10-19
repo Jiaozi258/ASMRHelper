@@ -10,5 +10,7 @@ data class Audio(
     val addedAt: Long = System.currentTimeMillis(),
     val coverUrl: String? = null,
     val sourceId: String = "",
-    val sourceSongId: String? = null
+    val sourceSongId: String? = null,
+    val album: String = "",
+    val publishTime: Long = 0L
 )

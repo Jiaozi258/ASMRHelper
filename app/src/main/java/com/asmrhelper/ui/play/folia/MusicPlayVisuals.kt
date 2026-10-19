@@ -18,6 +18,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,14 +28,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOne
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -74,6 +82,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.asmrhelper.R
+import com.asmrhelper.domain.model.LoopMode
+import com.asmrhelper.domain.model.PlaybackBackgroundMode
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.TextPrimary
@@ -95,6 +105,7 @@ fun AudioReactiveBackground(
     coverUrl: String?,
     waveform: ByteArray?,
     fft: FloatArray?,
+    mode: PlaybackBackgroundMode = PlaybackBackgroundMode.BLURRED_COVER,
     modifier: Modifier = Modifier
 ) {
     val accent = LocalAccentColor.current
@@ -141,33 +152,70 @@ fun AudioReactiveBackground(
         if (b.any { it > 0f }) b else MusicVisualizerMath.barsFromWaveform(waveform, 28)
     }
 
-    Box(modifier = modifier.clipToBounds().background(primary)) {
-        if (!coverUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = coverUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { scaleX = scale; scaleY = scale }
-                    .blur(40.dp)
-                    .alpha(0.62f)
-            )
-        }
-        // 双色调渐变（真实主/次色，降低覆盖度让封面透出来）
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            primary.copy(alpha = 0.58f),
-                            secondary.copy(alpha = 0.44f * breathe),
-                            primary.copy(alpha = 0.50f)
+    Box(modifier = modifier.clipToBounds()) {
+        when (mode) {
+            PlaybackBackgroundMode.BLURRED_COVER -> {
+                Box(modifier = Modifier.fillMaxSize().background(primary)) {
+                    if (!coverUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = coverUrl,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer { scaleX = scale; scaleY = scale }
+                                .blur(40.dp)
+                                .alpha(0.62f)
                         )
+                    }
+                    // 双色调渐变（真实主/次色，降低覆盖度让封面透出来）
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        primary.copy(alpha = 0.58f),
+                                        secondary.copy(alpha = 0.44f * breathe),
+                                        primary.copy(alpha = 0.50f)
+                                    )
+                                )
+                            )
                     )
-                )
-        )
+                }
+            }
+            // Folia 双色油画流动（概念复刻）：无封面，主/次色色场 + 游走柔光斑
+            PlaybackBackgroundMode.FOLIA_DUOTONE -> {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val w = size.width
+                    val h = size.height
+                    drawRect(
+                        brush = Brush.linearGradient(listOf(primary, secondary)),
+                        size = Size(w, h)
+                    )
+                    drawRect(
+                        brush = Brush.radialGradient(
+                            colors = listOf(secondary.copy(alpha = 0.6f), Color.Transparent),
+                            center = Offset(w * (0.2f + 0.6f * drift), h * 0.35f),
+                            radius = w * 0.85f
+                        ),
+                        size = Size(w, h)
+                    )
+                    drawRect(
+                        brush = Brush.radialGradient(
+                            colors = listOf(accent.copy(alpha = 0.32f * breathe), Color.Transparent),
+                            center = Offset(w * (0.8f - 0.6f * drift), h * 0.7f),
+                            radius = w * 0.9f
+                        ),
+                        size = Size(w, h)
+                    )
+                }
+            }
+            PlaybackBackgroundMode.SYSTEM_SOLID -> {
+                val solid = if (isSystemInDarkTheme()) Color(0xFF1C1C1E) else Color(0xFFF2F2F7)
+                Box(modifier = Modifier.fillMaxSize().background(solid))
+            }
+        }
 
         // 反应层：横移高光带（始终流动）+ 底部向上流动的柔光柱（有音频数据时）
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -292,14 +340,32 @@ fun FoliaCommandBar(
     isPlaying: Boolean,
     progress: Float,
     durationMs: Long,
+    isFavorite: Boolean,
+    loopMode: LoopMode,
     onPlayPause: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onSeek: (Long) -> Unit,
+    onToggleFavorite: () -> Unit,
+    onCycleLoopMode: () -> Unit,
     onMore: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val accent = LocalAccentColor.current
+    val loopIcon = when (loopMode) {
+        LoopMode.NONE -> Icons.Filled.Stop
+        LoopMode.SINGLE -> Icons.Filled.RepeatOne
+        LoopMode.LIST -> Icons.Filled.Repeat
+        LoopMode.SHUFFLE -> Icons.Filled.Shuffle
+    }
+    val loopLabel = stringResource(
+        when (loopMode) {
+            LoopMode.NONE -> R.string.settings_loop_none
+            LoopMode.SINGLE -> R.string.settings_loop_single
+            LoopMode.LIST -> R.string.settings_loop_list
+            LoopMode.SHUFFLE -> R.string.settings_loop_shuffle
+        }
+    )
     var expanded by remember { mutableStateOf(false) }
     var dragValue by remember { mutableStateOf<Float?>(null) }
     val shownValue = dragValue ?: progress.coerceIn(0f, 1f)
@@ -420,6 +486,25 @@ fun FoliaCommandBar(
                             }
                             IconButton(onClick = onMore) {
                                 Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more), tint = TextSecondary)
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            IconButton(onClick = onToggleFavorite) {
+                                Icon(
+                                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                    contentDescription = stringResource(if (isFavorite) R.string.library_remove_favorite else R.string.library_add_favorite),
+                                    tint = if (isFavorite) accent else TextSecondary
+                                )
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .clickable { onCycleLoopMode() }
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(loopIcon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(loopLabel, color = TextSecondary, fontSize = 12.sp)
                             }
                         }
                     }

@@ -130,4 +130,15 @@ interface SettingsRepository {
     fun getMusicLogin(sourceId: String): MusicLogin
     suspend fun setMusicLogin(sourceId: String, login: MusicLogin)
     suspend fun clearMusicLogin(sourceId: String)
+
+    // ── 播放页背景 / 音质 / 歌词偏移 ─────────────────────
+    // 背景模式：PlaybackBackgroundMode.name（默认 BLURRED_COVER）
+    fun getPlaybackBackgroundMode(): Flow<String>
+    suspend fun setPlaybackBackgroundMode(mode: String)
+    // 音质档位：PlaybackQuality.key（默认 excellent）
+    fun getPlaybackQuality(): Flow<String>
+    suspend fun setPlaybackQuality(quality: String)
+    // 歌词时间轴偏移（±2000ms，默认 0）
+    fun getLyricOffsetMs(): Flow<Int>
+    suspend fun setLyricOffsetMs(offsetMs: Int)
 }

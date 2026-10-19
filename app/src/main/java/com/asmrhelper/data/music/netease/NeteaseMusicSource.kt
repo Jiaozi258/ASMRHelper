@@ -57,12 +57,24 @@ class NeteaseMusicSource(
 
     override fun getSongUrl(songId: String, quality: String): Flow<String> = flow {
         // 会员/付费歌只在无损档（999000）返回地址，逐档回退，最后退回免费外链兜底。
-        val result = listOf("999000", "320000", "128000")
-            .firstNotNullOfOrNull { br ->
-                val body = json(mapOf("ids" to "[$songId]", "br" to br))
-                NeteaseJson.parseSongUrl(weapiPost("/weapi/song/enhance/player/url", body)).ifBlank { null }
-            }
+        val orderedBr = buildList {
+            qualityBitrate(quality)?.let(::add)
+            add("999000"); add("320000"); add("128000")
+        }.distinct()
+        val result = orderedBr.firstNotNullOfOrNull { br ->
+            val body = json(mapOf("ids" to "[$songId]", "br" to br))
+            NeteaseJson.parseSongUrl(weapiPost("/weapi/song/enhance/player/url", body)).ifBlank { null }
+        }
         emit(result ?: NeteaseJson.fallbackSongUrl(songId))
+    }
+
+    /** 音质档位 → 网易云 br 值；未知档位返回 null（走默认回退链）。 */
+    private fun qualityBitrate(quality: String): String? = when (quality) {
+        "standard" -> "128000"
+        "higher" -> "192000"
+        "excellent" -> "320000"
+        "lossless" -> "999000"
+        else -> null
     }
 
     override fun getLyric(songId: String): Flow<RemoteLyric> = flow {
