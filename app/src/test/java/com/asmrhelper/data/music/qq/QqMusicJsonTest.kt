@@ -42,7 +42,7 @@ class QqMusicJsonTest {
     fun parseSongUrlJoinsSipAndPurl() {
         val json = """{"req_0":{"data":{"sip":["http://aqqmusic.tc.qq.com/"],
             "midurlinfo":[{"result":0,"purl":"M500abc.mp3?guid=10000&vkey=K"}]}}}"""
-        assertEquals("http://aqqmusic.tc.qq.com/M500abc.mp3?guid=10000&vkey=K", QqMusicJson.parseSongUrl(json))
+        assertEquals("https://aqqmusic.tc.qq.com/M500abc.mp3?guid=10000&vkey=K", QqMusicJson.parseSongUrl(json))
     }
 
     @Test

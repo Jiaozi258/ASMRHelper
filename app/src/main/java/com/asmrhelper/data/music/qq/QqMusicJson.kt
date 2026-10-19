@@ -33,13 +33,17 @@ object QqMusicJson {
         val purl = info.optString("purl")
         val sip = data.optJSONArray("sip")
         if (info.optInt("result") == 0 && purl.isNotBlank() && sip != null && sip.length() > 0) {
-            sip.optString(0) + purl
+            https(sip.optString(0) + purl)
         } else {
             ""
         }
     } catch (_: Exception) {
         ""
     }
+
+    /** Android 默认禁明文 HTTP；QQ 流地址返回 `http://`（CDN 支持 https），统一转 https。 */
+    private fun https(url: String): String =
+        if (url.startsWith("http://")) "https://" + url.substring(7) else url
 
     fun parseLyric(json: String): RemoteLyric = try {
         val lyric = JSONObject(json).optJSONObject("req_0")?.optJSONObject("data")
