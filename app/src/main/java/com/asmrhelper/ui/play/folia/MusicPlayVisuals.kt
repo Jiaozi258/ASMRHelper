@@ -20,12 +20,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,9 +35,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -61,9 +57,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -99,12 +98,15 @@ import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.util.Duotone
+import com.asmrhelper.util.LyricScrollStyle
 import com.asmrhelper.util.MusicVisualizerMath
 import com.asmrhelper.util.WordLyricLine
 import com.asmrhelper.util.currentLineIndex
-import com.asmrhelper.util.evenWords
-import com.asmrhelper.util.wordIndexAt
 import kotlinx.coroutines.delay
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.roundToInt
 
 /**
  * 全屏音频反应背景：双色调封面为底（真实提取主/次色），叠加随 FFT 频谱
@@ -280,11 +282,9 @@ fun AudioReactiveBackground(
 }
 
 /**
- * 跳转（逐词蹦出）歌词：单行显示当前句，唱到的「词」逐个弹出高亮，
- * 而不是把整句歌词逐字像 KTV 那样变亮。有逐词时间戳（yrc）按真实时刻推进，
- * 没有则按分词均分；字体大小 / 阴影 / 对齐读取设置。
+ * 跳转歌词：一句一句跳，单行居中显示当前句，换句时整句轻微弹出强调
+ * （不再逐词蹦出，避免逐词时间对不上）。字体大小 / 阴影 / 对齐读取设置。
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CenteredLyrics(
     lines: List<WordLyricLine>,
@@ -302,58 +302,40 @@ fun CenteredLyrics(
         if (lines.isEmpty() || currentLine == null) {
             Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
         } else {
-            val words = currentLine.words.ifEmpty { currentLine.evenWords() }
-            if (words.isEmpty()) {
+            // key(currentIndex) 让换句时重启动画：整句从 0.92 弹到 1
+            key(currentIndex) {
+                var popped by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) { popped = true }
+                val scale by animateFloatAsState(
+                    targetValue = if (popped) 1f else 0.92f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    ),
+                    label = "linePop"
+                )
                 Text(
                     text = currentLine.text,
                     color = accent,
                     fontSize = fontSize.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = lyricTextAlign(alignment),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+                    style = if (shadowEnabled) TextStyle(
+                        shadow = Shadow(color = accent.copy(alpha = 0.6f), blurRadius = 14f)
+                    ) else TextStyle(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .graphicsLayer { scaleX = scale; scaleY = scale }
                 )
-            } else {
-                val wordIndex = words.wordIndexAt(progressMs)
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                    horizontalArrangement = lyricArrangement(alignment),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    words.forEachIndexed { i, w ->
-                        val isCurrent = i == wordIndex
-                        val scale by animateFloatAsState(
-                            targetValue = if (isCurrent) 1.18f else 1f,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessMedium
-                            ),
-                            label = "wordPop"
-                        )
-                        val wordColor = when {
-                            isCurrent -> accent
-                            i < wordIndex -> TextSecondary.copy(alpha = 0.45f)
-                            else -> TextSecondary.copy(alpha = 0.85f)
-                        }
-                        Text(
-                            text = w.text,
-                            color = wordColor,
-                            fontSize = fontSize.sp,
-                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                            style = if (isCurrent && shadowEnabled) TextStyle(
-                                shadow = Shadow(color = accent.copy(alpha = 0.6f), blurRadius = 14f)
-                            ) else TextStyle(),
-                            modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale }
-                        )
-                    }
-                }
             }
         }
     }
 }
 
 /**
- * 滑动歌词：多行带上下文，当前行居中高亮，随进度平滑滚动。
- * 字体大小 / 行间距 / 阴影 / 对齐方式均读取设置。
+ * 滑动歌词：多行保留上下文，当前句居中强调（突出重点），随进度平滑滚动。
+ * 用户上下拖动时跳到拖到的歌词时间点（松手 seek）；视觉样式可选平铺或鱼眼。
  */
 @Composable
 fun ScrollLyrics(
@@ -363,57 +345,114 @@ fun ScrollLyrics(
     fontSize: Int = 16,
     lineSpacing: Float = 1.5f,
     shadowEnabled: Boolean = false,
-    alignment: Int = 0
+    alignment: Int = 0,
+    style: LyricScrollStyle = LyricScrollStyle.FLAT,
+    onSeek: (Long) -> Unit = {}
 ) {
     val accent = LocalAccentColor.current
     val density = LocalDensity.current
-    val currentIndex = remember(lines, progressMs) { lines.currentLineIndex(progressMs) }
-    val lineHeight = (fontSize * lineSpacing).sp
     val textAlign = lyricTextAlign(alignment)
+    val lineHeight = (fontSize * lineSpacing).sp
+    val lineHeightPx = with(density) { lineHeight.toPx() }
+    val scrollState = rememberScrollState()
+    val autoScrolling = remember { mutableStateOf(false) }
+    val userDragging = remember { mutableStateOf(false) }
 
     BoxWithConstraints(modifier = modifier) {
-        val lineHeightPx = with(density) { lineHeight.toPx() }
         val viewportPx = with(density) { maxHeight.toPx() }
+        val topPaddingPx = (viewportPx - lineHeightPx) / 2f
+        val contentHeightPx = lines.size * lineHeightPx + 2f * topPaddingPx
+        val maxScroll = (contentHeightPx - viewportPx).coerceAtLeast(0f)
+        val topPaddingDp = with(density) { topPaddingPx.toDp() }
+
         if (lines.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
             }
             return@BoxWithConstraints
         }
-        val listState = rememberLazyListState()
-        LaunchedEffect(currentIndex, viewportPx, lineHeightPx, lines.size) {
-            listState.animateScrollToItem(
-                currentIndex,
-                scrollOffset = -(((viewportPx - lineHeightPx) / 2f).toInt())
-            )
+
+        val centerIndex = remember(lines, progressMs) { lines.currentLineIndex(progressMs) }
+
+        // 让拖动结束的 seek 协程永远读到最新的 lines / 布局 / 回调（切换歌曲或改设置后不读旧值）
+        val linesState by rememberUpdatedState(lines)
+        val topPaddingState by rememberUpdatedState(topPaddingPx)
+        val lineHeightState by rememberUpdatedState(lineHeightPx)
+        val onSeekState by rememberUpdatedState(onSeek)
+
+        // 自动滚动：把当前行居中（仅在用户未拖动时）
+        LaunchedEffect(centerIndex, lineHeightPx, viewportPx, lines.size) {
+            if (userDragging.value) return@LaunchedEffect
+            val target = (centerIndex * lineHeightPx - topPaddingPx).coerceIn(0f, maxScroll)
+            autoScrolling.value = true
+            try {
+                scrollState.animateScrollTo(target.roundToInt())
+            } finally {
+                autoScrolling.value = false
+            }
         }
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
+
+        // 区分「程序自动滚动」与「用户拖动」：isScrollInProgress 两者都会为 true，
+        // 用 autoScrolling 标志剔除自动滚动；用户松手时按居中行 seek。
+        LaunchedEffect(scrollState) {
+            var wasInProgress = false
+            snapshotFlow { scrollState.isScrollInProgress }.collect { inProgress ->
+                val userInitiated = inProgress && !autoScrolling.value
+                if (wasInProgress && !inProgress && !autoScrolling.value) {
+                    val ls = linesState
+                    if (ls.isNotEmpty()) {
+                        val idx = ((scrollState.value + topPaddingState) / lineHeightState)
+                            .roundToInt().coerceIn(0, ls.lastIndex)
+                        onSeekState(ls[idx].startMs)
+                    }
+                }
+                userDragging.value = userInitiated
+                wasInProgress = inProgress
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            itemsIndexed(lines) { index, line ->
-                val isCurrent = index == currentIndex
-                val color = when {
-                    isCurrent -> accent
-                    index < currentIndex -> TextSecondary.copy(alpha = 0.4f)
-                    else -> TextSecondary.copy(alpha = 0.8f)
+            Spacer(Modifier.height(topPaddingDp))
+            lines.forEachIndexed { index, line ->
+                val distance = index - centerIndex
+                val absDist = abs(distance)
+                val isCurrent = absDist == 0
+                // 上下文淡出：离当前行越远越淡，突出当前句
+                val alpha = when {
+                    isCurrent -> 1f
+                    absDist == 1 -> 0.62f
+                    absDist == 2 -> 0.42f
+                    else -> 0.26f
                 }
+                val scale = if (style == LyricScrollStyle.FISHEYE) fisheyeScale(absDist) else 1f
                 Text(
                     text = line.text,
-                    color = color,
+                    color = if (isCurrent) accent else TextSecondary,
                     fontSize = (if (isCurrent) fontSize else (fontSize - 1).coerceAtLeast(10)).sp,
                     lineHeight = lineHeight,
                     fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
                     textAlign = textAlign,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     style = if (isCurrent && shadowEnabled) TextStyle(
                         shadow = Shadow(color = accent.copy(alpha = 0.6f), blurRadius = 14f)
                     ) else TextStyle(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            this.alpha = alpha
+                        }
                 )
             }
+            Spacer(Modifier.height(topPaddingDp))
         }
     }
 }
@@ -424,10 +463,11 @@ private fun lyricTextAlign(alignment: Int): TextAlign = when (alignment) {
     else -> TextAlign.Center
 }
 
-private fun lyricArrangement(alignment: Int): Arrangement.Horizontal = when (alignment) {
-    1 -> Arrangement.Start
-    2 -> Arrangement.End
-    else -> Arrangement.Center
+/** 鱼眼式缩放衰减：离中心越远越小，越靠近中轴越接近原尺寸，模拟圆柱滚动。 */
+private fun fisheyeScale(distance: Int): Float {
+    if (distance == 0) return 1f
+    val t = (distance / 3f).coerceAtMost(1f)
+    return cos(t * (PI.toFloat() / 2f) * 0.9f).coerceAtLeast(0.35f)
 }
 
 /**

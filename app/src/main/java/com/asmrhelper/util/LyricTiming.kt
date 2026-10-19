@@ -2,6 +2,9 @@ package com.asmrhelper.util
 
 enum class LyricMode { JUMP, SCROLL }
 
+/** 滑动歌词的视觉样式：平铺（普通居中高亮）或鱼眼（圆柱式缩放衰减）。 */
+enum class LyricScrollStyle { FLAT, FISHEYE }
+
 /** 当前进度对应的歌词行：最后一个 timeMs <= progressMs 的下标，无匹配取 0。 */
 fun List<LrcLine>.currentLineIndex(progressMs: Long): Int =
     indexOfLast { it.timeMs <= progressMs }.coerceAtLeast(0)

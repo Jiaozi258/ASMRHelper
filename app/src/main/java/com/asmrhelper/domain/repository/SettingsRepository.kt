@@ -114,6 +114,10 @@ interface SettingsRepository {
     suspend fun setLyricsAlignment(alignment: Int)
     fun getLyricsMode(): Flow<Int> // 0=跳转(逐词蹦出), 1=滑动(带上下文)
     suspend fun setLyricsMode(mode: Int)
+    fun getLyricsScrollStyle(): Flow<Int> // 滑动歌词样式：0=平铺（默认），1=鱼眼
+    suspend fun setLyricsScrollStyle(style: Int)
+    fun getAppFontPath(): Flow<String?> // 自定义字体文件路径，null=跟随系统
+    suspend fun setAppFontPath(path: String?)
 
     // ── 音量阈值 ───────────────────────────────────────
     // 0=响度模式(目标响度), 1=阈值模式(最小/最大阈值压缩)

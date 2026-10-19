@@ -71,6 +71,7 @@ import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.ui.theme.appleClickable
 import com.asmrhelper.util.LyricMode
+import com.asmrhelper.util.LyricScrollStyle
 import kotlinx.coroutines.delay
 
 /**
@@ -109,6 +110,7 @@ fun MusicPlayScreen(
     val lyricsShadowEnabled by viewModel.lyricsShadowEnabled.collectAsStateWithLifecycle()
     val lyricsLineSpacing by viewModel.lyricsLineSpacing.collectAsStateWithLifecycle()
     val lyricsAlignment by viewModel.lyricsAlignment.collectAsStateWithLifecycle()
+    val lyricsScrollStyle by viewModel.lyricsScrollStyle.collectAsStateWithLifecycle()
 
     var showTimerDialog by remember { mutableStateOf(false) }
     var showLyricsDialog by remember { mutableStateOf(false) }
@@ -170,6 +172,8 @@ fun MusicPlayScreen(
                     lineSpacing = lyricsLineSpacing,
                     shadowEnabled = lyricsShadowEnabled,
                     alignment = lyricsAlignment,
+                    style = lyricsScrollStyle,
+                    onSeek = { viewModel.seekTo(it) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)

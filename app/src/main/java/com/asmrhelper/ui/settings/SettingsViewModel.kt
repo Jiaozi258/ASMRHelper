@@ -351,6 +351,10 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
     val lyricsMode: StateFlow<Int> = settingsRepository.getLyricsMode()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val lyricsScrollStyle: StateFlow<Int> = settingsRepository.getLyricsScrollStyle()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val appFontPath: StateFlow<String?> = settingsRepository.getAppFontPath()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun setLyricsFontSize(sp: Int) {
         viewModelScope.launch { settingsRepository.setLyricsFontSize(sp) }
@@ -369,6 +373,12 @@ class SettingsViewModel @Inject constructor(
     }
     fun setLyricsMode(mode: Int) {
         viewModelScope.launch { settingsRepository.setLyricsMode(mode) }
+    }
+    fun setLyricsScrollStyle(style: Int) {
+        viewModelScope.launch { settingsRepository.setLyricsScrollStyle(style) }
+    }
+    fun setAppFontPath(path: String?) {
+        viewModelScope.launch { settingsRepository.setAppFontPath(path) }
     }
 
     // ── 音量阈值 ──────────────────────────────────────

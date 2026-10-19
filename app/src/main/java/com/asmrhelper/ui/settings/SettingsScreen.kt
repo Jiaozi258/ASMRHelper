@@ -1,6 +1,7 @@
 package com.asmrhelper.ui.settings
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -112,6 +113,7 @@ import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.ui.theme.ThemePreset
+import com.asmrhelper.util.AppFont
 
 // ── 循环模式显示名 ────────────────────────────────────────
 
@@ -968,6 +970,21 @@ private fun AppearanceSettingsScreen(
     val bgColorIndex by viewModel.bgColorIndex.collectAsStateWithLifecycle()
     val themePresetOrdinal by viewModel.themePresetOrdinal.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val appFontPath by viewModel.appFontPath.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var showFontDialog by remember { mutableStateOf(false) }
+    val fontLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            val imported = AppFont.importFont(context, uri)
+            if (imported != null) {
+                viewModel.setAppFontPath(imported)
+                Toast.makeText(context, R.string.settings_font_imported, Toast.LENGTH_SHORT).show()
+                (context as? Activity)?.recreate()
+            } else {
+                Toast.makeText(context, R.string.settings_font_import_failed, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     SubScreenScaffold(title = stringResource(R.string.category_appearance), onBack = onBack) {
         SectionHeader(icon = Icons.Filled.Palette, title = stringResource(R.string.settings_appearance_section))
@@ -1109,6 +1126,83 @@ private fun AppearanceSettingsScreen(
             }
         }
 
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showFontDialog = true }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val currentFont = appFontPath
+                Column {
+                    Text(stringResource(R.string.settings_font_type), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        if (currentFont == null) stringResource(R.string.settings_font_follow_system) else File(currentFont).name,
+                        color = LocalAccentColor.current,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
+            }
+        }
+
+    }
+
+    if (showFontDialog) {
+        AlertDialog(
+            onDismissRequest = { showFontDialog = false },
+            title = { Text(stringResource(R.string.settings_font_type), color = TextPrimary) },
+            text = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            viewModel.setAppFontPath(null)
+                            showFontDialog = false
+                            (context as? Activity)?.recreate()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            stringResource(R.string.settings_font_follow_system),
+                            color = if (appFontPath == null) LocalAccentColor.current else TextSecondary,
+                            fontSize = 14.sp,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    TextButton(
+                        onClick = {
+                            showFontDialog = false
+                            fontLauncher.launch(arrayOf("font/ttf", "font/otf", "application/x-font-ttf", "application/x-font-otf", "application/octet-stream"))
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            stringResource(R.string.settings_font_import),
+                            color = TextSecondary,
+                            fontSize = 14.sp,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showFontDialog = false }) {
+                    Text(stringResource(R.string.common_cancel), color = TextSecondary)
+                }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(14.dp)
+        )
     }
 }
 
@@ -1334,6 +1428,7 @@ private fun LyricsSettingsScreen(
     val lyricsDisplayArea by viewModel.lyricsDisplayArea.collectAsStateWithLifecycle()
     val lyricsAlignment by viewModel.lyricsAlignment.collectAsStateWithLifecycle()
     val lyricsMode by viewModel.lyricsMode.collectAsStateWithLifecycle()
+    val lyricsScrollStyle by viewModel.lyricsScrollStyle.collectAsStateWithLifecycle()
 
     SubScreenScaffold(title = stringResource(R.string.category_lyrics), onBack = onBack) {
         SectionHeader(icon = Icons.Filled.MusicNote, title = stringResource(R.string.category_lyrics))
@@ -1369,6 +1464,37 @@ private fun LyricsSettingsScreen(
                                 DropdownMenuItem(
                                     text = { Text(label, color = TextPrimary) },
                                     onClick = { viewModel.setLyricsMode(i); modeExpanded = false }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+
+                var scrollStyleExpanded by remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { scrollStyleExpanded = true },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(stringResource(R.string.lyrics_scroll_style), color = TextPrimary, fontSize = 14.sp)
+                        Text(
+                            if (lyricsScrollStyle == 1) stringResource(R.string.lyrics_scroll_style_fisheye) else stringResource(R.string.lyrics_scroll_style_flat),
+                            color = LocalAccentColor.current,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Box {
+                        Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
+                        DropdownMenu(expanded = scrollStyleExpanded, onDismissRequest = { scrollStyleExpanded = false }) {
+                            listOf(stringResource(R.string.lyrics_scroll_style_flat), stringResource(R.string.lyrics_scroll_style_fisheye)).forEachIndexed { i, label ->
+                                DropdownMenuItem(
+                                    text = { Text(label, color = TextPrimary) },
+                                    onClick = { viewModel.setLyricsScrollStyle(i); scrollStyleExpanded = false }
                                 )
                             }
                         }

@@ -92,6 +92,9 @@
     <string name="lyric_mode">Lyric mode</string>
     <string name="lyric_mode_jump">Jump</string>
     <string name="lyric_mode_scroll">Scroll</string>
+    <string name="lyrics_scroll_style">Scroll lyric style</string>
+    <string name="lyrics_scroll_style_flat">Flat</string>
+    <string name="lyrics_scroll_style_fisheye">Fisheye</string>
     <string name="no_lyrics">No lyrics</string>
     <string name="visualizer_style">Visualizer style</string>
     <string name="visualizer_bar">Bars</string>
@@ -560,6 +563,11 @@
     <string name="settings_bg_deep_blue">Deep blue</string>
     <string name="settings_bg_dark_purple">Dark purple</string>
     <string name="settings_bg_dark_green">Ink green</string>
+    <string name="settings_font_type">Font type</string>
+    <string name="settings_font_follow_system">Follow system</string>
+    <string name="settings_font_import">Import font (.ttf/.otf)</string>
+    <string name="settings_font_imported">Font imported</string>
+    <string name="settings_font_import_failed">Import failed, please choose a .ttf or .otf font file</string>
 
     <!-- Storage -->
     <string name="settings_cache_section">Cache</string>

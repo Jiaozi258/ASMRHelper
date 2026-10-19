@@ -5,11 +5,13 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.text.font.FontFamily
 
 @Composable
 fun ASMRHelperTheme(
     preset: ThemePreset = ThemePreset.APPLE_BLUE,
     darkTheme: Boolean = true,
+    customFontFamily: FontFamily? = null,
     content: @Composable () -> Unit
 ) {
     val appColors = if (darkTheme) DarkAppColors else LightAppColors
@@ -50,7 +52,7 @@ fun ASMRHelperTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = AppTypography,
+            typography = appTypography(customFontFamily),
             content = content
         )
     }

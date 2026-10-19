@@ -26,6 +26,7 @@ import com.asmrhelper.ui.theme.ThemeMode
 import com.asmrhelper.ui.theme.resolveDark
 import com.asmrhelper.ui.theme.ThemePreset
 import com.asmrhelper.util.AppLocale
+import com.asmrhelper.util.AppFont
 import com.asmrhelper.util.ShareReceiver
 import com.asmrhelper.util.ShortcutReceiver
 import dagger.hilt.android.AndroidEntryPoint
@@ -71,6 +72,8 @@ class MainActivity : ComponentActivity() {
 
         val prefs = getSharedPreferences("asmr_settings", MODE_PRIVATE)
         val presetOrdinal = prefs.getInt("theme_preset", 0)
+        // 自定义字体：导入后本 Activity recreate，重新加载最新字体路径
+        val fontFamily = AppFont.loadFontFamily(this)
 
         setContent {
             val ordinal by settingsRepository.getThemePresetOrdinal()
@@ -93,7 +96,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            ASMRHelperTheme(preset = preset, darkTheme = darkTheme) {
+            ASMRHelperTheme(preset = preset, darkTheme = darkTheme, customFontFamily = fontFamily) {
                 AsmrNavHost()
             }
         }

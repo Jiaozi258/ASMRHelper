@@ -92,6 +92,9 @@
     <string name="lyric_mode">歌词模式</string>
     <string name="lyric_mode_jump">跳转</string>
     <string name="lyric_mode_scroll">滚动</string>
+    <string name="lyrics_scroll_style">滑动歌词样式</string>
+    <string name="lyrics_scroll_style_flat">平铺</string>
+    <string name="lyrics_scroll_style_fisheye">鱼眼</string>
     <string name="no_lyrics">暂无歌词</string>
     <string name="visualizer_style">可视化风格</string>
     <string name="visualizer_bar">柱状</string>
@@ -560,6 +563,11 @@
     <string name="settings_bg_deep_blue">深邃蓝</string>
     <string name="settings_bg_dark_purple">暗紫</string>
     <string name="settings_bg_dark_green">墨绿</string>
+    <string name="settings_font_type">文字类型</string>
+    <string name="settings_font_follow_system">跟随系统</string>
+    <string name="settings_font_import">导入字体 (.ttf/.otf)</string>
+    <string name="settings_font_imported">字体已导入</string>
+    <string name="settings_font_import_failed">导入失败，请选择 .ttf 或 .otf 字体文件</string>
 
     <!-- 存储管理 -->
     <string name="settings_cache_section">缓存管理</string>

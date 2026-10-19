@@ -39,6 +39,7 @@ import com.asmrhelper.player.SceneEffectsController
 import com.asmrhelper.player.SceneEffect
 import com.asmrhelper.util.LrcParser
 import com.asmrhelper.util.LyricMode
+import com.asmrhelper.util.LyricScrollStyle
 import com.asmrhelper.util.WordLyricLine
 import com.asmrhelper.util.toWordLyricLines
 import com.asmrhelper.util.LyricsStore
@@ -215,6 +216,15 @@ class PlayViewModel @Inject constructor(
 
     fun setLyricsMode(mode: LyricMode) {
         viewModelScope.launch { settingsRepository.setLyricsMode(if (mode == LyricMode.SCROLL) 1 else 0) }
+    }
+
+    // 滑动歌词视觉样式：0=平铺（默认），1=鱼眼
+    val lyricsScrollStyle: StateFlow<LyricScrollStyle> = settingsRepository.getLyricsScrollStyle()
+        .map { if (it == 1) LyricScrollStyle.FISHEYE else LyricScrollStyle.FLAT }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LyricScrollStyle.FLAT)
+
+    fun setLyricsScrollStyle(style: LyricScrollStyle) {
+        viewModelScope.launch { settingsRepository.setLyricsScrollStyle(if (style == LyricScrollStyle.FISHEYE) 1 else 0) }
     }
 
     val lyricsFontSize: StateFlow<Int> = settingsRepository.getLyricsFontSize()

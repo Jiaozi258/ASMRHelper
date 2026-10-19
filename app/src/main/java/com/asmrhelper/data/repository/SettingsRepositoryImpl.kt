@@ -420,6 +420,21 @@ class SettingsRepositoryImpl @Inject constructor(
         _lyricsMode.value = mode
     }
 
+    private val _lyricsScrollStyle = MutableStateFlow(prefs.getInt("lyrics_scroll_style", 0))
+    override fun getLyricsScrollStyle(): Flow<Int> = _lyricsScrollStyle
+    override suspend fun setLyricsScrollStyle(style: Int) {
+        prefs.edit().putInt("lyrics_scroll_style", style).apply()
+        _lyricsScrollStyle.value = style
+    }
+
+    private val _appFontPath = MutableStateFlow(prefs.getString("app_font_path", null))
+    override fun getAppFontPath(): Flow<String?> = _appFontPath
+    override suspend fun setAppFontPath(path: String?) {
+        if (path != null) prefs.edit().putString("app_font_path", path).apply()
+        else prefs.edit().remove("app_font_path").apply()
+        _appFontPath.value = path
+    }
+
     // ── 音量阈值 ───────────────────────────────────────
 
     private val _volumeThresholdMode = MutableStateFlow(prefs.getInt("volume_threshold_mode", 0))
