@@ -471,9 +471,10 @@ fun FoliaCommandBar(
     )
     var expanded by remember { mutableStateOf(false) }
     var dragValue by remember { mutableStateOf<Float?>(null) }
+    var interactionTick by remember { mutableStateOf(0) }
     val shownValue = dragValue ?: progress.coerceIn(0f, 1f)
 
-    LaunchedEffect(expanded) {
+    LaunchedEffect(expanded, interactionTick) {
         if (expanded) {
             delay(3000)
             expanded = false
@@ -508,7 +509,7 @@ fun FoliaCommandBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { expanded = !expanded }
+                        .clickable { interactionTick++; expanded = !expanded }
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -542,8 +543,9 @@ fun FoliaCommandBar(
                         }
                         Slider(
                             value = shownValue,
-                            onValueChange = { dragValue = it },
+                            onValueChange = { interactionTick++; dragValue = it },
                             onValueChangeFinished = {
+                                interactionTick++
                                 dragValue?.let { onSeek((it * durationMs).toLong()) }
                                 dragValue = null
                             },
@@ -573,10 +575,10 @@ fun FoliaCommandBar(
                             }
                         )
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            IconButton(onClick = onPrevious) {
+                            IconButton(onClick = { interactionTick++; onPrevious() }) {
                                 Icon(Icons.Filled.SkipPrevious, contentDescription = stringResource(R.string.play_prev_track), tint = TextPrimary)
                             }
-                            IconButton(onClick = onPlayPause, modifier = Modifier.weight(1f)) {
+                            IconButton(onClick = { interactionTick++; onPlayPause() }, modifier = Modifier.weight(1f)) {
                                 Icon(
                                     imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                                     contentDescription = if (isPlaying) stringResource(R.string.play_pause) else stringResource(R.string.play_play),
@@ -584,15 +586,15 @@ fun FoliaCommandBar(
                                     modifier = Modifier.size(40.dp)
                                 )
                             }
-                            IconButton(onClick = onNext) {
+                            IconButton(onClick = { interactionTick++; onNext() }) {
                                 Icon(Icons.Filled.SkipNext, contentDescription = stringResource(R.string.play_next_track), tint = TextPrimary)
                             }
-                            IconButton(onClick = onMore) {
+                            IconButton(onClick = { interactionTick++; onMore() }) {
                                 Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more), tint = TextSecondary)
                             }
                         }
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            IconButton(onClick = onToggleFavorite) {
+                            IconButton(onClick = { interactionTick++; onToggleFavorite() }) {
                                 Icon(
                                     imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                                     contentDescription = stringResource(if (isFavorite) R.string.library_remove_favorite else R.string.library_add_favorite),
@@ -601,7 +603,7 @@ fun FoliaCommandBar(
                             }
                             Row(
                                 modifier = Modifier
-                                    .clickable { onCycleLoopMode() }
+                                    .clickable { interactionTick++; onCycleLoopMode() }
                                     .padding(horizontal = 8.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {

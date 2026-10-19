@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ASMRHelper</string>
+    <string name="app_name">NACRE</string>
 
     <!-- App shortcuts -->
     <string name="shortcut_resume">Resume playback</string>
@@ -79,6 +79,7 @@
     <string name="discover_user_playlists">My playlists</string>
     <string name="discover_no_results">No results found</string>
     <string name="discover_play_failed">Cannot get stream URL</string>
+    <string name="play_error_unplayable">Unable to play this track</string>
     <string name="discover_fetching_url">Getting song link…</string>
     <string name="discover_tab_recommend">Recommend</string>
     <string name="discover_tab_daily">Daily</string>

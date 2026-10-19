@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Loop
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -264,6 +265,7 @@ private fun PersonalPreferenceScreen(
     val isPrivacyMode by viewModel.isPrivacyMode.collectAsStateWithLifecycle()
     val showNotification by viewModel.showNotification.collectAsStateWithLifecycle()
     val showOnLockScreen by viewModel.showOnLockScreen.collectAsStateWithLifecycle()
+    val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     // Android 13+ requires runtime permission for notifications
@@ -431,6 +433,57 @@ private fun PersonalPreferenceScreen(
                         uncheckedTrackColor = DarkSurfaceVariant
                     )
                 )
+            }
+        }
+
+        SectionSpacer()
+
+        SectionHeader(icon = Icons.Filled.Translate, title = stringResource(R.string.language_title))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(
+                        stringResource(R.string.language_follow_system),
+                        stringResource(R.string.language_zh),
+                        stringResource(R.string.language_en)
+                    ).forEachIndexed { index, label ->
+                        val selected = index == appLanguage
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (selected) LocalAccentColor.current.copy(alpha = 0.15f)
+                                    else DarkSurfaceVariant
+                                )
+                                .clickable {
+                                    if (index != appLanguage) {
+                                        viewModel.setAppLanguage(index)
+                                        (context as? android.app.Activity)?.recreate()
+                                    }
+                                }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                label,
+                                color = if (selected) LocalAccentColor.current else TextHint,
+                                fontSize = 13.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -915,8 +968,6 @@ private fun AppearanceSettingsScreen(
     val bgColorIndex by viewModel.bgColorIndex.collectAsStateWithLifecycle()
     val themePresetOrdinal by viewModel.themePresetOrdinal.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
-    val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
     SubScreenScaffold(title = stringResource(R.string.category_appearance), onBack = onBack) {
         SectionHeader(icon = Icons.Filled.Palette, title = stringResource(R.string.settings_appearance_section))
@@ -1058,54 +1109,6 @@ private fun AppearanceSettingsScreen(
             }
         }
 
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                Text(stringResource(R.string.language_title), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf(
-                        stringResource(R.string.language_follow_system),
-                        stringResource(R.string.language_zh),
-                        stringResource(R.string.language_en)
-                    ).forEachIndexed { index, label ->
-                        val selected = index == appLanguage
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(
-                                    if (selected) LocalAccentColor.current.copy(alpha = 0.15f)
-                                    else DarkSurfaceVariant
-                                )
-                                .clickable {
-                                    if (index != appLanguage) {
-                                        viewModel.setAppLanguage(index)
-                                        (context as? android.app.Activity)?.recreate()
-                                    }
-                                }
-                                .padding(vertical = 10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                label,
-                                color = if (selected) LocalAccentColor.current else TextHint,
-                                fontSize = 13.sp,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 

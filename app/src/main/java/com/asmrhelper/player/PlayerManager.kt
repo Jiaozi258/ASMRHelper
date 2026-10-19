@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.asmrhelper.R
@@ -254,6 +255,15 @@ class PlayerManager @Inject constructor(
                 if (playbackState == Player.STATE_ENDED) {
                     handlePlaybackEnded()
                 }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                _state.update { it.copy(isPlaying = false) }
+                android.widget.Toast.makeText(
+                    context,
+                    context.getString(R.string.play_error_unplayable),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
         })
 
