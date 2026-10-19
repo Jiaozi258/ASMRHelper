@@ -16,13 +16,10 @@
 
 Hi there, I'm the author — a student building this in my spare time. NACRE is a personal project, and also the first time I've seriously tried to build an Android app of this size.
 
-To be honest, this is a **vibe-coding** project: a good chunk of the code was written together with an AI assistant (Claude Code). I describe what I want, it writes, and then I read, tweak, and debug line by line — lots of pitfalls, lots of rewrites. So it's **not perfect**; there may be bugs, and some implementations are pretty hacky and not textbook-clean architecture.
+To be honest, this is a **vibe-coding** project: a good chunk of the code was written together with Claude Code.
 
-But I quite like it. It carries a small dream of mine about software that is "good-sounding, good-looking, and calming": blending sleep white noise, binaural beats, ambient sounds, online music, lyrics, and a beautiful player into one app.
 
-If you'd take a look, drop a ⭐, or open an issue, I'd be really glad 🙏.
-
-> The name comes from **NACRE (mother-of-pearl)** — I hope it can feel as warm, quiet, and softly lustrous as nacre.
+> The name comes from **NACRE (mother-of-pearl)**
 
 ---
 
@@ -212,12 +209,11 @@ git clone https://github.com/JiaoZi258/NACRE.git
 ## 🙏 Acknowledgements
 
 - Thanks to Jetpack Compose, Media3, Room, Hilt, Coil, and the whole Android open-source ecosystem.
-- Thanks to the AI assistant for helping me build this project from zero to where it is today.
 
 ---
 
 <div align="center">
   <br>
   <p>Made with ❤️, ☕, and a little bit of vibe ✨</p>
-  <p>If it's useful to you, a ⭐ is very welcome</p>
+  <p>If you're interested, feel free to give it a try</p>
 </div>
