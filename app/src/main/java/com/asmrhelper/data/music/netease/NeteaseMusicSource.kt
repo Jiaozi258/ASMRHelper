@@ -2,6 +2,7 @@ package com.asmrhelper.data.music.netease
 
 import android.content.Context
 import com.asmrhelper.R
+import com.asmrhelper.data.music.neteaselib.Eapi
 import com.asmrhelper.data.music.neteaselib.Weapi
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
@@ -21,6 +22,7 @@ import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import kotlin.random.Random
 
 /** 网易云音乐原生音源：直接请求 music.163.com，weapi 加密。 */
 class NeteaseMusicSource(
@@ -37,6 +39,11 @@ class NeteaseMusicSource(
     private var cookie: String = persistedCookie
     private var nickname: String = persistedNickname
     private var uid: String = ""
+
+    /** eapi 设备指纹（52 位大写 hex），进程内固定，与 NeteaseCloudMusicApi 一致。 */
+    private val deviceId: String by lazy {
+        buildString { repeat(52) { append("0123456789ABCDEF"[Random.nextInt(16)]) } }
+    }
 
     private val _isLoggedIn = MutableStateFlow(cookie.contains("MUSIC_U"))
     override val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
@@ -56,24 +63,25 @@ class NeteaseMusicSource(
     }
 
     override fun getSongUrl(songId: String, quality: String): Flow<String> = flow {
-        // 会员/付费歌只在无损档（999000）返回地址，逐档回退，最后退回免费外链兜底。
-        val orderedBr = buildList {
-            qualityBitrate(quality)?.let(::add)
-            add("999000"); add("320000"); add("128000")
+        // 老 `/weapi/song/enhance/player/url` + `br` 已被网易废弃（返回空），
+        // 改用 eapi v1 + `level`/`encodeType`。付费歌只在更高档返回地址，逐档回退。
+        val orderedLevels = buildList {
+            qualityLevel(quality)?.let(::add)
+            add("exhigh"); add("higher"); add("standard")
         }.distinct()
-        val result = orderedBr.firstNotNullOfOrNull { br ->
-            val body = json(mapOf("ids" to "[$songId]", "br" to br))
-            NeteaseJson.parseSongUrl(weapiPost("/weapi/song/enhance/player/url", body)).ifBlank { null }
+        val result = orderedLevels.firstNotNullOfOrNull { level ->
+            val encodeType = if (level == "lossless") "flac" else "mp3"
+            eapiSongUrl(songId, level, encodeType).ifBlank { null }
         }
         emit(result ?: NeteaseJson.fallbackSongUrl(songId))
     }
 
-    /** 音质档位 → 网易云 br 值；未知档位返回 null（走默认回退链）。 */
-    private fun qualityBitrate(quality: String): String? = when (quality) {
-        "standard" -> "128000"
-        "higher" -> "192000"
-        "excellent" -> "320000"
-        "lossless" -> "999000"
+    /** 音质档位 → 网易云 level；未知档位返回 null（走默认回退链）。 */
+    private fun qualityLevel(quality: String): String? = when (quality) {
+        "standard" -> "standard"
+        "higher" -> "higher"
+        "excellent" -> "exhigh"
+        "lossless" -> "lossless"
         else -> null
     }
 
@@ -249,9 +257,82 @@ class NeteaseMusicSource(
         return obj.toString()
     }
 
+    // ── eapi POST（新版取流接口） ──────────────────────
+
+    /** 单曲取流：eapi v1 + `level`/`encodeType`，返回可播放地址（空串=不可用）。 */
+    private suspend fun eapiSongUrl(songId: String, level: String, encodeType: String): String {
+        if (cookie.isBlank()) ensureAnonymousCookie()
+        val header = eapiHeader()
+        val data = JSONObject()
+            .put("ids", "[$songId]")
+            .put("level", level)
+            .put("encodeType", encodeType)
+            .put("header", header)
+        return eapiPost(SONG_URL_URI, data.toString(), header)
+    }
+
+    /** 请求头字段：同时内嵌进加密 data 并拼进 Cookie 头，匿名时带 `MUSIC_A`。 */
+    private fun eapiHeader(): JSONObject {
+        val now = System.currentTimeMillis()
+        val header = JSONObject()
+            .put("osver", "Microsoft-Windows-10-Professional-build-19045-64bit")
+            .put("deviceId", deviceId)
+            .put("os", "pc")
+            .put("appver", "3.1.17.204416")
+            .put("versioncode", "140")
+            .put("mobilename", "")
+            .put("buildver", (now / 1000).toString())
+            .put("resolution", "1920x1080")
+            .put("__csrf", cookieValue("__csrf"))
+            .put("channel", "netease")
+            .put("requestId", "${now}_${Random.nextInt(0, 10000).toString().padStart(4, '0')}")
+        cookieValue("MUSIC_A").takeIf { it.isNotBlank() }?.let { header.put("MUSIC_A", it) }
+        cookieValue("MUSIC_U").takeIf { it.isNotBlank() }?.let { header.put("MUSIC_U", it) }
+        return header
+    }
+
+    private suspend fun eapiPost(uri: String, jsonBody: String, header: JSONObject): String =
+        withContext(Dispatchers.IO) {
+            try {
+                val params = Eapi.encrypt(uri, jsonBody)
+                val body = FormBody.Builder().add("params", params).build()
+                val builder = Request.Builder()
+                    .url("https://interface.music.163.com/eapi/" + uri.removePrefix("/api/"))
+                    .header("User-Agent", EAPI_USER_AGENT)
+                    .header("Referer", "https://music.163.com")
+                    .header("Cookie", eapiCookie(header))
+                    .post(body)
+                client.newCall(builder.build()).execute().use { resp ->
+                    if (resp.isSuccessful) resp.body?.string() ?: "" else ""
+                }
+            } catch (_: Exception) {
+                ""
+            }
+        }
+
+    /** eapi 的 Cookie 头：header 各字段 URL-编码后 `k=v; k=v` 拼接。 */
+    private fun eapiCookie(header: JSONObject): String {
+        val parts = mutableListOf<String>()
+        val keys = header.keys()
+        while (keys.hasNext()) {
+            val k = keys.next()
+            parts.add("${urlEncode(k)}=${urlEncode(header.optString(k))}")
+        }
+        return parts.joinToString("; ")
+    }
+
+    private fun urlEncode(s: String): String = java.net.URLEncoder.encode(s, "UTF-8")
+
+    /** 从当前 cookie 串提取单个键值（无则空串）。 */
+    private fun cookieValue(name: String): String =
+        Regex("""(?:^|;\s*)$name=([^;]*)""").find(cookie)?.groupValues?.get(1)?.trim() ?: ""
+
     companion object {
         private const val ANON_PATH = "/weapi/register/anonimous"
+        private const val SONG_URL_URI = "/api/song/enhance/player/url/v1"
         private const val USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        private const val EAPI_USER_AGENT =
+            "NeteaseMusic 9.0.90/5038 (iPhone; iOS 16.2; zh_CN)"
     }
 }
