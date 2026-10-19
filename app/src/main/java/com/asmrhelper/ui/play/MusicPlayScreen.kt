@@ -60,6 +60,7 @@ import com.asmrhelper.ui.components.ModeToggleButton
 import com.asmrhelper.ui.play.folia.AudioReactiveBackground
 import com.asmrhelper.ui.play.folia.CenteredLyrics
 import com.asmrhelper.ui.play.folia.FoliaCommandBar
+import com.asmrhelper.ui.play.folia.ScrollLyrics
 import com.asmrhelper.ui.playlist.PlaylistViewModel
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -69,6 +70,7 @@ import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.ui.theme.appleClickable
+import com.asmrhelper.util.LyricMode
 import kotlinx.coroutines.delay
 
 /**
@@ -102,6 +104,11 @@ fun MusicPlayScreen(
     val playbackQuality by viewModel.playbackQuality.collectAsStateWithLifecycle()
     val lyricOffsetMs by viewModel.lyricOffsetMs.collectAsStateWithLifecycle()
     val currentFavorite by viewModel.currentFavorite.collectAsStateWithLifecycle()
+    val lyricsMode by viewModel.lyricsMode.collectAsStateWithLifecycle()
+    val lyricsFontSize by viewModel.lyricsFontSize.collectAsStateWithLifecycle()
+    val lyricsShadowEnabled by viewModel.lyricsShadowEnabled.collectAsStateWithLifecycle()
+    val lyricsLineSpacing by viewModel.lyricsLineSpacing.collectAsStateWithLifecycle()
+    val lyricsAlignment by viewModel.lyricsAlignment.collectAsStateWithLifecycle()
 
     var showTimerDialog by remember { mutableStateOf(false) }
     var showLyricsDialog by remember { mutableStateOf(false) }
@@ -153,14 +160,32 @@ fun MusicPlayScreen(
             // 顶部留白给状态栏 + 模式按钮
             Spacer(Modifier.height(40.dp))
 
-            // 居中逐词歌词（单行，无上下文）
-            CenteredLyrics(
-                lines = lyrics,
-                progressMs = (progressMs + lyricOffsetMs).coerceAtLeast(0L),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            )
+            // 歌词：跳转=逐词蹦出（单行）；滑动=多行带上下文
+            val lyricProgress = (progressMs + lyricOffsetMs).coerceAtLeast(0L)
+            if (lyricsMode == LyricMode.SCROLL) {
+                ScrollLyrics(
+                    lines = lyrics,
+                    progressMs = lyricProgress,
+                    fontSize = lyricsFontSize,
+                    lineSpacing = lyricsLineSpacing,
+                    shadowEnabled = lyricsShadowEnabled,
+                    alignment = lyricsAlignment,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                )
+            } else {
+                CenteredLyrics(
+                    lines = lyrics,
+                    progressMs = lyricProgress,
+                    fontSize = lyricsFontSize,
+                    shadowEnabled = lyricsShadowEnabled,
+                    alignment = lyricsAlignment,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                )
+            }
 
             // 底部悬浮命令条：折叠只显歌名，点击展开完整控制
             FoliaCommandBar(
@@ -247,6 +272,12 @@ fun MusicPlayScreen(
                     MoreRow(stringResource(R.string.menu_timer), "") { showMoreDialog = false; showTimerDialog = true }
                     MoreRow(stringResource(R.string.menu_song_info), "") { showMoreDialog = false; showSongInfoDialog = true }
                     MoreRow(stringResource(R.string.menu_lyric_offset), "") { showMoreDialog = false; showLyricOffsetDialog = true }
+                    MoreRow(
+                        stringResource(R.string.lyric_mode),
+                        stringResource(if (lyricsMode == LyricMode.SCROLL) R.string.lyric_mode_scroll else R.string.lyric_mode_jump)
+                    ) {
+                        viewModel.setLyricsMode(if (lyricsMode == LyricMode.SCROLL) LyricMode.JUMP else LyricMode.SCROLL)
+                    }
                     MoreRow(stringResource(R.string.menu_queue), "") { showMoreDialog = false; showQueueDialog = true }
                     MoreRow(stringResource(R.string.menu_background), "") { showMoreDialog = false; showBackgroundDialog = true }
                     MoreRow(stringResource(R.string.menu_quality), "") { showMoreDialog = false; showQualityDialog = true }

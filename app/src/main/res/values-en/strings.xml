@@ -118,7 +118,7 @@
     <string name="song_info_publish">Released</string>
     <string name="song_info_source_local">Local</string>
     <string name="bg_blurred_cover">Blurred cover</string>
-    <string name="bg_folia_duotone">Folia duotone</string>
+    <string name="bg_folia_duotone">Duotone flow</string>
     <string name="bg_system_solid">Solid (follow system)</string>
     <string name="quality_standard">Standard</string>
     <string name="quality_higher">Higher</string>

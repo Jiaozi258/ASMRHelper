@@ -38,6 +38,7 @@ import com.asmrhelper.player.SpatialMode
 import com.asmrhelper.player.SceneEffectsController
 import com.asmrhelper.player.SceneEffect
 import com.asmrhelper.util.LrcParser
+import com.asmrhelper.util.LyricMode
 import com.asmrhelper.util.WordLyricLine
 import com.asmrhelper.util.toWordLyricLines
 import com.asmrhelper.util.LyricsStore
@@ -206,6 +207,24 @@ class PlayViewModel @Inject constructor(
     fun setLyricOffsetMs(offsetMs: Int) {
         viewModelScope.launch { settingsRepository.setLyricOffsetMs(offsetMs.coerceIn(-2000, 2000)) }
     }
+
+    // ── 歌词展示模式（跳转/滑动）+ 显示设置 ───────────────
+    val lyricsMode: StateFlow<LyricMode> = settingsRepository.getLyricsMode()
+        .map { if (it == 1) LyricMode.SCROLL else LyricMode.JUMP }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LyricMode.JUMP)
+
+    fun setLyricsMode(mode: LyricMode) {
+        viewModelScope.launch { settingsRepository.setLyricsMode(if (mode == LyricMode.SCROLL) 1 else 0) }
+    }
+
+    val lyricsFontSize: StateFlow<Int> = settingsRepository.getLyricsFontSize()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 16)
+    val lyricsShadowEnabled: StateFlow<Boolean> = settingsRepository.getLyricsShadowEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val lyricsLineSpacing: StateFlow<Float> = settingsRepository.getLyricsLineSpacing()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.5f)
+    val lyricsAlignment: StateFlow<Int> = settingsRepository.getLyricsAlignment()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     // ── 收藏 / 快进时间：必须在 init 之前声明 ──
     // init 里的协程会立即运行并写这些 StateFlow，声明在 init 之后会导致 NPE

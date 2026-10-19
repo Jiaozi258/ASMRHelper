@@ -1330,6 +1330,7 @@ private fun LyricsSettingsScreen(
     val lyricsLineSpacing by viewModel.lyricsLineSpacing.collectAsStateWithLifecycle()
     val lyricsDisplayArea by viewModel.lyricsDisplayArea.collectAsStateWithLifecycle()
     val lyricsAlignment by viewModel.lyricsAlignment.collectAsStateWithLifecycle()
+    val lyricsMode by viewModel.lyricsMode.collectAsStateWithLifecycle()
 
     SubScreenScaffold(title = stringResource(R.string.category_lyrics), onBack = onBack) {
         SectionHeader(icon = Icons.Filled.MusicNote, title = stringResource(R.string.category_lyrics))
@@ -1342,6 +1343,37 @@ private fun LyricsSettingsScreen(
             colors = CardDefaults.cardColors(containerColor = DarkSurface)
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                var modeExpanded by remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { modeExpanded = true },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(stringResource(R.string.lyric_mode), color = TextPrimary, fontSize = 14.sp)
+                        Text(
+                            if (lyricsMode == 1) stringResource(R.string.lyric_mode_scroll) else stringResource(R.string.lyric_mode_jump),
+                            color = LocalAccentColor.current,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Box {
+                        Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
+                        DropdownMenu(expanded = modeExpanded, onDismissRequest = { modeExpanded = false }) {
+                            listOf(stringResource(R.string.lyric_mode_jump), stringResource(R.string.lyric_mode_scroll)).forEachIndexed { i, label ->
+                                DropdownMenuItem(
+                                    text = { Text(label, color = TextPrimary) },
+                                    onClick = { viewModel.setLyricsMode(i); modeExpanded = false }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+
                 Text(stringResource(R.string.settings_lyrics_font_size, lyricsFontSize), color = TextPrimary, fontSize = 14.sp)
                 Slider(
                     value = lyricsFontSize.toFloat(),

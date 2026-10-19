@@ -349,6 +349,8 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
     val lyricsAlignment: StateFlow<Int> = settingsRepository.getLyricsAlignment()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val lyricsMode: StateFlow<Int> = settingsRepository.getLyricsMode()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     fun setLyricsFontSize(sp: Int) {
         viewModelScope.launch { settingsRepository.setLyricsFontSize(sp) }
@@ -364,6 +366,9 @@ class SettingsViewModel @Inject constructor(
     }
     fun setLyricsAlignment(alignment: Int) {
         viewModelScope.launch { settingsRepository.setLyricsAlignment(alignment) }
+    }
+    fun setLyricsMode(mode: Int) {
+        viewModelScope.launch { settingsRepository.setLyricsMode(mode) }
     }
 
     // ── 音量阈值 ──────────────────────────────────────

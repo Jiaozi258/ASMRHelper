@@ -413,6 +413,13 @@ class SettingsRepositoryImpl @Inject constructor(
         _lyricsAlignment.value = alignment
     }
 
+    private val _lyricsMode = MutableStateFlow(prefs.getInt("lyrics_mode", 0))
+    override fun getLyricsMode(): Flow<Int> = _lyricsMode
+    override suspend fun setLyricsMode(mode: Int) {
+        prefs.edit().putInt("lyrics_mode", mode).apply()
+        _lyricsMode.value = mode
+    }
+
     // ── 音量阈值 ───────────────────────────────────────
 
     private val _volumeThresholdMode = MutableStateFlow(prefs.getInt("volume_threshold_mode", 0))

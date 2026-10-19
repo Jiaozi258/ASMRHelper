@@ -112,6 +112,8 @@ interface SettingsRepository {
     suspend fun setLyricsDisplayArea(area: Int)
     fun getLyricsAlignment(): Flow<Int> // 0=居中, 1=左对齐, 2=右对齐
     suspend fun setLyricsAlignment(alignment: Int)
+    fun getLyricsMode(): Flow<Int> // 0=跳转(逐词蹦出), 1=滑动(带上下文)
+    suspend fun setLyricsMode(mode: Int)
 
     // ── 音量阈值 ───────────────────────────────────────
     // 0=响度模式(目标响度), 1=阈值模式(最小/最大阈值压缩)

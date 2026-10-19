@@ -118,7 +118,7 @@
     <string name="song_info_publish">发行时间</string>
     <string name="song_info_source_local">本地</string>
     <string name="bg_blurred_cover">模糊封面</string>
-    <string name="bg_folia_duotone">Folia 双色流动</string>
+    <string name="bg_folia_duotone">双色流动</string>
     <string name="bg_system_solid">纯色（跟随系统）</string>
     <string name="quality_standard">标准</string>
     <string name="quality_higher">较高</string>

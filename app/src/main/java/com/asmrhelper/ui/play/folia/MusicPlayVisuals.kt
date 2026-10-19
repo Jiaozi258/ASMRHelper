@@ -6,6 +6,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
@@ -19,8 +20,12 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,6 +36,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -70,8 +78,10 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -131,7 +141,7 @@ fun AudioReactiveBackground(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 9000, easing = LinearEasing),
+            animation = tween(durationMillis = 6500, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "flowDrift"
@@ -184,28 +194,44 @@ fun AudioReactiveBackground(
                     )
                 }
             }
-            // Folia 双色油画流动（概念复刻）：无封面，主/次色色场 + 游走柔光斑
+            // 双色流动：无封面，主/次色色场 + 游走柔光斑 + 斜向高光带，流动更明显
             PlaybackBackgroundMode.FOLIA_DUOTONE -> {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val w = size.width
                     val h = size.height
+                    // 主/次色随 drift 左右推移的三段渐变，色场本身也在动
                     drawRect(
-                        brush = Brush.linearGradient(listOf(primary, secondary)),
+                        brush = Brush.linearGradient(
+                            colors = listOf(primary, secondary, primary),
+                            start = Offset(w * drift * 0.7f, 0f),
+                            end = Offset(w * (0.6f + 0.7f * drift), h)
+                        ),
                         size = Size(w, h)
                     )
+                    // 两团游走柔光：更大、更亮、沿对角移动
                     drawRect(
                         brush = Brush.radialGradient(
-                            colors = listOf(secondary.copy(alpha = 0.6f), Color.Transparent),
-                            center = Offset(w * (0.2f + 0.6f * drift), h * 0.35f),
-                            radius = w * 0.85f
+                            colors = listOf(secondary.copy(alpha = 0.9f), Color.Transparent),
+                            center = Offset(w * (0.1f + 0.8f * drift), h * (0.15f + 0.35f * drift)),
+                            radius = w * 1.1f
                         ),
                         size = Size(w, h)
                     )
                     drawRect(
                         brush = Brush.radialGradient(
-                            colors = listOf(accent.copy(alpha = 0.32f * breathe), Color.Transparent),
-                            center = Offset(w * (0.8f - 0.6f * drift), h * 0.7f),
-                            radius = w * 0.9f
+                            colors = listOf(accent.copy(alpha = 0.55f * (0.4f + 0.6f * breathe)), Color.Transparent),
+                            center = Offset(w * (0.9f - 0.8f * drift), h * (0.85f - 0.35f * drift)),
+                            radius = w * 1.15f
+                        ),
+                        size = Size(w, h)
+                    )
+                    // 斜向高光带扫过画面，强化"流动感"
+                    val sweep = drift * w * 1.8f - w * 0.4f
+                    drawRect(
+                        brush = Brush.linearGradient(
+                            colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.16f), Color.Transparent),
+                            start = Offset(sweep, 0f),
+                            end = Offset(sweep + w * 0.7f, h)
                         ),
                         size = Size(w, h)
                     )
@@ -254,77 +280,154 @@ fun AudioReactiveBackground(
 }
 
 /**
- * 居中逐词歌词：单行显示，唱到哪个字哪个字高亮发光，不展示上下文。
- * 有逐词时间戳（yrc）按真实时刻推进；没有则把整行时长按字符均分。
+ * 跳转（逐词蹦出）歌词：单行显示当前句，唱到的「词」逐个弹出高亮，
+ * 而不是把整句歌词逐字像 KTV 那样变亮。有逐词时间戳（yrc）按真实时刻推进，
+ * 没有则按分词均分；字体大小 / 阴影 / 对齐读取设置。
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CenteredLyrics(
     lines: List<WordLyricLine>,
     progressMs: Long,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fontSize: Int = 16,
+    shadowEnabled: Boolean = false,
+    alignment: Int = 0
 ) {
     val accent = LocalAccentColor.current
     val currentIndex = remember(lines, progressMs) { lines.currentLineIndex(progressMs) }
     val currentLine = lines.getOrNull(currentIndex)
 
-    val glowPulse = if (lines.isNotEmpty()) {
-        val transition = rememberInfiniteTransition(label = "lyricGlow")
-        transition.animateFloat(
-            initialValue = 0.55f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1200, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "glowPulse"
-        ).value
-    } else 0f
-
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        when {
-            lines.isEmpty() -> Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
-            currentLine == null -> Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
-            else -> {
-                val words = currentLine.words.ifEmpty { currentLine.evenWords() }
-                if (words.isEmpty()) {
-                    Text(
-                        text = currentLine.text,
-                        color = accent,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
-                    )
-                } else {
-                    val wordIndex = words.wordIndexAt(progressMs)
-                    val annotated = buildAnnotatedString {
-                        words.forEachIndexed { i, w ->
-                            val isCurrent = i == wordIndex
-                            withStyle(
-                                SpanStyle(
-                                    color = if (isCurrent) accent else TextSecondary,
-                                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                                    shadow = if (isCurrent) Shadow(
-                                        color = accent.copy(alpha = 0.6f * glowPulse),
-                                        blurRadius = 16f * glowPulse
-                                    ) else null
-                                )
-                            ) {
-                                append(w.text)
-                            }
+        if (lines.isEmpty() || currentLine == null) {
+            Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
+        } else {
+            val words = currentLine.words.ifEmpty { currentLine.evenWords() }
+            if (words.isEmpty()) {
+                Text(
+                    text = currentLine.text,
+                    color = accent,
+                    fontSize = fontSize.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = lyricTextAlign(alignment),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+                )
+            } else {
+                val wordIndex = words.wordIndexAt(progressMs)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                    horizontalArrangement = lyricArrangement(alignment),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    words.forEachIndexed { i, w ->
+                        val isCurrent = i == wordIndex
+                        val scale by animateFloatAsState(
+                            targetValue = if (isCurrent) 1.18f else 1f,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium
+                            ),
+                            label = "wordPop"
+                        )
+                        val wordColor = when {
+                            isCurrent -> accent
+                            i < wordIndex -> TextSecondary.copy(alpha = 0.45f)
+                            else -> TextSecondary.copy(alpha = 0.85f)
                         }
+                        Text(
+                            text = w.text,
+                            color = wordColor,
+                            fontSize = fontSize.sp,
+                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                            style = if (isCurrent && shadowEnabled) TextStyle(
+                                shadow = Shadow(color = accent.copy(alpha = 0.6f), blurRadius = 14f)
+                            ) else TextStyle(),
+                            modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale }
+                        )
                     }
-                    Text(
-                        text = annotated,
-                        fontSize = 20.sp,
-                        lineHeight = 30.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
-                    )
                 }
             }
         }
     }
+}
+
+/**
+ * 滑动歌词：多行带上下文，当前行居中高亮，随进度平滑滚动。
+ * 字体大小 / 行间距 / 阴影 / 对齐方式均读取设置。
+ */
+@Composable
+fun ScrollLyrics(
+    lines: List<WordLyricLine>,
+    progressMs: Long,
+    modifier: Modifier = Modifier,
+    fontSize: Int = 16,
+    lineSpacing: Float = 1.5f,
+    shadowEnabled: Boolean = false,
+    alignment: Int = 0
+) {
+    val accent = LocalAccentColor.current
+    val density = LocalDensity.current
+    val currentIndex = remember(lines, progressMs) { lines.currentLineIndex(progressMs) }
+    val lineHeight = (fontSize * lineSpacing).sp
+    val textAlign = lyricTextAlign(alignment)
+
+    BoxWithConstraints(modifier = modifier) {
+        val lineHeightPx = with(density) { lineHeight.toPx() }
+        val viewportPx = with(density) { maxHeight.toPx() }
+        if (lines.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
+            }
+            return@BoxWithConstraints
+        }
+        val listState = rememberLazyListState()
+        LaunchedEffect(currentIndex, viewportPx, lineHeightPx, lines.size) {
+            listState.animateScrollToItem(
+                currentIndex,
+                scrollOffset = -(((viewportPx - lineHeightPx) / 2f).toInt())
+            )
+        }
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            itemsIndexed(lines) { index, line ->
+                val isCurrent = index == currentIndex
+                val color = when {
+                    isCurrent -> accent
+                    index < currentIndex -> TextSecondary.copy(alpha = 0.4f)
+                    else -> TextSecondary.copy(alpha = 0.8f)
+                }
+                Text(
+                    text = line.text,
+                    color = color,
+                    fontSize = (if (isCurrent) fontSize else (fontSize - 1).coerceAtLeast(10)).sp,
+                    lineHeight = lineHeight,
+                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                    textAlign = textAlign,
+                    style = if (isCurrent && shadowEnabled) TextStyle(
+                        shadow = Shadow(color = accent.copy(alpha = 0.6f), blurRadius = 14f)
+                    ) else TextStyle(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                )
+            }
+        }
+    }
+}
+
+private fun lyricTextAlign(alignment: Int): TextAlign = when (alignment) {
+    1 -> TextAlign.Left
+    2 -> TextAlign.Right
+    else -> TextAlign.Center
+}
+
+private fun lyricArrangement(alignment: Int): Arrangement.Horizontal = when (alignment) {
+    1 -> Arrangement.Start
+    2 -> Arrangement.End
+    else -> Arrangement.Center
 }
 
 /**
