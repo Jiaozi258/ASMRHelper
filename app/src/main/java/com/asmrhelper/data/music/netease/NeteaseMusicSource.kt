@@ -3,14 +3,17 @@ package com.asmrhelper.data.music.netease
 import android.content.Context
 import com.asmrhelper.R
 import com.asmrhelper.data.music.neteaselib.Eapi
+import com.asmrhelper.data.music.neteaselib.PublicKeyState
 import com.asmrhelper.data.music.neteaselib.Weapi
+import com.asmrhelper.data.music.neteaselib.Xeapi
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
 import com.asmrhelper.domain.music.MusicSource
 import com.asmrhelper.domain.music.WebLoginConfig
-import com.asmrhelper.util.Cookies
+import java.security.MessageDigest
+import java.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +27,11 @@ import okhttp3.Request
 import org.json.JSONObject
 import kotlin.random.Random
 
-/** 网易云音乐原生音源：直接请求 music.163.com，weapi 加密。 */
+/**
+ * 网易云音乐原生音源。接口加密方式对齐 Folia（@neteasecloudmusicapienhanced/api）：
+ * 搜索/歌词/歌单/榜单走 eapi，取流与游客注册走 xeapi（X25519 ECDH + AES-GCM/ECB），
+ * 歌曲详情/推荐/用户歌单/电台/登录仍走 weapi。
+ */
 class NeteaseMusicSource(
     private val client: OkHttpClient,
     private val context: Context,
@@ -40,10 +47,17 @@ class NeteaseMusicSource(
     private var nickname: String = persistedNickname
     private var uid: String = ""
 
-    /** eapi 设备指纹（52 位大写 hex），进程内固定，与 NeteaseCloudMusicApi 一致。 */
+    private val prefs = context.getSharedPreferences("asmr_settings", Context.MODE_PRIVATE)
+
+    /** 52 位大写 hex 设备指纹，持久化避免每次启动重复注册游客触发风控。 */
     private val deviceId: String by lazy {
-        buildString { repeat(52) { append("0123456789ABCDEF"[Random.nextInt(16)]) } }
+        prefs.getString("netease_device_id", null)?.takeIf { it.isNotBlank() }
+            ?: buildString { repeat(52) { append("0123456789ABCDEF"[Random.nextInt(16)]) } }
+                .also { prefs.edit().putString("netease_device_id", it).apply() }
     }
+
+    /** xeapi 公钥状态缓存（内存 + SharedPreferences）。 */
+    private var cachedPublicKeyState: PublicKeyState? = null
 
     private val _isLoggedIn = MutableStateFlow(cookie.contains("MUSIC_U"))
     override val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
@@ -53,30 +67,36 @@ class NeteaseMusicSource(
         WebLoginConfig("https://music.163.com/#/login", "https://music.163.com", setOf("MUSIC_U", "__csrf"))
 
     override fun search(keyword: String, page: Int): Flow<List<RemoteSong>> = flow {
-        val body = json(mapOf(
-            "s" to keyword,
-            "type" to "1",
-            "limit" to "30",
-            "offset" to ((page - 1) * 30).toString()
-        ))
-        emit(NeteaseJson.parseSearch(weapiPost("/weapi/cloudsearch/get/web", body)))
+        ensureAnonymousSession()
+        val data = JSONObject()
+            .put("s", keyword)
+            .put("type", 1)
+            .put("limit", 30)
+            .put("offset", (page - 1) * 30)
+            .put("total", true)
+        emit(NeteaseJson.parseSearch(eapiPost(SEARCH_URI, data)))
     }
 
     override fun getSongUrl(songId: String, quality: String): Flow<String> = flow {
-        // 老 `/weapi/song/enhance/player/url` + `br` 已被网易废弃（返回空），
-        // 改用 eapi v1 + `level`/`encodeType`。付费歌只在更高档返回地址，逐档回退。
+        // 网易已废弃 weapi 与普通 eapi 取流，改用 xeapi v1 + `level`/`encodeType`。
+        // 付费/会员歌只在更高档返回地址，逐档回退。
+        ensureAnonymousSession()
         val orderedLevels = buildList {
             qualityLevel(quality)?.let(::add)
-            add("exhigh"); add("higher"); add("standard")
+            add("exhigh"); add("standard")
         }.distinct()
         val result = orderedLevels.firstNotNullOfOrNull { level ->
             val encodeType = if (level == "lossless") "flac" else "mp3"
-            eapiSongUrl(songId, level, encodeType).ifBlank { null }
+            val resp = xeapiPost(
+                SONG_URL_URI,
+                mapOf("ids" to "[$songId]", "level" to level, "encodeType" to encodeType),
+            )
+            NeteaseJson.parseSongUrl(resp.body).ifBlank { null }
         }
         emit(result ?: NeteaseJson.fallbackSongUrl(songId))
     }
 
-    /** 音质档位 → 网易云 level；未知档位返回 null（走默认回退链）。 */
+    /** 音质档位 → 网易云 xeapi level；未知档位返回 null（走默认回退链）。 */
     private fun qualityLevel(quality: String): String? = when (quality) {
         "standard" -> "standard"
         "higher" -> "higher"
@@ -86,8 +106,15 @@ class NeteaseMusicSource(
     }
 
     override fun getLyric(songId: String): Flow<RemoteLyric> = flow {
-        val body = json(mapOf("id" to songId, "lv" to "-1", "tv" to "-1"))
-        emit(NeteaseJson.parseLyric(weapiPost("/weapi/song/lyric", body)))
+        ensureAnonymousSession()
+        val data = JSONObject()
+            .put("id", songId)
+            .put("tv", -1)
+            .put("lv", -1)
+            .put("rv", -1)
+            .put("kv", -1)
+            .put("_nmclfl", 1)
+        emit(NeteaseJson.parseLyric(eapiPost(LYRIC_URI, data)))
     }
 
     override fun getCoverUrl(songId: String): Flow<String> = flow {
@@ -102,8 +129,9 @@ class NeteaseMusicSource(
     }
 
     override fun getPlaylist(playlistId: String): Flow<RemotePlaylist> = flow {
-        val body = json(mapOf("id" to playlistId, "n" to "1000", "s" to "0"))
-        NeteaseJson.parsePlaylistDetail(weapiPost("/weapi/v6/playlist/detail", body))?.let { emit(it) }
+        ensureAnonymousSession()
+        val data = JSONObject().put("id", playlistId).put("n", 100000).put("s", 8)
+        NeteaseJson.parsePlaylistDetail(eapiPost(PLAYLIST_URI, data))?.let { emit(it) }
     }
 
     /** 用户歌单：需登录并解析出 uid；匿名/失败返回空。 */
@@ -133,7 +161,8 @@ class NeteaseMusicSource(
     }
 
     override fun getCharts(): Flow<List<RemoteChart>> = flow {
-        emit(NeteaseJson.parseCharts(weapiPost("/weapi/toplist", "{}")))
+        ensureAnonymousSession()
+        emit(NeteaseJson.parseCharts(eapiPost(TOPLIST_URI, JSONObject())))
     }
 
     // ── 登录 ───────────────────────────────────────────
@@ -203,15 +232,8 @@ class NeteaseMusicSource(
         weapiPostRaw(path, jsonBody).body
 
     private suspend fun weapiPostRaw(path: String, jsonBody: String): WeapiResp {
-        if (cookie.isBlank() && path != ANON_PATH) ensureAnonymousCookie()
+        if (cookie.isBlank()) ensureAnonymousSession()
         return postOnce(path, jsonBody)
-    }
-
-    /** 免登录也要一个游客 cookie（`MUSIC_A`），否则搜索/播放常返回空。 */
-    private suspend fun ensureAnonymousCookie() {
-        val raw = postOnce(ANON_PATH, "{}").body
-        val anon = Cookies.select(NeteaseJson.parseQrCookie(raw), setOf("MUSIC_A"))
-        if (anon.isNotBlank()) cookie = anon
     }
 
     private suspend fun postOnce(path: String, jsonBody: String): WeapiResp =
@@ -257,18 +279,190 @@ class NeteaseMusicSource(
         return obj.toString()
     }
 
-    // ── eapi POST（新版取流接口） ──────────────────────
+    // ── 游客会话（xeapi） ─────────────────────────────
 
-    /** 单曲取流：eapi v1 + `level`/`encodeType`，返回可播放地址（空串=不可用）。 */
-    private suspend fun eapiSongUrl(songId: String, level: String, encodeType: String): String {
-        if (cookie.isBlank()) ensureAnonymousCookie()
+    /** 免登录也要一个游客 cookie（`MUSIC_A`），否则搜索/播放常返回空。 */
+    private suspend fun ensureAnonymousSession() {
+        if (cookie.contains("MUSIC_U") || cookie.contains("MUSIC_A")) return
+        val state = loadOrFetchPublicKey() ?: return
+        val musicA = registerAnonymous(state)
+        if (musicA.isNotBlank()) {
+            cookie = musicA
+            onLoginChanged(cookie, nickname)
+        }
+    }
+
+    /** 拉取并缓存 xeapi 公钥（`/api/bsr/sk/get`，明文 + HMAC 签名）。 */
+    private suspend fun loadOrFetchPublicKey(): PublicKeyState? {
+        cachedPublicKeyState?.let { return it }
+        prefs.getString("netease_xeapi_pk", null)?.let { saved ->
+            runCatching {
+                val o = JSONObject(saved)
+                PublicKeyState(
+                    version = o.optString("version"),
+                    publicKey = o.optString("publicKey"),
+                    sk = o.optString("sk").ifBlank { null },
+                )
+            }.getOrNull()?.let { cachedPublicKeyState = it; return it }
+        }
+        return withContext(Dispatchers.IO) {
+            try {
+                val ts = System.currentTimeMillis().toString()
+                val nonce = buildString { repeat(16) { append(Random.nextInt(10)) } }
+                val body = FormBody.Builder()
+                    .add("appVersion", "9.5.61")
+                    .add("currentKeyVersion", "")
+                    .add("deviceId", deviceId)
+                    .add("nonce", nonce)
+                    .add("os", "android")
+                    .add("requestType", "active")
+                    .add("signature", Xeapi.xeapiSign(ts, nonce))
+                    .add("t1", "")
+                    .add("t2", "")
+                    .add("timestamp", ts)
+                    .add("uid", "")
+                    .build()
+                val req = Request.Builder()
+                    .url(PUBLIC_KEY_URL)
+                    .header("User-Agent", XEAPI_ANDROID_UA)
+                    .header("Cookie", "deviceId=${urlEncode(deviceId)}")
+                    .post(body)
+                    .build()
+                client.newCall(req).execute().use { resp ->
+                    val text = resp.body?.string() ?: return@use null
+                    val encrypted = JSONObject(text).optJSONObject("data")?.optString("encryptedData")
+                        ?.takeIf { it.isNotBlank() } ?: return@use null
+                    val state = Xeapi.decryptPublicKey(encrypted)
+                    cachedPublicKeyState = state
+                    prefs.edit().putString("netease_xeapi_pk", JSONObject()
+                        .put("version", state.version)
+                        .put("publicKey", state.publicKey)
+                        .put("sk", state.sk ?: "")
+                        .toString()).apply()
+                    state
+                }
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
+    /** 游客注册：返回 `MUSIC_A=...` cookie（失败返回空串）。 */
+    private suspend fun registerAnonymous(state: PublicKeyState): String {
+        val cmeid = cloudmusicDllEncodeId(deviceId)
+        val encodedId = Base64.getEncoder().encodeToString("$deviceId $cmeid".toByteArray(Charsets.UTF_8))
+        val resp = xeapiPost(ANON_URI, mapOf("username" to encodedId))
+        val musicA = extractCookieValue(resp.setCookies, "MUSIC_A")
+        return if (musicA.isNotBlank()) "MUSIC_A=$musicA" else ""
+    }
+
+    /** 游客注册的 cmeid 计算（deviceId 循环异或固定 key 后 MD5 + base64）。 */
+    private fun cloudmusicDllEncodeId(id: String): String {
+        val xored = StringBuilder(id.length)
+        for (i in id.indices) {
+            xored.append((id[i].code xor ID_XOR_KEY[i % ID_XOR_KEY.length].code).toChar())
+        }
+        val digest = MessageDigest.getInstance("MD5").digest(xored.toString().toByteArray(Charsets.UTF_8))
+        return Base64.getEncoder().encodeToString(digest)
+    }
+
+    // ── xeapi POST ──────────────────────────────────────
+
+    private data class XeapiResp(val body: String, val setCookies: List<String>)
+
+    private suspend fun xeapiPost(uri: String, data: Map<String, String>): XeapiResp {
+        val state = loadOrFetchPublicKey() ?: return XeapiResp("", emptyList())
+        return withContext(Dispatchers.IO) {
+            try {
+                val form = Xeapi.xeapi(data, state, "android", "", "")
+                val body = FormBody.Builder()
+                    .add("C", form.c).add("S", form.s).add("R", form.r)
+                    .build()
+                val builder = Request.Builder()
+                    .url("$XEAPI_BASE/xeapi/" + uri.removePrefix("/api/"))
+                    .header("User-Agent", XEAPI_ANDROID_UA)
+                    .header("X-Client-Enc-State", "ENCRYPTED")
+                    .header("x-aeapi", "true")
+                    .header("content-type", "application/x-www-form-urlencoded;charset=utf-8")
+                    .header("x-deviceid", deviceId)
+                    .header("x-os", "android")
+                    .header("x-osver", "16")
+                    .header("x-appver", "9.5.61")
+                    .header("x-sdeviceid", deviceId)
+                    .header("x-buildver", (System.currentTimeMillis() / 1000).toString())
+                    .header("Cookie", buildXeapiCookie())
+                    .post(body)
+                cookieValue("MUSIC_U").takeIf { it.isNotBlank() }?.let { builder.header("x-music-u", it) }
+                client.newCall(builder.build()).execute().use { resp ->
+                    val bytes = if (resp.isSuccessful) resp.body?.bytes() ?: ByteArray(0) else ByteArray(0)
+                    val decrypted = if (bytes.isNotEmpty()) Xeapi.decryptResponse(bytes) else ""
+                    XeapiResp(decrypted, resp.headers("Set-Cookie"))
+                }
+            } catch (_: Exception) {
+                XeapiResp("", emptyList())
+            }
+        }
+    }
+
+    /** xeapi 的 Cookie 头：android 指纹 + 游客/登录 token，各字段 URL 编码。 */
+    private fun buildXeapiCookie(): String {
+        val now = System.currentTimeMillis()
+        val nuid = randomHex(16)
+        val map = linkedMapOf(
+            "os" to "android",
+            "appver" to "9.5.61",
+            "osver" to "16",
+            "channel" to "xiaomi",
+            "__remember_me" to "true",
+            "ntes_kaola_ad" to "1",
+            "_ntes_nuid" to nuid,
+            "_ntes_nnid" to "$nuid,$now",
+            "WNMCID" to "abcdef.$now.01.0",
+            "WEVNSM" to "1.0.0",
+            "NMTID" to "00O" + randomHex(16),
+            "buildver" to (now / 1000).toString(),
+            "deviceId" to deviceId,
+            "sDeviceId" to deviceId,
+        )
+        cookieValue("MUSIC_A").takeIf { it.isNotBlank() }?.let { map["MUSIC_A"] = it }
+        cookieValue("MUSIC_U").takeIf { it.isNotBlank() }?.let { map["MUSIC_U"] = it }
+        return map.entries.joinToString("; ") { "${urlEncode(it.key)}=${urlEncode(it.value)}" }
+    }
+
+    private fun randomHex(bytes: Int): String =
+        Random.nextBytes(bytes).joinToString("") { "%02x".format(it.toInt() and 0xff) }
+
+    private fun extractCookieValue(setCookies: List<String>, name: String): String {
+        for (c in setCookies) {
+            Regex("""(?:^|;\s*)$name=([^;]+)""").find(c)?.let { return it.groupValues[1] }
+        }
+        return ""
+    }
+
+    // ── eapi POST ──────────────────────────────────────
+
+    /** eapi 请求：`data` 内嵌 header 后 AES-128-ECB 加密，POST 到 eapi 域名。 */
+    private suspend fun eapiPost(uri: String, data: JSONObject): String {
+        if (cookie.isBlank()) ensureAnonymousSession()
         val header = eapiHeader()
-        val data = JSONObject()
-            .put("ids", "[$songId]")
-            .put("level", level)
-            .put("encodeType", encodeType)
-            .put("header", header)
-        return eapiPost(SONG_URL_URI, data.toString(), header)
+        data.put("header", header)
+        return withContext(Dispatchers.IO) {
+            try {
+                val params = Eapi.encrypt(uri, data.toString())
+                val body = FormBody.Builder().add("params", params).build()
+                val builder = Request.Builder()
+                    .url("$EAPI_BASE/eapi/" + uri.removePrefix("/api/"))
+                    .header("User-Agent", EAPI_USER_AGENT)
+                    .header("Referer", "https://music.163.com")
+                    .header("Cookie", eapiCookie(header))
+                    .post(body)
+                client.newCall(builder.build()).execute().use { resp ->
+                    if (resp.isSuccessful) resp.body?.string() ?: "" else ""
+                }
+            } catch (_: Exception) {
+                ""
+            }
+        }
     }
 
     /** 请求头字段：同时内嵌进加密 data 并拼进 Cookie 头，匿名时带 `MUSIC_A`。 */
@@ -291,25 +485,6 @@ class NeteaseMusicSource(
         return header
     }
 
-    private suspend fun eapiPost(uri: String, jsonBody: String, header: JSONObject): String =
-        withContext(Dispatchers.IO) {
-            try {
-                val params = Eapi.encrypt(uri, jsonBody)
-                val body = FormBody.Builder().add("params", params).build()
-                val builder = Request.Builder()
-                    .url("https://interface.music.163.com/eapi/" + uri.removePrefix("/api/"))
-                    .header("User-Agent", EAPI_USER_AGENT)
-                    .header("Referer", "https://music.163.com")
-                    .header("Cookie", eapiCookie(header))
-                    .post(body)
-                client.newCall(builder.build()).execute().use { resp ->
-                    if (resp.isSuccessful) resp.body?.string() ?: "" else ""
-                }
-            } catch (_: Exception) {
-                ""
-            }
-        }
-
     /** eapi 的 Cookie 头：header 各字段 URL-编码后 `k=v; k=v` 拼接。 */
     private fun eapiCookie(header: JSONObject): String {
         val parts = mutableListOf<String>()
@@ -328,11 +503,24 @@ class NeteaseMusicSource(
         Regex("""(?:^|;\s*)$name=([^;]*)""").find(cookie)?.groupValues?.get(1)?.trim() ?: ""
 
     companion object {
-        private const val ANON_PATH = "/weapi/register/anonimous"
+        private const val ID_XOR_KEY = "3go8&$8*3*3h0k(2)2"
+
+        private const val ANON_URI = "/api/register/anonimous"
         private const val SONG_URL_URI = "/api/song/enhance/player/url/v1"
+        private const val SEARCH_URI = "/api/cloudsearch/pc"
+        private const val LYRIC_URI = "/api/song/lyric"
+        private const val PLAYLIST_URI = "/api/v6/playlist/detail"
+        private const val TOPLIST_URI = "/api/toplist"
+
+        private const val PUBLIC_KEY_URL = "https://interface.music.163.com/api/bsr/sk/get"
+        private const val XEAPI_BASE = "https://interface3.music.163.com"
+        private const val EAPI_BASE = "https://interfacepc.music.163.com"
+
         private const val USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         private const val EAPI_USER_AGENT =
             "NeteaseMusic 9.0.90/5038 (iPhone; iOS 16.2; zh_CN)"
+        private const val XEAPI_ANDROID_UA =
+            "NeteaseMusic/9.5.61.260802021928(9005061);Dalvik/2.1.0 (Linux; U; Android 12; HBN-AL00 Build/cd737a2.0)"
     }
 }
