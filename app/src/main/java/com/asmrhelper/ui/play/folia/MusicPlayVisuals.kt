@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
@@ -282,6 +284,7 @@ fun CenteredLyrics(
  * 折叠时只有歌名的小胶囊；点一下弹性展开成完整控制条（歌名+作者+进度+上一曲/播放/下一曲/更多），
  * 再点收起，展开后约 3 秒无操作自动收起。
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FoliaCommandBar(
     title: String,
@@ -379,8 +382,26 @@ fun FoliaCommandBar(
                             colors = SliderDefaults.colors(
                                 thumbColor = accent,
                                 activeTrackColor = accent,
-                                inactiveTrackColor = DarkSurfaceVariant
-                            )
+                                inactiveTrackColor = DarkSurfaceVariant.copy(alpha = 0.6f)
+                            ),
+                            thumb = {
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .background(color = accent, shape = CircleShape)
+                                )
+                            },
+                            track = { sliderState ->
+                                SliderDefaults.Track(
+                                    sliderState = sliderState,
+                                    modifier = Modifier.height(3.dp),
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = accent,
+                                        activeTrackColor = accent,
+                                        inactiveTrackColor = DarkSurfaceVariant.copy(alpha = 0.6f)
+                                    )
+                                )
+                            }
                         )
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                             IconButton(onClick = onPrevious) {

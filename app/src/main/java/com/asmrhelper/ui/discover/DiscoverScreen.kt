@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -77,6 +78,7 @@ fun DiscoverScreen(
     val expandedChartId by viewModel.expandedChartId.collectAsStateWithLifecycle()
     val expandedChartSongs by viewModel.expandedChartSongs.collectAsStateWithLifecycle()
     val messageRes by viewModel.messageRes.collectAsStateWithLifecycle()
+    val fetchingSongId by viewModel.fetchingSongId.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     LaunchedEffect(messageRes) {
@@ -95,12 +97,17 @@ fun DiscoverScreen(
         onPlayRequested()
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(DarkBackground)
     ) {
-        SearchBar(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
+            SearchBar(
             query = query,
             onQueryChange = viewModel::onQueryChange,
             searching = searching
@@ -128,6 +135,32 @@ fun DiscoverScreen(
                 onTogglePlaylist = viewModel::toggleUserPlaylist,
                 onToggleChart = viewModel::toggleChart
             )
+        }
+        }
+
+        if (fetchingSongId != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 24.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(DarkSurface)
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = LocalAccentColor.current,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.discover_fetching_url),
+                        color = TextPrimary,
+                        fontSize = 13.sp
+                    )
+                }
+            }
         }
     }
 }

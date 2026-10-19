@@ -86,6 +86,10 @@ class DiscoverViewModel @Inject constructor(
     private val _messageRes = MutableStateFlow<Int?>(null)
     val messageRes: StateFlow<Int?> = _messageRes.asStateFlow()
 
+    /** 正在获取播放链接的歌曲 id（非空时 UI 显示「正在获取歌曲链接」加载态）。 */
+    private val _fetchingSongId = MutableStateFlow<String?>(null)
+    val fetchingSongId: StateFlow<String?> = _fetchingSongId.asStateFlow()
+
     init {
         // 初始拉取 + 音源切换 / 登录状态变化时刷新（登录后能立刻看到歌单/电台/每日推荐）。
         viewModelScope.launch {
@@ -205,14 +209,19 @@ class DiscoverViewModel @Inject constructor(
     /** 播放在线歌曲：拿不到流地址则提示，不把空串塞给 ExoPlayer（Review Focus #3）。 */
     fun play(song: RemoteSong) {
         val source = activeSource.value
+        _fetchingSongId.value = song.id
         viewModelScope.launch {
-            source.getSongUrl(song.id).collect { url ->
-                if (url.isBlank()) {
-                    _messageRes.value = R.string.discover_play_failed
-                } else {
-                    val audio = song.toAudio(url)
-                    playerManager.handleEvent(PlayerEvent.Play(audio, listOf(audio)))
+            try {
+                source.getSongUrl(song.id).collect { url ->
+                    if (url.isBlank()) {
+                        _messageRes.value = R.string.discover_play_failed
+                    } else {
+                        val audio = song.toAudio(url)
+                        playerManager.handleEvent(PlayerEvent.Play(audio, listOf(audio)))
+                    }
                 }
+            } finally {
+                _fetchingSongId.value = null
             }
         }
     }

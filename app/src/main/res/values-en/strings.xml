@@ -79,6 +79,7 @@
     <string name="discover_user_playlists">My playlists</string>
     <string name="discover_no_results">No results found</string>
     <string name="discover_play_failed">Cannot get stream URL</string>
+    <string name="discover_fetching_url">Getting song link…</string>
 
     <!-- MUSIC player -->
     <string name="lyric_mode">Lyric mode</string>

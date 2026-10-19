@@ -37,7 +37,7 @@ fun WordLyricLine.evenWords(): List<WordLyric> {
     }
 }
 
-/** 歌词分词：CJK 字符逐字成词，连续拉丁/数字/标点归为一个词。 */
+/** 歌词分词：CJK 字符逐字成词，连续拉丁/数字/标点归为一个词，词间空白附着到前一词尾（保留英文单词间距，避免 helloworld）。 */
 fun tokenizeWords(text: String): List<String> {
     val out = mutableListOf<String>()
     val sb = StringBuilder()
@@ -53,7 +53,10 @@ fun tokenizeWords(text: String): List<String> {
                 flush()
                 out.add(ch.toString())
             }
-            ch.isWhitespace() -> flush()
+            ch.isWhitespace() -> {
+                flush()
+                if (out.isNotEmpty()) out[out.lastIndex] = out.last() + ch.toString()
+            }
             else -> sb.append(ch)
         }
     }
