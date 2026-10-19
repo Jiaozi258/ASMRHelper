@@ -30,6 +30,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +48,7 @@ import coil.compose.AsyncImage
 import com.asmrhelper.R
 import com.asmrhelper.data.local.db.entity.PlayHistoryEntity
 import com.asmrhelper.domain.model.music.RemoteChart
+import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
@@ -68,6 +71,11 @@ fun DiscoverScreen(
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     val charts by viewModel.charts.collectAsStateWithLifecycle()
     val recent by viewModel.recent.collectAsStateWithLifecycle()
+    val dailyRecommend by viewModel.dailyRecommend.collectAsStateWithLifecycle()
+    val radio by viewModel.radio.collectAsStateWithLifecycle()
+    val userPlaylists by viewModel.userPlaylists.collectAsStateWithLifecycle()
+    val expandedPlaylistId by viewModel.expandedPlaylistId.collectAsStateWithLifecycle()
+    val expandedPlaylistSongs by viewModel.expandedPlaylistSongs.collectAsStateWithLifecycle()
     val messageRes by viewModel.messageRes.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -108,8 +116,14 @@ fun DiscoverScreen(
                 recommendations = recommendations,
                 charts = charts,
                 recent = recent,
+                dailyRecommend = dailyRecommend,
+                radio = radio,
+                userPlaylists = userPlaylists,
+                expandedPlaylistId = expandedPlaylistId,
+                expandedPlaylistSongs = expandedPlaylistSongs,
                 onPlay = playSong,
-                onPlayRecent = playRecentEntry
+                onPlayRecent = playRecentEntry,
+                onTogglePlaylist = viewModel::toggleUserPlaylist
             )
         }
     }
@@ -190,13 +204,29 @@ private fun DiscoverHome(
     recommendations: List<RemoteSong>,
     charts: List<RemoteChart>,
     recent: List<PlayHistoryEntity>,
+    dailyRecommend: List<RemoteSong>,
+    radio: List<RemoteSong>,
+    userPlaylists: List<RemotePlaylist>,
+    expandedPlaylistId: String?,
+    expandedPlaylistSongs: List<RemoteSong>,
     onPlay: (RemoteSong) -> Unit,
-    onPlayRecent: (PlayHistoryEntity) -> Unit
+    onPlayRecent: (PlayHistoryEntity) -> Unit,
+    onTogglePlaylist: (RemotePlaylist) -> Unit
 ) {
+    // 排行榜默认折叠，点击标题展开/收起歌曲列表（可点进榜单）。
+    val expandedCharts = remember { mutableStateMapOf<String, Boolean>() }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
     ) {
+        if (dailyRecommend.isNotEmpty()) {
+            item { SectionHeader(stringResource(R.string.discover_daily_recommend)) }
+            items(dailyRecommend, key = { "daily:${it.sourceId}:${it.id}" }) { song ->
+                SongRow(song = song, onPlay = { onPlay(song) })
+            }
+        }
+
         if (recommendations.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.discover_recommendations)) }
             items(recommendations, key = { "rec:${it.sourceId}:${it.id}" }) { song ->
@@ -207,9 +237,45 @@ private fun DiscoverHome(
         if (charts.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.discover_charts)) }
             charts.forEach { chart ->
-                item { ChartHeader(chart.name) }
-                items(chart.songs, key = { "chart:${chart.id}:${it.id}" }) { song ->
-                    SongRow(song = song, onPlay = { onPlay(song) })
+                val expanded = expandedCharts[chart.id] ?: false
+                item(key = "chart_header:${chart.id}") {
+                    ChartHeader(
+                        name = chart.name,
+                        expanded = expanded,
+                        onClick = { expandedCharts[chart.id] = !expanded }
+                    )
+                }
+                if (expanded) {
+                    items(chart.songs, key = { "chart:${chart.id}:${it.id}" }) { song ->
+                        SongRow(song = song, onPlay = { onPlay(song) })
+                    }
+                }
+            }
+        }
+
+        if (radio.isNotEmpty()) {
+            item { SectionHeader(stringResource(R.string.discover_radio)) }
+            items(radio, key = { "radio:${it.sourceId}:${it.id}" }) { song ->
+                SongRow(song = song, onPlay = { onPlay(song) })
+            }
+        }
+
+        if (userPlaylists.isNotEmpty()) {
+            item { SectionHeader(stringResource(R.string.discover_user_playlists)) }
+            userPlaylists.forEach { playlist ->
+                val expanded = expandedPlaylistId == playlist.id
+                item(key = "pl_header:${playlist.id}") {
+                    PlaylistRow(
+                        name = playlist.name,
+                        coverUrl = playlist.coverUrl,
+                        expanded = expanded,
+                        onClick = { onTogglePlaylist(playlist) }
+                    )
+                }
+                if (expanded) {
+                    items(expandedPlaylistSongs, key = { "pl:${playlist.id}:${it.id}" }) { song ->
+                        SongRow(song = song, onPlay = { onPlay(song) })
+                    }
                 }
             }
         }
@@ -235,14 +301,54 @@ private fun SectionHeader(title: String) {
 }
 
 @Composable
-private fun ChartHeader(name: String) {
-    Text(
-        name,
-        color = TextSecondary,
-        fontSize = 13.sp,
-        fontWeight = FontWeight.Medium,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-    )
+private fun ChartHeader(name: String, expanded: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            name,
+            color = TextSecondary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = if (expanded) "▾" else "▸",
+            color = TextHint,
+            fontSize = 13.sp
+        )
+    }
+}
+
+@Composable
+private fun PlaylistRow(name: String, coverUrl: String?, expanded: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Cover(coverUrl = coverUrl)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            name,
+            color = TextPrimary,
+            fontSize = 14.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = if (expanded) "▾" else "▸",
+            color = TextHint,
+            fontSize = 13.sp
+        )
+    }
 }
 
 @Composable

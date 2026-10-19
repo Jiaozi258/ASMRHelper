@@ -7,6 +7,7 @@ import com.asmrhelper.domain.model.AmbientSource
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.BackgroundImage
 import com.asmrhelper.domain.model.LoopMode
+import com.asmrhelper.domain.model.PlaybackMode
 import com.asmrhelper.domain.model.PlayerState
 import com.asmrhelper.domain.repository.AudioRepository
 import com.asmrhelper.domain.repository.SettingsRepository
@@ -19,7 +20,7 @@ import com.asmrhelper.data.repository.BookmarkRepository
 import com.asmrhelper.data.repository.SceneRepository
 import com.asmrhelper.data.music.MusicSourceManager
 import com.asmrhelper.data.music.isRemoteSong
-import com.asmrhelper.data.music.toLrcLines
+import com.asmrhelper.data.music.toWordLyricLines
 import com.asmrhelper.player.AudioVisualizerController
 import com.asmrhelper.player.BinauralBeatEngine
 import com.asmrhelper.player.EqualizerController
@@ -33,8 +34,9 @@ import com.asmrhelper.player.SpatialAudioController
 import com.asmrhelper.player.SpatialMode
 import com.asmrhelper.player.SceneEffectsController
 import com.asmrhelper.player.SceneEffect
-import com.asmrhelper.util.LrcLine
 import com.asmrhelper.util.LrcParser
+import com.asmrhelper.util.WordLyricLine
+import com.asmrhelper.util.toWordLyricLines
 import com.asmrhelper.util.LyricsStore
 import com.asmrhelper.util.maskPrivacy
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -183,8 +185,8 @@ class PlayViewModel @Inject constructor(
     val seekTimeSeconds: StateFlow<Int> = _seekTimeSeconds
 
     // ── 歌词：同样必须在 init 之前声明（init 的协程会立即写） ──
-    private val _lyrics = MutableStateFlow<List<LrcLine>>(emptyList())
-    val lyrics: StateFlow<List<LrcLine>> = _lyrics.asStateFlow()
+    private val _lyrics = MutableStateFlow<List<WordLyricLine>>(emptyList())
+    val lyrics: StateFlow<List<WordLyricLine>> = _lyrics.asStateFlow()
     private val _hasLyrics = MutableStateFlow(false)
     val hasLyrics: StateFlow<Boolean> = _hasLyrics.asStateFlow()
     private val _rawLyricsText = MutableStateFlow("")
@@ -346,10 +348,11 @@ class PlayViewModel @Inject constructor(
             }
         }
 
-        // Attach audio visualizer when enabled (visualizer or trigger) and playing
+        // Attach audio visualizer when enabled (visualizer or trigger) and playing.
+        // MUSIC 模式的全屏背景可视化始终需要音频数据，故播放时无条件 attach。
         viewModelScope.launch {
-            combine(playerManager.state, _visualizerEnabled, _volumeTriggerEnabled) { state, vis, trig ->
-                state.isPlaying && (vis || trig)
+            combine(playerManager.state, _visualizerEnabled, _volumeTriggerEnabled, playbackMode) { state, vis, trig, mode ->
+                state.isPlaying && (vis || trig || mode == PlaybackMode.MUSIC.ordinal)
             }.collect { shouldAttach ->
                 if (shouldAttach && !audioVisualizerController.isActive) {
                     audioVisualizerController.attach(playerManager.getAudioSessionId())
@@ -448,7 +451,7 @@ class PlayViewModel @Inject constructor(
                     _rawLyricsText.value = ""
                 } else {
                     source.getLyric(audio.sourceSongId ?: audio.id.toString()).collect { remote ->
-                        val lines = remote.toLrcLines()
+                        val lines = remote.toWordLyricLines()
                         _lyrics.value = lines
                         _hasLyrics.value = lines.isNotEmpty()
                         _rawLyricsText.value = remote.rawText
@@ -456,7 +459,7 @@ class PlayViewModel @Inject constructor(
                 }
             } else {
                 val text = withContext(Dispatchers.IO) { LyricsStore.loadLyrics(context, audio.filePath) }
-                val lines = if (text.isNullOrBlank()) emptyList() else LrcParser.parse(text)
+                val lines = if (text.isNullOrBlank()) emptyList() else LrcParser.parse(text).toWordLyricLines()
                 _lyrics.value = lines
                 _hasLyrics.value = lines.isNotEmpty()
                 _rawLyricsText.value = text ?: ""
@@ -469,7 +472,7 @@ class PlayViewModel @Inject constructor(
         val audio = uiState.value.playerState.currentAudio ?: return
         viewModelScope.launch {
             withContext(Dispatchers.IO) { LyricsStore.saveLyrics(context, audio.filePath, text) }
-            val lines = LrcParser.parse(text)
+            val lines = LrcParser.parse(text).toWordLyricLines()
             _lyrics.value = lines
             _hasLyrics.value = lines.isNotEmpty()
             _rawLyricsText.value = text

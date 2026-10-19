@@ -3,6 +3,7 @@ package com.asmrhelper.data.music.netease
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemoteLyricLine
+import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
 import org.json.JSONArray
 import org.json.JSONObject
@@ -29,7 +30,9 @@ object NeteaseJson {
     fun fallbackSongUrl(id: String): String = "https://music.163.com/song/media/outer/url?id=$id.mp3"
 
     fun parseLyric(json: String): RemoteLyric = try {
-        val raw = JSONObject(json).optJSONObject("lrc")?.optString("lyric") ?: ""
+        val obj = JSONObject(json)
+        val raw = obj.optJSONObject("lrc")?.optString("lyric") ?: ""
+        val yrc = obj.optJSONObject("yrc")?.optString("lyric") ?: ""
         val lines = mutableListOf<RemoteLyricLine>()
         for (line in raw.split('\n')) {
             val m = LYRIC_TIME.find(line) ?: continue
@@ -39,7 +42,7 @@ object NeteaseJson {
             val text = line.substring(m.range.last + 1).trim()
             if (text.isNotEmpty()) lines.add(RemoteLyricLine(timeMs, text))
         }
-        RemoteLyric(lines = lines, rawText = raw)
+        RemoteLyric(lines = lines, rawText = raw, yrc = yrc)
     } catch (_: Exception) {
         RemoteLyric()
     }
@@ -73,6 +76,71 @@ object NeteaseJson {
         songs
     } catch (_: Exception) {
         emptyList()
+    }
+
+    /** 单曲详情（`/weapi/v3/song/detail` → songs[0]）。 */
+    fun parseSongDetail(json: String): RemoteSong? = try {
+        JSONObject(json).optJSONArray("songs")?.optJSONObject(0)?.let { parseSong(it) }
+    } catch (_: Exception) {
+        null
+    }
+
+    /** 歌单详情（`/weapi/v6/playlist/detail` → playlist）。 */
+    fun parsePlaylistDetail(json: String): RemotePlaylist? = try {
+        val p = JSONObject(json).optJSONObject("playlist") ?: return null
+        RemotePlaylist(
+            id = p.optLong("id").toString(),
+            name = p.optString("name"),
+            coverUrl = p.optString("coverImgUrl").takeIf { it.isNotBlank() },
+            songs = parseSongArray(p.optJSONArray("tracks"))
+        )
+    } catch (_: Exception) {
+        null
+    }
+
+    /** 用户歌单列表（`/weapi/user/playlist` → playlist[]，仅名称/封面）。 */
+    fun parseUserPlaylists(json: String): List<RemotePlaylist> = try {
+        val arr = JSONObject(json).optJSONArray("playlist") ?: return emptyList()
+        val list = mutableListOf<RemotePlaylist>()
+        for (i in 0 until arr.length()) {
+            val p = arr.optJSONObject(i) ?: continue
+            list.add(
+                RemotePlaylist(
+                    id = p.optLong("id").toString(),
+                    name = p.optString("name"),
+                    coverUrl = p.optString("coverImgUrl").takeIf { it.isNotBlank() }
+                )
+            )
+        }
+        list
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 私人 FM（`/weapi/v1/radio/get` → data[]）。 */
+    fun parseRadio(json: String): List<RemoteSong> = try {
+        parseSongArray(JSONObject(json).optJSONArray("data"))
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 每日推荐（`/weapi/v1/discovery/recommend/songs` → data.dailySongs[] 或 recommend[]）。 */
+    fun parseDailyRecommend(json: String): List<RemoteSong> = try {
+        val obj = JSONObject(json)
+        val daily = parseSongArray(obj.optJSONObject("data")?.optJSONArray("dailySongs"))
+        if (daily.isNotEmpty()) daily else parseSongArray(obj.optJSONArray("recommend"))
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 登录响应中的用户 uid（account.id 或 profile.userId）。 */
+    fun parseLoginUid(json: String): String = try {
+        val obj = JSONObject(json)
+        obj.optJSONObject("account")?.optString("id")?.takeIf { it.isNotBlank() }
+            ?: obj.optJSONObject("profile")?.optString("userId")?.takeIf { it.isNotBlank() }
+            ?: ""
+    } catch (_: Exception) {
+        ""
     }
 
     // ── 登录 ────────────────────────────────────────────

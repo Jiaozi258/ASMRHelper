@@ -7,6 +7,7 @@ import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * 音乐音源统一接口。由各平台的原生实现（如 `NeteaseMusicSource`）直接请求
@@ -40,6 +41,15 @@ interface MusicSource {
     fun getPlaylist(playlistId: String): Flow<RemotePlaylist>
     fun getRecommendations(): Flow<List<RemoteSong>>
     fun getCharts(): Flow<List<RemoteChart>>
+
+    /** 当前登录用户的歌单列表（需登录）；未登录或不支持时返回空。 */
+    fun getUserPlaylists(): Flow<List<RemotePlaylist>> = flowOf(emptyList())
+
+    /** 电台（私人 FM / 推荐电台）歌曲；未登录或不支持时返回空。 */
+    fun getRadio(): Flow<List<RemoteSong>> = flowOf(emptyList())
+
+    /** 每日推荐歌曲（需登录）；未登录或不支持时返回空。 */
+    fun getDailyRecommendSongs(): Flow<List<RemoteSong>> = flowOf(emptyList())
 
     fun loginAccount(username: String, password: String): Flow<Result<Unit>>
     fun importLogin(cookie: String, nickname: String)

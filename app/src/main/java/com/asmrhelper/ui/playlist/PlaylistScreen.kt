@@ -197,6 +197,7 @@ fun PlaylistScreen(
                             onRemoveAudio = { audioId ->
                                 viewModel.removeAudioFromPlaylist(playlist.id, audioId)
                             },
+                            onPlayAudio = onPlayAudio,
                             onExport = {
                                 scope.launch {
                                     val json = viewModel.getExportJson(playlist.id) ?: return@launch
@@ -449,6 +450,7 @@ private fun PlaylistCard(
     onDeleteRequest: () -> Unit,
     onAddAudioRequest: () -> Unit,
     onRemoveAudio: (Long) -> Unit,
+    onPlayAudio: (Audio) -> Unit = {},
     onExport: () -> Unit = {},
     onPlayAll: () -> Unit = {}
 ) {
@@ -578,6 +580,7 @@ private fun PlaylistCard(
                         audios.forEach { audio ->
                             AudioItemRow(
                                 audio = audio,
+                                onPlay = { onPlayAudio(audio) },
                                 onRemove = { onRemoveAudio(audio.id) }
                             )
                         }
@@ -591,11 +594,13 @@ private fun PlaylistCard(
 @Composable
 private fun AudioItemRow(
     audio: Audio,
+    onPlay: () -> Unit,
     onRemove: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onPlay)
             .padding(vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

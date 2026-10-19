@@ -74,6 +74,9 @@
     <string name="discover_recommendations">Recommendations</string>
     <string name="discover_charts">Charts</string>
     <string name="discover_recent">Recently played</string>
+    <string name="discover_daily_recommend">Daily picks</string>
+    <string name="discover_radio">Radio</string>
+    <string name="discover_user_playlists">My playlists</string>
     <string name="discover_no_results">No results found</string>
     <string name="discover_play_failed">Cannot get stream URL</string>
 

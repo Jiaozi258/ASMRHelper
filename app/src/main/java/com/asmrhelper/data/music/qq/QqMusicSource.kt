@@ -79,7 +79,10 @@ class QqMusicSource(
         emit(QqMusicJson.parseLyric(post("music.musichallSong.PlayLyricInfo", "GetPlayLyricInfo", param)))
     }
 
-    override fun getCoverUrl(songId: String): Flow<String> = flow { emit("") }
+    override fun getCoverUrl(songId: String): Flow<String> = flow {
+        // QQ 封面走公开图床，songId 即 songmid：300×300 专辑封面。
+        emit("https://y.gtimg.cn/music/photo_new/T002R300x300M000$songId.jpg")
+    }
     override fun getSongDetail(songId: String): Flow<RemoteSong> = flow {}
     override fun getPlaylist(playlistId: String): Flow<RemotePlaylist> = flow { emit(RemotePlaylist("", "")) }
 

@@ -8,6 +8,7 @@ import com.asmrhelper.data.music.MusicSourceManager
 import com.asmrhelper.data.repository.PlayHistoryRepositoryImpl
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.music.RemoteChart
+import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
 import com.asmrhelper.domain.music.MusicSource
 import com.asmrhelper.player.PlayerEvent
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -50,6 +52,25 @@ class DiscoverViewModel @Inject constructor(
     private val _charts = MutableStateFlow<List<RemoteChart>>(emptyList())
     val charts: StateFlow<List<RemoteChart>> = _charts.asStateFlow()
 
+    /** 每日推荐歌曲（需登录）。 */
+    private val _dailyRecommend = MutableStateFlow<List<RemoteSong>>(emptyList())
+    val dailyRecommend: StateFlow<List<RemoteSong>> = _dailyRecommend.asStateFlow()
+
+    /** 电台（私人 FM）歌曲（需登录）。 */
+    private val _radio = MutableStateFlow<List<RemoteSong>>(emptyList())
+    val radio: StateFlow<List<RemoteSong>> = _radio.asStateFlow()
+
+    /** 用户歌单（需登录）。 */
+    private val _userPlaylists = MutableStateFlow<List<RemotePlaylist>>(emptyList())
+    val userPlaylists: StateFlow<List<RemotePlaylist>> = _userPlaylists.asStateFlow()
+
+    /** 当前展开的歌单 id 及其已拉取的歌曲。 */
+    private val _expandedPlaylistId = MutableStateFlow<String?>(null)
+    val expandedPlaylistId: StateFlow<String?> = _expandedPlaylistId.asStateFlow()
+
+    private val _expandedPlaylistSongs = MutableStateFlow<List<RemoteSong>>(emptyList())
+    val expandedPlaylistSongs: StateFlow<List<RemoteSong>> = _expandedPlaylistSongs.asStateFlow()
+
     /** 最近播放：复用本地播放历史（这些是本地文件，播放时直接用 filePath）。 */
     val recent: StateFlow<List<PlayHistoryEntity>> = playHistoryRepository.getAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -59,13 +80,19 @@ class DiscoverViewModel @Inject constructor(
     val messageRes: StateFlow<Int?> = _messageRes.asStateFlow()
 
     init {
-        refresh()
+        // 初始拉取 + 音源切换 / 登录状态变化时刷新（登录后能立刻看到歌单/电台/每日推荐）。
+        viewModelScope.launch {
+            activeSource.flatMapLatest { it.isLoggedIn }.collect { refresh() }
+        }
     }
 
-    /** 重新拉取推荐 + 排行榜（音源切换后可调用）。 */
+    /** 重新拉取推荐 + 排行榜 + 电台 + 用户歌单（音源切换/登录后调用）。 */
     fun refresh() {
         loadRecommendations()
         loadCharts()
+        loadDailyRecommend()
+        loadRadio()
+        loadUserPlaylists()
     }
 
     fun onQueryChange(value: String) {
@@ -103,6 +130,50 @@ class DiscoverViewModel @Inject constructor(
         viewModelScope.launch {
             source.getCharts().collect { list ->
                 _charts.value = list
+            }
+        }
+    }
+
+    fun loadDailyRecommend() {
+        val source = activeSource.value
+        viewModelScope.launch {
+            source.getDailyRecommendSongs().collect { list ->
+                _dailyRecommend.value = list
+            }
+        }
+    }
+
+    fun loadRadio() {
+        val source = activeSource.value
+        viewModelScope.launch {
+            source.getRadio().collect { list ->
+                _radio.value = list
+            }
+        }
+    }
+
+    fun loadUserPlaylists() {
+        val source = activeSource.value
+        viewModelScope.launch {
+            source.getUserPlaylists().collect { list ->
+                _userPlaylists.value = list
+            }
+        }
+    }
+
+    /** 点击用户歌单：展开并拉取其歌曲，再点收起。 */
+    fun toggleUserPlaylist(playlist: RemotePlaylist) {
+        if (_expandedPlaylistId.value == playlist.id) {
+            _expandedPlaylistId.value = null
+            _expandedPlaylistSongs.value = emptyList()
+            return
+        }
+        _expandedPlaylistId.value = playlist.id
+        _expandedPlaylistSongs.value = emptyList()
+        val source = activeSource.value
+        viewModelScope.launch {
+            source.getPlaylist(playlist.id).collect { detail ->
+                _expandedPlaylistSongs.value = detail.songs
             }
         }
     }

@@ -1,6 +1,5 @@
 package com.asmrhelper.ui.play
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -56,22 +55,18 @@ import com.asmrhelper.domain.model.isMenuItemVisible
 import com.asmrhelper.ui.components.AsmrDropdownMenu
 import com.asmrhelper.ui.components.MenuItem
 import com.asmrhelper.ui.components.ModeToggleButton
+import com.asmrhelper.ui.play.folia.AudioReactiveBackground
 import com.asmrhelper.ui.play.folia.CenteredLyrics
-import com.asmrhelper.ui.play.folia.CoverDuotoneBackground
-import com.asmrhelper.ui.play.folia.FloatingControls
-import com.asmrhelper.ui.play.folia.MusicVisualizer
-import com.asmrhelper.ui.play.folia.VisualizerStyle
+import com.asmrhelper.ui.play.folia.FoliaCommandBar
 import com.asmrhelper.ui.playlist.PlaylistViewModel
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
-import com.asmrhelper.ui.theme.DynamicIsland
 import com.asmrhelper.ui.theme.ErrorRed
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.ui.theme.appleClickable
-import com.asmrhelper.util.LyricMode
 import kotlinx.coroutines.delay
 
 /**
@@ -113,9 +108,6 @@ fun MusicPlayScreen(
     var showAmbientDialog by remember { mutableStateOf(false) }
     var showMoreDialog by remember { mutableStateOf(false) }
 
-    var visualizerStyle by remember { mutableStateOf(VisualizerStyle.BAR) }
-    var lyricMode by remember { mutableStateOf(LyricMode.JUMP) }
-
     // 模式按钮 2 秒无交互淡出；任意触摸递增 tick 重置计时（Review Focus #6）。
     var interactionTick by remember { mutableIntStateOf(0) }
     var controlsVisible by remember { mutableStateOf(true) }
@@ -139,7 +131,7 @@ fun MusicPlayScreen(
             .fillMaxSize()
             .pointerInput(Unit) { detectTapGestures { interactionTick++ } }
     ) {
-        CoverDuotoneBackground(coverUrl, Modifier.fillMaxSize())
+        AudioReactiveBackground(coverUrl, waveform, fft, Modifier.fillMaxSize())
 
         Column(
             modifier = Modifier
@@ -147,65 +139,22 @@ fun MusicPlayScreen(
                 .statusBarsPadding()
                 .padding(horizontal = 20.dp)
         ) {
-            // 顶部留白给灵动岛 + 模式按钮
+            // 顶部留白给状态栏 + 模式按钮
             Spacer(Modifier.height(40.dp))
 
-            // 音频可视化（点击循环切换 6 种风格，切换交叉淡入）
-            Crossfade(targetState = visualizerStyle, label = "visualizer_crossfade") { style ->
-                MusicVisualizer(
-                    waveform = waveform,
-                    fft = fft,
-                    style = style,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(96.dp)
-                        .appleClickable { visualizerStyle = visualizerStyle.next() }
-                )
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            // 歌名 / 艺术家
-            Text(
-                text = state.displayTitle.ifEmpty { stringResource(R.string.play_not_playing) },
-                color = TextPrimary,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            state.playerState.currentAudio?.artist?.let { artist ->
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = artist,
-                    color = TextSecondary,
-                    fontSize = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            // 居中歌词
+            // 居中逐词歌词（单行，无上下文）
             CenteredLyrics(
                 lines = lyrics,
                 progressMs = progressMs,
-                mode = lyricMode,
-                onToggleMode = {
-                    lyricMode = if (lyricMode == LyricMode.JUMP) LyricMode.SCROLL else LyricMode.JUMP
-                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
             )
 
-            // 底部悬浮控制条
-            FloatingControls(
+            // 底部悬浮命令条：折叠只显歌名，点击展开完整控制
+            FoliaCommandBar(
+                title = state.displayTitle.ifEmpty { stringResource(R.string.play_not_playing) },
+                artist = state.playerState.currentAudio?.artist,
                 isPlaying = state.playerState.isPlaying,
                 progress = if (durationMs > 0) progressMs.toFloat() / durationMs else 0f,
                 durationMs = durationMs,
@@ -216,21 +165,9 @@ fun MusicPlayScreen(
                 onMore = { showMoreDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                animateEntrance = !controlsEntered,
-                onEntered = onControlsEntered
+                    .padding(bottom = 16.dp)
             )
         }
-
-        // 灵动岛「正在播放」胶囊
-        DynamicIsland(
-            title = state.displayTitle.ifEmpty { null },
-            isPlaying = state.playerState.isPlaying,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(top = 6.dp)
-        )
 
         // 左上角模式切换按钮（2 秒淡出，触摸恢复）
         ModeToggleButton(
@@ -256,6 +193,7 @@ fun MusicPlayScreen(
                     MenuItem("favorites", stringResource(R.string.play_menu_favorites)),
                     MenuItem("scan", stringResource(R.string.play_menu_scan)),
                     MenuItem("file_manager", stringResource(R.string.play_menu_file_manager)),
+                    MenuItem("playlist", stringResource(R.string.play_menu_playlist)),
                     MenuItem("background", stringResource(R.string.play_menu_background)),
                     MenuItem("trigger_pad", stringResource(R.string.play_menu_trigger_pad)),
                     MenuItem("sleep_journal", stringResource(R.string.play_menu_sleep_journal)),
@@ -268,6 +206,7 @@ fun MusicPlayScreen(
                         "favorites" -> onNavigateToLibrary(1)
                         "scan" -> onNavigateToLibrary(0)
                         "file_manager" -> onNavigateToLibrary(2)
+                        "playlist" -> onNavigateToPlaylist()
                         "trigger_pad" -> onNavigateToTriggerPad()
                         "background" -> onNavigateToBackground()
                         "sleep_journal" -> onNavigateToSleepJournal()
@@ -290,23 +229,6 @@ fun MusicPlayScreen(
                         .height(360.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    MoreRow(
-                        label = stringResource(R.string.visualizer_style),
-                        value = visualizerStyleLabel(visualizerStyle),
-                        onClick = { visualizerStyle = visualizerStyle.next() }
-                    )
-                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
-                    MoreRow(
-                        label = stringResource(R.string.lyric_mode),
-                        value = if (lyricMode == LyricMode.JUMP)
-                            stringResource(R.string.lyric_mode_jump)
-                        else stringResource(R.string.lyric_mode_scroll),
-                        onClick = {
-                            lyricMode = if (lyricMode == LyricMode.JUMP)
-                                LyricMode.SCROLL else LyricMode.JUMP
-                        }
-                    )
-                    HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
                     MoreRow(stringResource(R.string.menu_timer), "") { showMoreDialog = false; showTimerDialog = true }
                     MoreRow(stringResource(R.string.menu_lyrics_edit), "") { showMoreDialog = false; showLyricsDialog = true }
                     // 本地播放列表按 Audio.id 索引，在线歌曲（QQ 非数字 mid / 网易云远程 id）
@@ -981,18 +903,4 @@ private fun formatTime(ms: Long): String {
     val min = totalSec / 60
     val sec = totalSec % 60
     return "%02d:%02d".format(min, sec)
-}
-
-/** 可视化风格循环到下一个。 */
-private fun VisualizerStyle.next(): VisualizerStyle =
-    VisualizerStyle.entries[(ordinal + 1) % VisualizerStyle.entries.size]
-
-@Composable
-private fun visualizerStyleLabel(style: VisualizerStyle): String = when (style) {
-    VisualizerStyle.BAR -> stringResource(R.string.visualizer_bar)
-    VisualizerStyle.WAVE -> stringResource(R.string.visualizer_wave)
-    VisualizerStyle.DOTS -> stringResource(R.string.visualizer_dots)
-    VisualizerStyle.RADIAL -> stringResource(R.string.visualizer_radial)
-    VisualizerStyle.MIRROR -> stringResource(R.string.visualizer_mirror)
-    VisualizerStyle.GLOW -> stringResource(R.string.visualizer_glow)
 }

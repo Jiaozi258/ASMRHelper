@@ -1,27 +1,23 @@
 package com.asmrhelper.ui.play.folia
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -35,7 +31,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,49 +47,50 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.asmrhelper.R
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.LocalAccentColor
-import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.util.Duotone
-import com.asmrhelper.util.LrcLine
-import com.asmrhelper.util.LyricMode
 import com.asmrhelper.util.MusicVisualizerMath
+import com.asmrhelper.util.WordLyricLine
 import com.asmrhelper.util.currentLineIndex
-import com.asmrhelper.util.scrollAnchorIndex
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
+import com.asmrhelper.util.evenWords
+import com.asmrhelper.util.wordIndexAt
+import kotlinx.coroutines.delay
 
-private const val VISIBLE_LINES = 9
-
-/** 可视化风格：柱状频谱 / 波形 / 点阵 / 环形 / 对称 / 光晕曲线。 */
-enum class VisualizerStyle { BAR, WAVE, DOTS, RADIAL, MIRROR, GLOW }
-
-/** 全屏双色调背景：模糊封面 + 由封面主色派生的双色渐变 + 缓慢缩放流动。 */
+/**
+ * 全屏音频反应背景：双色调封面为底（真实提取主/次色），叠加随 FFT 频谱
+ * 从底部向上流动的柔光柱，让整个画面跟随音频动。
+ */
 @Composable
-fun CoverDuotoneBackground(coverUrl: String?, modifier: Modifier = Modifier) {
+fun AudioReactiveBackground(
+    coverUrl: String?,
+    waveform: ByteArray?,
+    fft: FloatArray?,
+    modifier: Modifier = Modifier
+) {
     val accent = LocalAccentColor.current
-    val seed = rememberCoverDominantColor(coverUrl, accent.toArgb().toLong() and 0xFFFFFFFFL)
-    val duotone = remember(seed) { Duotone.duotone(seed) }
-    val primary = Color(duotone.primary.toInt())
-    val secondary = Color(duotone.secondary.toInt())
+    val fallbackPrimary = accent.toArgb().toLong() and 0xFFFFFFFFL
+    val fallbackSecondary = Duotone.darken(fallbackPrimary, 55)
+    val (primaryLong, secondaryLong) = rememberCoverPalette(coverUrl, fallbackPrimary, fallbackSecondary)
+    val primary = Color(primaryLong.toInt())
+    val secondary = Color(secondaryLong.toInt())
 
     val transition = rememberInfiniteTransition(label = "coverBg")
     val scale by transition.animateFloat(
@@ -106,6 +102,12 @@ fun CoverDuotoneBackground(coverUrl: String?, modifier: Modifier = Modifier) {
         ),
         label = "coverScale"
     )
+
+    // 频谱柱：优先 FFT，无 FFT 数据退回波形
+    val bars = remember(fft, waveform) {
+        val b = MusicVisualizerMath.barsFromFft(fft, 28)
+        if (b.any { it > 0f }) b else MusicVisualizerMath.barsFromWaveform(waveform, 28)
+    }
 
     Box(modifier = modifier.clipToBounds().background(primary)) {
         if (!coverUrl.isNullOrBlank()) {
@@ -120,6 +122,7 @@ fun CoverDuotoneBackground(coverUrl: String?, modifier: Modifier = Modifier) {
                     .alpha(0.5f)
             )
         }
+        // 双色调渐变（真实主/次色）
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -133,174 +136,42 @@ fun CoverDuotoneBackground(coverUrl: String?, modifier: Modifier = Modifier) {
                     )
                 )
         )
-    }
-}
 
-/** 音频可视化：按 [style] 绘制柱状频谱或波形，空数据仅显示一条怠速基线。 */
-@Composable
-fun MusicVisualizer(
-    waveform: ByteArray?,
-    fft: FloatArray?,
-    style: VisualizerStyle,
-    modifier: Modifier = Modifier
-) {
-    val accent = LocalAccentColor.current
-    val heights = remember(waveform, fft, style) {
-        when (style) {
-            VisualizerStyle.BAR -> MusicVisualizerMath.barsFromFft(fft, 24)
-            VisualizerStyle.WAVE -> MusicVisualizerMath.barsFromWaveform(waveform, 32)
-            VisualizerStyle.DOTS -> MusicVisualizerMath.barsFromFft(fft, 16)
-            VisualizerStyle.RADIAL -> MusicVisualizerMath.barsFromFft(fft, 36)
-            VisualizerStyle.MIRROR -> MusicVisualizerMath.barsFromFft(fft, 24)
-            VisualizerStyle.GLOW -> MusicVisualizerMath.barsFromFft(fft, 24)
-        }
-    }
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val mid = h / 2f
-        drawLine(
-            color = accent.copy(alpha = 0.22f),
-            start = Offset(0f, mid),
-            end = Offset(w, mid),
-            strokeWidth = 2f
-        )
-        when (style) {
-            VisualizerStyle.BAR -> {
-                val barWidth = w / heights.size.coerceAtLeast(1)
-                heights.forEachIndexed { i, v ->
-                    val bh = v * h * 0.9f
+        // 音频反应层：底部向上流动的柔光柱
+        if (bars.any { it > 0f }) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val w = size.width
+                val h = size.height
+                val n = bars.size
+                val bw = w / n
+                bars.forEachIndexed { i, v ->
+                    val bh = v * h * 0.85f
                     drawRoundRect(
-                        color = accent.copy(alpha = 0.85f),
-                        topLeft = Offset(i * barWidth + barWidth * 0.2f, mid - bh / 2f),
-                        size = Size(barWidth * 0.6f, bh.coerceAtLeast(2f)),
-                        cornerRadius = CornerRadius(barWidth * 0.3f)
+                        color = accent.copy(alpha = 0.06f + 0.20f * v),
+                        topLeft = Offset(i * bw + bw * 0.18f, h - bh),
+                        size = Size(bw * 0.64f, bh),
+                        cornerRadius = CornerRadius(bw * 0.5f)
                     )
-                }
-            }
-            VisualizerStyle.WAVE -> {
-                if (heights.size > 1) {
-                    val step = w / (heights.size - 1)
-                    val path = Path()
-                    heights.forEachIndexed { i, v ->
-                        val x = i * step
-                        val y = mid - v * h * 0.45f
-                        if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-                    }
-                    drawPath(path = path, color = accent.copy(alpha = 0.9f), style = Stroke(width = 3f))
-                }
-            }
-            VisualizerStyle.DOTS -> {
-                // 空闲（无数据）时只画基线，不画静态点阵
-                if (heights.any { it > 0f }) {
-                    val n = heights.size
-                    val step = w / n
-                    heights.forEachIndexed { i, v ->
-                        val cx = i * step + step / 2f
-                        val r = 2.dp.toPx() + v * 6.dp.toPx()
-                        drawCircle(
-                            color = accent.copy(alpha = 0.3f + 0.6f * v),
-                            radius = r,
-                            center = Offset(cx, mid)
-                        )
-                    }
-                }
-            }
-            VisualizerStyle.RADIAL -> {
-                // 空闲（无数据）时只画基线，不画静态圆环
-                if (heights.any { it > 0f }) {
-                    val n = heights.size
-                    val cx = w / 2f
-                    val cy = h / 2f
-                    val maxR = minOf(w, h) * 0.42f
-                    val inner = maxR * 0.16f
-                    heights.forEachIndexed { i, v ->
-                        val angle = (i.toFloat() / n) * 2f * PI.toFloat()
-                        val dirX = cos(angle)
-                        val dirY = sin(angle)
-                        val len = inner + v * (maxR - inner)
-                        drawLine(
-                            color = accent.copy(alpha = 0.35f + 0.6f * v),
-                            start = Offset(cx + dirX * inner, cy + dirY * inner),
-                            end = Offset(cx + dirX * len, cy + dirY * len),
-                            strokeWidth = 4.dp.toPx(),
-                            cap = StrokeCap.Round
-                        )
-                    }
-                }
-            }
-            VisualizerStyle.MIRROR -> {
-                val barWidth = w / heights.size.coerceAtLeast(1)
-                heights.forEachIndexed { i, v ->
-                    val bh = v * h * 0.45f
-                    val left = i * barWidth + barWidth * 0.2f
-                    val wd = barWidth * 0.6f
-                    drawRoundRect(
-                        color = accent.copy(alpha = 0.85f),
-                        topLeft = Offset(left, mid - bh),
-                        size = Size(wd, bh.coerceAtLeast(2f)),
-                        cornerRadius = CornerRadius(wd / 2f)
-                    )
-                    drawRoundRect(
-                        color = accent.copy(alpha = 0.85f),
-                        topLeft = Offset(left, mid),
-                        size = Size(wd, bh.coerceAtLeast(2f)),
-                        cornerRadius = CornerRadius(wd / 2f)
-                    )
-                }
-            }
-            VisualizerStyle.GLOW -> {
-                if (heights.size > 1) {
-                    val n = heights.size
-                    val step = w / (n - 1)
-                    val amp = h * 0.45f
-                    val pts = heights.mapIndexed { i, v -> Offset(i * step, mid - v * amp) }
-                    // Catmull-Rom → 三次贝塞尔，平滑穿过每个采样点
-                    val path = Path()
-                    path.moveTo(pts[0].x, pts[0].y)
-                    for (i in 0 until n - 1) {
-                        val p0 = pts[(i - 1).coerceAtLeast(0)]
-                        val p1 = pts[i]
-                        val p2 = pts[i + 1]
-                        val p3 = pts[(i + 2).coerceAtMost(n - 1)]
-                        path.cubicTo(
-                            p1.x + (p2.x - p0.x) / 6f, p1.y + (p2.y - p0.y) / 6f,
-                            p2.x - (p3.x - p1.x) / 6f, p2.y - (p3.y - p1.y) / 6f,
-                            p2.x, p2.y
-                        )
-                    }
-                    // 底部半透明填充：曲线下方到基线 mid
-                    val fill = Path().apply {
-                        addPath(path)
-                        lineTo(pts[n - 1].x, mid)
-                        lineTo(pts[0].x, mid)
-                        close()
-                    }
-                    drawPath(path = fill, color = accent.copy(alpha = 0.10f))
-                    // 三叠发光描边
-                    drawPath(path = path, color = accent.copy(alpha = 0.15f), style = Stroke(width = 14.dp.toPx(), cap = StrokeCap.Round))
-                    drawPath(path = path, color = accent.copy(alpha = 0.4f), style = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round))
-                    drawPath(path = path, color = accent.copy(alpha = 0.95f), style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
                 }
             }
         }
     }
 }
 
-/** 居中歌词：当前行高亮放大发光，底部一行按钮在「跳转/滚动」间切换。 */
+/**
+ * 居中逐词歌词：单行显示，唱到哪个字哪个字高亮发光，不展示上下文。
+ * 有逐词时间戳（yrc）按真实时刻推进；没有则把整行时长按字符均分。
+ */
 @Composable
 fun CenteredLyrics(
-    lines: List<LrcLine>,
+    lines: List<WordLyricLine>,
     progressMs: Long,
-    mode: LyricMode,
-    onToggleMode: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val accent = LocalAccentColor.current
-    val listState = rememberLazyListState()
     val currentIndex = remember(lines, progressMs) { lines.currentLineIndex(progressMs) }
+    val currentLine = lines.getOrNull(currentIndex)
 
-    // 当前行发光脉冲（有歌词时才启动，空闲省电）
     val glowPulse = if (lines.isNotEmpty()) {
         val transition = rememberInfiniteTransition(label = "lyricGlow")
         transition.animateFloat(
@@ -314,52 +185,62 @@ fun CenteredLyrics(
         ).value
     } else 0f
 
-    LaunchedEffect(currentIndex, mode, lines) {
-        if (lines.isEmpty()) return@LaunchedEffect
-        val anchor = scrollAnchorIndex(currentIndex, mode, VISIBLE_LINES)
-            .coerceIn(0, (lines.size - 1).coerceAtLeast(0))
-        // 跳转模式瞬时定位，滚动模式平滑滚动
-        if (mode == LyricMode.JUMP) listState.scrollToItem(anchor) else listState.animateScrollToItem(anchor)
-    }
-
-    Column(modifier = modifier) {
-        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            if (lines.isEmpty()) {
-                Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
-            } else {
-                LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                    itemsIndexed(lines) { i, line ->
-                        val isCurrent = i == currentIndex
-                        Text(
-                            text = line.text,
-                            style = TextStyle(
-                                color = if (isCurrent) accent else TextSecondary,
-                                fontSize = if (isCurrent) 20.sp else 15.sp,
-                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                                textAlign = TextAlign.Center,
-                                shadow = if (isCurrent) Shadow(color = accent.copy(alpha = 0.5f * glowPulse), blurRadius = 16f * glowPulse) else null
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 9.dp)
-                        )
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        when {
+            lines.isEmpty() -> Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
+            currentLine == null -> Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
+            else -> {
+                val words = currentLine.words.ifEmpty { currentLine.evenWords() }
+                if (words.isEmpty()) {
+                    Text(
+                        text = currentLine.text,
+                        color = accent,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+                    )
+                } else {
+                    val wordIndex = words.wordIndexAt(progressMs)
+                    val annotated = buildAnnotatedString {
+                        words.forEachIndexed { i, w ->
+                            val isCurrent = i == wordIndex
+                            withStyle(
+                                SpanStyle(
+                                    color = if (isCurrent) accent else TextSecondary,
+                                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                    shadow = if (isCurrent) Shadow(
+                                        color = accent.copy(alpha = 0.6f * glowPulse),
+                                        blurRadius = 16f * glowPulse
+                                    ) else null
+                                )
+                            ) {
+                                append(w.text)
+                            }
+                        }
                     }
+                    Text(
+                        text = annotated,
+                        fontSize = 20.sp,
+                        lineHeight = 30.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+                    )
                 }
             }
-        }
-        TextButton(onClick = onToggleMode, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            Text(
-                stringResource(if (mode == LyricMode.JUMP) R.string.lyric_mode_jump else R.string.lyric_mode_scroll),
-                color = TextHint,
-                fontSize = 12.sp
-            )
         }
     }
 }
 
-/** 底部悬浮控制条：进度 + 上一曲/播放暂停/下一曲 + 更多。首次出现上滑淡入。 */
+/**
+ * 底部悬浮命令条（半透明磨砂质感）：
+ * 折叠时只有歌名的小胶囊；点一下展开成完整控制条（歌名+作者+进度+上一曲/播放/下一曲/更多），
+ * 再点收起，展开后约 3 秒无操作自动收起。
+ */
 @Composable
-fun FloatingControls(
+fun FoliaCommandBar(
+    title: String,
+    artist: String?,
     isPlaying: Boolean,
     progress: Float,
     durationMs: Long,
@@ -368,33 +249,77 @@ fun FloatingControls(
     onNext: () -> Unit,
     onSeek: (Long) -> Unit,
     onMore: () -> Unit,
-    modifier: Modifier = Modifier,
-    animateEntrance: Boolean = true,
-    onEntered: () -> Unit = {}
+    modifier: Modifier = Modifier
 ) {
     val accent = LocalAccentColor.current
+    var expanded by remember { mutableStateOf(false) }
     var dragValue by remember { mutableStateOf<Float?>(null) }
     val shownValue = dragValue ?: progress.coerceIn(0f, 1f)
-    // 首次入场才上滑淡入；已在场（子页返回/模式切回）时直接可见，不重播
-    var visible by remember { mutableStateOf(!animateEntrance) }
-    LaunchedEffect(animateEntrance) {
-        if (animateEntrance) {
-            visible = true
-            onEntered()
+
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            delay(3000)
+            expanded = false
         }
     }
-    AnimatedVisibility(
-        visible = visible,
+
+    Surface(
         modifier = modifier,
-        enter = slideInVertically(initialOffsetY = { it / 2 }, animationSpec = tween(320)) + fadeIn(tween(320)),
-        exit = ExitTransition.None
+        shape = RoundedCornerShape(if (expanded) 24.dp else 20.dp),
+        color = DarkSurfaceVariant.copy(alpha = 0.45f)
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            color = DarkSurfaceVariant.copy(alpha = 0.72f)
-        ) {
-            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+        if (!expanded) {
+            // 折叠：只有歌名，整条可点展开
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = true }
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    color = TextPrimary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Text("▴", color = TextSecondary, fontSize = 12.sp)
+            }
+        } else {
+            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = title,
+                            color = TextPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (artist?.isNotBlank() == true) {
+                            Text(
+                                text = artist,
+                                color = TextSecondary,
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    Text(
+                        text = "▾",
+                        color = TextSecondary,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .clickable { expanded = false }
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
                 Slider(
                     value = shownValue,
                     onValueChange = { dragValue = it },

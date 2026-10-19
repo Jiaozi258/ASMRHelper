@@ -36,6 +36,7 @@ class NeteaseMusicSource(
 
     private var cookie: String = persistedCookie
     private var nickname: String = persistedNickname
+    private var uid: String = ""
 
     private val _isLoggedIn = MutableStateFlow(cookie.contains("MUSIC_U"))
     override val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
@@ -55,10 +56,13 @@ class NeteaseMusicSource(
     }
 
     override fun getSongUrl(songId: String, quality: String): Flow<String> = flow {
-        // 旧接口免登录可拿免费歌地址；拿不到再退回外链兜底。
-        val body = json(mapOf("ids" to "[$songId]", "br" to "320000"))
-        val url = NeteaseJson.parseSongUrl(weapiPost("/weapi/song/enhance/player/url", body))
-        emit(url.ifBlank { NeteaseJson.fallbackSongUrl(songId) })
+        // 会员/付费歌只在无损档（999000）返回地址，逐档回退，最后退回免费外链兜底。
+        val result = listOf("999000", "320000", "128000")
+            .firstNotNullOfOrNull { br ->
+                val body = json(mapOf("ids" to "[$songId]", "br" to br))
+                NeteaseJson.parseSongUrl(weapiPost("/weapi/song/enhance/player/url", body)).ifBlank { null }
+            }
+        emit(result ?: NeteaseJson.fallbackSongUrl(songId))
     }
 
     override fun getLyric(songId: String): Flow<RemoteLyric> = flow {
@@ -66,9 +70,42 @@ class NeteaseMusicSource(
         emit(NeteaseJson.parseLyric(weapiPost("/weapi/song/lyric", body)))
     }
 
-    override fun getCoverUrl(songId: String): Flow<String> = flow { emit("") }
-    override fun getSongDetail(songId: String): Flow<RemoteSong> = flow {}
-    override fun getPlaylist(playlistId: String): Flow<RemotePlaylist> = flow { emit(RemotePlaylist("", "")) }
+    override fun getCoverUrl(songId: String): Flow<String> = flow {
+        val body = json(mapOf("c" to "[{\"id\": $songId}]"))
+        val cover = NeteaseJson.parseSongDetail(weapiPost("/weapi/v3/song/detail", body))?.coverUrl ?: ""
+        emit(cover)
+    }
+
+    override fun getSongDetail(songId: String): Flow<RemoteSong> = flow {
+        val body = json(mapOf("c" to "[{\"id\": $songId}]"))
+        NeteaseJson.parseSongDetail(weapiPost("/weapi/v3/song/detail", body))?.let { emit(it) }
+    }
+
+    override fun getPlaylist(playlistId: String): Flow<RemotePlaylist> = flow {
+        val body = json(mapOf("id" to playlistId, "n" to "1000", "s" to "0"))
+        NeteaseJson.parsePlaylistDetail(weapiPost("/weapi/v6/playlist/detail", body))?.let { emit(it) }
+    }
+
+    /** 用户歌单：需登录并解析出 uid；匿名/失败返回空。 */
+    override fun getUserPlaylists(): Flow<List<RemotePlaylist>> = flow {
+        val u = resolveUid()
+        if (u.isBlank()) {
+            emit(emptyList())
+            return@flow
+        }
+        val body = json(mapOf("uid" to u, "limit" to "30", "offset" to "0"))
+        emit(NeteaseJson.parseUserPlaylists(weapiPost("/weapi/user/playlist", body)))
+    }
+
+    /** 私人 FM（电台）：需登录；匿名/失败返回空。 */
+    override fun getRadio(): Flow<List<RemoteSong>> = flow {
+        emit(NeteaseJson.parseRadio(weapiPost("/weapi/v1/radio/get", "{}")))
+    }
+
+    /** 每日推荐歌曲：需登录；匿名/失败返回空。 */
+    override fun getDailyRecommendSongs(): Flow<List<RemoteSong>> = flow {
+        emit(NeteaseJson.parseDailyRecommend(weapiPost("/weapi/v1/discovery/recommend/songs", "{}")))
+    }
 
     override fun getRecommendations(): Flow<List<RemoteSong>> = flow {
         val body = json(mapOf("limit" to "30"))
@@ -103,6 +140,7 @@ class NeteaseMusicSource(
         if (NeteaseJson.parseCode(resp.body) == 200 && ck.contains("MUSIC_U")) {
             cookie = ck
             nickname = NeteaseJson.parseLoginNickname(resp.body).ifBlank { username }
+            uid = NeteaseJson.parseLoginUid(resp.body)
             _isLoggedIn.value = true
             onLoginChanged(cookie, nickname)
             emit(Result.success(Unit))
@@ -123,8 +161,18 @@ class NeteaseMusicSource(
     override fun logout() {
         cookie = ""
         nickname = ""
+        uid = ""
         _isLoggedIn.value = false
         onLoginChanged("", "")
+    }
+
+    /** 惰性解析登录用户 uid（账号密码登录已带，WebView 导入时按需拉取）。 */
+    private suspend fun resolveUid(): String {
+        if (uid.isNotBlank()) return uid
+        val resp = weapiPost("/weapi/w/nuser/account/get", "{}")
+        val u = NeteaseJson.parseLoginUid(resp)
+        if (u.isNotBlank()) uid = u
+        return uid
     }
 
     // ── weapi POST ──────────────────────────────────────

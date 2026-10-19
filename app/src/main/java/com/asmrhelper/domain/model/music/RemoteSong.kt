@@ -14,10 +14,11 @@ data class RemoteSong(
 /** 单行歌词。 */
 data class RemoteLyricLine(val timeMs: Long, val text: String)
 
-/** 归一化后的歌词：带时间戳的行 + 原始文本。 */
+/** 归一化后的歌词：带时间戳的行 + 原始文本 + 逐词歌词原文（yrc，可为空）。 */
 data class RemoteLyric(
     val lines: List<RemoteLyricLine> = emptyList(),
-    val rawText: String = ""
+    val rawText: String = "",
+    val yrc: String = ""
 )
 
 /** 在线歌单。 */
