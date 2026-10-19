@@ -141,4 +141,9 @@ interface SettingsRepository {
     // 歌词时间轴偏移（±2000ms，默认 0）
     fun getLyricOffsetMs(): Flow<Int>
     suspend fun setLyricOffsetMs(offsetMs: Int)
+
+    // ── 发现页模块显示开关 ───────────────────────────────
+    // 隐藏的模块 id 集合（DiscoverModule.*），默认空 = 全显示
+    fun getDiscoverHiddenModules(): Flow<Set<String>>
+    suspend fun setDiscoverModuleHidden(module: String, hidden: Boolean)
 }

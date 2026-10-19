@@ -16,24 +16,36 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -57,7 +69,7 @@ import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 
-/** 发现页：搜索 / 热门推荐 / 排行榜 / 最近播放 + 在线流播放。 */
+/** 发现页：搜索 + 四个标签页（推荐/每日/排行榜/歌单）+ 模块显示自定义。 */
 @Composable
 fun DiscoverScreen(
     modifier: Modifier = Modifier,
@@ -79,7 +91,11 @@ fun DiscoverScreen(
     val expandedChartSongs by viewModel.expandedChartSongs.collectAsStateWithLifecycle()
     val messageRes by viewModel.messageRes.collectAsStateWithLifecycle()
     val fetchingSongId by viewModel.fetchingSongId.collectAsStateWithLifecycle()
+    val hiddenModules by viewModel.hiddenModules.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    var selectedTab by remember { mutableIntStateOf(0) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(messageRes) {
         messageRes?.let {
@@ -88,12 +104,13 @@ fun DiscoverScreen(
         }
     }
 
-    val playSong: (RemoteSong) -> Unit = { song ->
-        viewModel.play(song)
+    // 点击某首在线歌：当前可见列表整段成为播放队列
+    val playSongs: (List<RemoteSong>, Int) -> Unit = { songs, index ->
+        viewModel.playSongs(songs, index)
         onPlayRequested()
     }
-    val playRecentEntry: (PlayHistoryEntity) -> Unit = { entry ->
-        viewModel.playRecent(entry)
+    val playRecentEntries: (List<PlayHistoryEntity>, Int) -> Unit = { entries, index ->
+        viewModel.playRecent(entries, index)
         onPlayRequested()
     }
 
@@ -108,34 +125,44 @@ fun DiscoverScreen(
                 .statusBarsPadding()
         ) {
             SearchBar(
-            query = query,
-            onQueryChange = viewModel::onQueryChange,
-            searching = searching
-        )
-
-        when {
-            query.isNotBlank() -> SearchResults(
+                query = query,
+                onQueryChange = viewModel::onQueryChange,
                 searching = searching,
-                results = searchResults,
-                onPlay = playSong
+                onOpenSettings = { showSettingsDialog = true }
             )
-            else -> DiscoverHome(
-                recommendations = recommendations,
-                charts = charts,
-                recent = recent,
-                dailyRecommend = dailyRecommend,
-                radio = radio,
-                userPlaylists = userPlaylists,
-                expandedPlaylistId = expandedPlaylistId,
-                expandedPlaylistSongs = expandedPlaylistSongs,
-                expandedChartId = expandedChartId,
-                expandedChartSongs = expandedChartSongs,
-                onPlay = playSong,
-                onPlayRecent = playRecentEntry,
-                onTogglePlaylist = viewModel::toggleUserPlaylist,
-                onToggleChart = viewModel::toggleChart
-            )
-        }
+
+            when {
+                query.isNotBlank() -> SearchResults(
+                    searching = searching,
+                    results = searchResults,
+                    onPlay = playSongs
+                )
+                else -> {
+                    DiscoverTabRow(selectedTab) { selectedTab = it }
+                    when (selectedTab) {
+                        0 -> RecommendTab(recommendations, hiddenModules, playSongs)
+                        1 -> DailyTab(dailyRecommend, radio, hiddenModules, playSongs)
+                        2 -> ChartsTab(
+                            charts = charts,
+                            expandedChartId = expandedChartId,
+                            expandedChartSongs = expandedChartSongs,
+                            hiddenModules = hiddenModules,
+                            onPlay = playSongs,
+                            onToggleChart = viewModel::toggleChart
+                        )
+                        else -> PlaylistsTab(
+                            userPlaylists = userPlaylists,
+                            recent = recent,
+                            expandedPlaylistId = expandedPlaylistId,
+                            expandedPlaylistSongs = expandedPlaylistSongs,
+                            hiddenModules = hiddenModules,
+                            onPlay = playSongs,
+                            onPlayRecent = playRecentEntries,
+                            onTogglePlaylist = viewModel::toggleUserPlaylist
+                        )
+                    }
+                }
+            }
         }
 
         if (fetchingSongId != null) {
@@ -163,18 +190,34 @@ fun DiscoverScreen(
             }
         }
     }
+
+    if (showSettingsDialog) {
+        DiscoverSettingsDialog(
+            hiddenModules = hiddenModules,
+            onToggle = viewModel::toggleModule,
+            onDismiss = { showSettingsDialog = false }
+        )
+    }
 }
+
+private val discoverTabLabels = listOf(
+    R.string.discover_tab_recommend,
+    R.string.discover_tab_daily,
+    R.string.discover_tab_charts,
+    R.string.discover_tab_playlists
+)
 
 @Composable
 private fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
-    searching: Boolean
+    searching: Boolean,
+    onOpenSettings: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         OutlinedTextField(
@@ -210,6 +253,38 @@ private fun SearchBar(
                 unfocusedTextColor = TextPrimary
             )
         )
+        IconButton(onClick = onOpenSettings) {
+            Icon(Icons.Filled.Settings, stringResource(R.string.discover_settings_title), tint = TextSecondary)
+        }
+    }
+}
+
+@Composable
+private fun DiscoverTabRow(selectedIndex: Int, onSelect: (Int) -> Unit) {
+    val accent = LocalAccentColor.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        discoverTabLabels.forEachIndexed { i, labelRes ->
+            val selected = i == selectedIndex
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (selected) accent.copy(alpha = 0.18f) else Color.Transparent)
+                    .clickable { onSelect(i) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    stringResource(labelRes),
+                    color = if (selected) accent else TextSecondary,
+                    fontSize = 14.sp,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+                )
+            }
+        }
     }
 }
 
@@ -217,7 +292,7 @@ private fun SearchBar(
 private fun SearchResults(
     searching: Boolean,
     results: List<RemoteSong>,
-    onPlay: (RemoteSong) -> Unit
+    onPlay: (List<RemoteSong>, Int) -> Unit
 ) {
     when {
         searching -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -228,77 +303,129 @@ private fun SearchResults(
             modifier = Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
         ) {
-            items(results, key = { "${it.sourceId}:${it.id}" }) { song ->
-                SongRow(song = song, onPlay = { onPlay(song) })
+            itemsIndexed(results, key = { _, it -> "${it.sourceId}:${it.id}" }) { index, song ->
+                SongRow(song = song, onPlay = { onPlay(results, index) })
             }
         }
     }
 }
 
+/** 推荐标签：热门推荐。 */
 @Composable
-private fun DiscoverHome(
+private fun RecommendTab(
     recommendations: List<RemoteSong>,
-    charts: List<RemoteChart>,
-    recent: List<PlayHistoryEntity>,
-    dailyRecommend: List<RemoteSong>,
-    radio: List<RemoteSong>,
-    userPlaylists: List<RemotePlaylist>,
-    expandedPlaylistId: String?,
-    expandedPlaylistSongs: List<RemoteSong>,
-    expandedChartId: String?,
-    expandedChartSongs: List<RemoteSong>,
-    onPlay: (RemoteSong) -> Unit,
-    onPlayRecent: (PlayHistoryEntity) -> Unit,
-    onTogglePlaylist: (RemotePlaylist) -> Unit,
-    onToggleChart: (RemoteChart) -> Unit
+    hiddenModules: Set<String>,
+    onPlay: (List<RemoteSong>, Int) -> Unit
 ) {
+    if (DiscoverModule.RECOMMEND in hiddenModules || recommendations.isEmpty()) {
+        EmptyTab()
+        return
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
     ) {
-        if (dailyRecommend.isNotEmpty()) {
+        itemsIndexed(recommendations, key = { _, it -> "rec:${it.sourceId}:${it.id}" }) { index, song ->
+            SongRow(song = song, onPlay = { onPlay(recommendations, index) })
+        }
+    }
+}
+
+/** 每日标签：每日推荐 + 电台，整段拼接成队列。 */
+@Composable
+private fun DailyTab(
+    dailyRecommend: List<RemoteSong>,
+    radio: List<RemoteSong>,
+    hiddenModules: Set<String>,
+    onPlay: (List<RemoteSong>, Int) -> Unit
+) {
+    val daily = if (DiscoverModule.DAILY in hiddenModules) emptyList() else dailyRecommend
+    val radioList = if (DiscoverModule.RADIO in hiddenModules) emptyList() else radio
+    val combined = daily + radioList
+    if (combined.isEmpty()) {
+        EmptyTab()
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        if (daily.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.discover_daily_recommend)) }
-            items(dailyRecommend, key = { "daily:${it.sourceId}:${it.id}" }) { song ->
-                SongRow(song = song, onPlay = { onPlay(song) })
+            itemsIndexed(daily, key = { _, it -> "daily:${it.sourceId}:${it.id}" }) { index, song ->
+                SongRow(song = song, onPlay = { onPlay(combined, index) })
             }
         }
-
-        if (recommendations.isNotEmpty()) {
-            item { SectionHeader(stringResource(R.string.discover_recommendations)) }
-            items(recommendations, key = { "rec:${it.sourceId}:${it.id}" }) { song ->
-                SongRow(song = song, onPlay = { onPlay(song) })
-            }
-        }
-
-        if (charts.isNotEmpty()) {
-            item { SectionHeader(stringResource(R.string.discover_charts)) }
-            charts.forEach { chart ->
-                val expanded = expandedChartId == chart.id
-                item(key = "chart_header:${chart.id}") {
-                    ChartHeader(
-                        name = chart.name,
-                        expanded = expanded,
-                        onClick = { onToggleChart(chart) }
-                    )
-                }
-                if (expanded) {
-                    items(expandedChartSongs, key = { "chart:${chart.id}:${it.id}" }) { song ->
-                        SongRow(song = song, onPlay = { onPlay(song) })
-                    }
-                }
-            }
-        }
-
-        if (radio.isNotEmpty()) {
+        if (radioList.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.discover_radio)) }
-            items(radio, key = { "radio:${it.sourceId}:${it.id}" }) { song ->
-                SongRow(song = song, onPlay = { onPlay(song) })
+            itemsIndexed(radioList, key = { _, it -> "radio:${it.sourceId}:${it.id}" }) { index, song ->
+                SongRow(song = song, onPlay = { onPlay(combined, daily.size + index) })
             }
         }
+    }
+}
 
-        if (userPlaylists.isNotEmpty()) {
+/** 排行榜标签：榜单可点开/收起。 */
+@Composable
+private fun ChartsTab(
+    charts: List<RemoteChart>,
+    expandedChartId: String?,
+    expandedChartSongs: List<RemoteSong>,
+    hiddenModules: Set<String>,
+    onPlay: (List<RemoteSong>, Int) -> Unit,
+    onToggleChart: (RemoteChart) -> Unit
+) {
+    if (DiscoverModule.CHARTS in hiddenModules || charts.isEmpty()) {
+        EmptyTab()
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        charts.forEach { chart ->
+            val expanded = expandedChartId == chart.id
+            item(key = "chart_header:${chart.id}") {
+                ChartHeader(
+                    name = chart.name,
+                    expanded = expanded,
+                    onClick = { onToggleChart(chart) }
+                )
+            }
+            if (expanded) {
+                itemsIndexed(expandedChartSongs, key = { _, it -> "chart:${chart.id}:${it.id}" }) { index, song ->
+                    SongRow(song = song, onPlay = { onPlay(expandedChartSongs, index) })
+                }
+            }
+        }
+    }
+}
+
+/** 歌单标签：我的歌单（可折叠）+ 最近播放。 */
+@Composable
+private fun PlaylistsTab(
+    userPlaylists: List<RemotePlaylist>,
+    recent: List<PlayHistoryEntity>,
+    expandedPlaylistId: String?,
+    expandedPlaylistSongs: List<RemoteSong>,
+    hiddenModules: Set<String>,
+    onPlay: (List<RemoteSong>, Int) -> Unit,
+    onPlayRecent: (List<PlayHistoryEntity>, Int) -> Unit,
+    onTogglePlaylist: (RemotePlaylist) -> Unit
+) {
+    val playlists = if (DiscoverModule.PLAYLISTS in hiddenModules) emptyList() else userPlaylists
+    val recentList = if (DiscoverModule.RECENT in hiddenModules) emptyList() else recent
+    if (playlists.isEmpty() && recentList.isEmpty()) {
+        EmptyTab()
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        if (playlists.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.discover_user_playlists)) }
-            userPlaylists.forEach { playlist ->
+            playlists.forEach { playlist ->
                 val expanded = expandedPlaylistId == playlist.id
                 item(key = "pl_header:${playlist.id}") {
                     PlaylistRow(
@@ -309,20 +436,68 @@ private fun DiscoverHome(
                     )
                 }
                 if (expanded) {
-                    items(expandedPlaylistSongs, key = { "pl:${playlist.id}:${it.id}" }) { song ->
-                        SongRow(song = song, onPlay = { onPlay(song) })
+                    itemsIndexed(expandedPlaylistSongs, key = { _, it -> "pl:${playlist.id}:${it.id}" }) { index, song ->
+                        SongRow(song = song, onPlay = { onPlay(expandedPlaylistSongs, index) })
                     }
                 }
             }
         }
-
-        if (recent.isNotEmpty()) {
+        if (recentList.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.discover_recent)) }
-            items(recent, key = { "recent:${it.id}" }) { entry ->
-                RecentRow(entry = entry, onPlay = { onPlayRecent(entry) })
+            itemsIndexed(recentList, key = { _, it -> "recent:${it.id}" }) { index, entry ->
+                RecentRow(entry = entry, onPlay = { onPlayRecent(recentList, index) })
             }
         }
     }
+}
+
+@Composable
+private fun DiscoverSettingsDialog(
+    hiddenModules: Set<String>,
+    onToggle: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val modules = listOf(
+        DiscoverModule.RECOMMEND to R.string.discover_recommendations,
+        DiscoverModule.DAILY to R.string.discover_daily_recommend,
+        DiscoverModule.RADIO to R.string.discover_radio,
+        DiscoverModule.CHARTS to R.string.discover_charts,
+        DiscoverModule.PLAYLISTS to R.string.discover_user_playlists,
+        DiscoverModule.RECENT to R.string.discover_recent
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.discover_settings_title), color = TextPrimary) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                modules.forEach { (key, labelRes) ->
+                    val visible = key !in hiddenModules
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(stringResource(labelRes), color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                        Switch(
+                            checked = visible,
+                            onCheckedChange = { onToggle(key) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = LocalAccentColor.current,
+                                checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
+                            )
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+        },
+        containerColor = DarkSurface,
+        shape = RoundedCornerShape(16.dp)
+    )
 }
 
 @Composable
@@ -334,6 +509,13 @@ private fun SectionHeader(title: String) {
         fontWeight = FontWeight.Bold,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
     )
+}
+
+@Composable
+private fun EmptyTab() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(stringResource(R.string.discover_empty_tab), color = TextHint, fontSize = 14.sp)
+    }
 }
 
 @Composable

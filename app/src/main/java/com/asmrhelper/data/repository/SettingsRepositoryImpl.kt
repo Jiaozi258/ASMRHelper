@@ -494,4 +494,17 @@ class SettingsRepositoryImpl @Inject constructor(
         prefs.edit().putInt("lyric_offset_ms", offsetMs).apply()
         _lyricOffsetMs.value = offsetMs
     }
+
+    // ── 发现页模块显示开关 ───────────────────────────────
+
+    private val _discoverHiddenModules = MutableStateFlow(
+        prefs.getStringSet("discover_hidden_modules", emptySet())?.toSet() ?: emptySet()
+    )
+    override fun getDiscoverHiddenModules(): Flow<Set<String>> = _discoverHiddenModules
+    override suspend fun setDiscoverModuleHidden(module: String, hidden: Boolean) {
+        val set = _discoverHiddenModules.value.toMutableSet()
+        if (hidden) set.add(module) else set.remove(module)
+        prefs.edit().putStringSet("discover_hidden_modules", set).apply()
+        _discoverHiddenModules.value = set
+    }
 }

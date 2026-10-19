@@ -80,6 +80,12 @@
     <string name="discover_no_results">No results found</string>
     <string name="discover_play_failed">Cannot get stream URL</string>
     <string name="discover_fetching_url">Getting song link…</string>
+    <string name="discover_tab_recommend">Recommend</string>
+    <string name="discover_tab_daily">Daily</string>
+    <string name="discover_tab_charts">Charts</string>
+    <string name="discover_tab_playlists">Playlists</string>
+    <string name="discover_settings_title">Discover settings</string>
+    <string name="discover_empty_tab">Nothing here</string>
 
     <!-- MUSIC player -->
     <string name="lyric_mode">Lyric mode</string>
