@@ -71,6 +71,13 @@ class DiscoverViewModel @Inject constructor(
     private val _expandedPlaylistSongs = MutableStateFlow<List<RemoteSong>>(emptyList())
     val expandedPlaylistSongs: StateFlow<List<RemoteSong>> = _expandedPlaylistSongs.asStateFlow()
 
+    /** 当前展开的排行榜 id 及其已拉取的歌曲（toplist 接口不带 tracks，展开时再拉）。 */
+    private val _expandedChartId = MutableStateFlow<String?>(null)
+    val expandedChartId: StateFlow<String?> = _expandedChartId.asStateFlow()
+
+    private val _expandedChartSongs = MutableStateFlow<List<RemoteSong>>(emptyList())
+    val expandedChartSongs: StateFlow<List<RemoteSong>> = _expandedChartSongs.asStateFlow()
+
     /** 最近播放：复用本地播放历史（这些是本地文件，播放时直接用 filePath）。 */
     val recent: StateFlow<List<PlayHistoryEntity>> = playHistoryRepository.getAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -169,11 +176,28 @@ class DiscoverViewModel @Inject constructor(
             return
         }
         _expandedPlaylistId.value = playlist.id
-        _expandedPlaylistSongs.value = emptyList()
+        _expandedPlaylistSongs.value = playlist.songs
         val source = activeSource.value
         viewModelScope.launch {
             source.getPlaylist(playlist.id).collect { detail ->
-                _expandedPlaylistSongs.value = detail.songs
+                if (detail.songs.isNotEmpty()) _expandedPlaylistSongs.value = detail.songs
+            }
+        }
+    }
+
+    /** 点击排行榜标题：展开并拉取榜单歌曲（toplist 摘要不含 tracks），再点收起。 */
+    fun toggleChart(chart: RemoteChart) {
+        if (_expandedChartId.value == chart.id) {
+            _expandedChartId.value = null
+            _expandedChartSongs.value = emptyList()
+            return
+        }
+        _expandedChartId.value = chart.id
+        _expandedChartSongs.value = chart.songs
+        val source = activeSource.value
+        viewModelScope.launch {
+            source.getPlaylist(chart.id).collect { detail ->
+                if (detail.songs.isNotEmpty()) _expandedChartSongs.value = detail.songs
             }
         }
     }

@@ -30,8 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -76,6 +74,8 @@ fun DiscoverScreen(
     val userPlaylists by viewModel.userPlaylists.collectAsStateWithLifecycle()
     val expandedPlaylistId by viewModel.expandedPlaylistId.collectAsStateWithLifecycle()
     val expandedPlaylistSongs by viewModel.expandedPlaylistSongs.collectAsStateWithLifecycle()
+    val expandedChartId by viewModel.expandedChartId.collectAsStateWithLifecycle()
+    val expandedChartSongs by viewModel.expandedChartSongs.collectAsStateWithLifecycle()
     val messageRes by viewModel.messageRes.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -121,9 +121,12 @@ fun DiscoverScreen(
                 userPlaylists = userPlaylists,
                 expandedPlaylistId = expandedPlaylistId,
                 expandedPlaylistSongs = expandedPlaylistSongs,
+                expandedChartId = expandedChartId,
+                expandedChartSongs = expandedChartSongs,
                 onPlay = playSong,
                 onPlayRecent = playRecentEntry,
-                onTogglePlaylist = viewModel::toggleUserPlaylist
+                onTogglePlaylist = viewModel::toggleUserPlaylist,
+                onToggleChart = viewModel::toggleChart
             )
         }
     }
@@ -209,13 +212,13 @@ private fun DiscoverHome(
     userPlaylists: List<RemotePlaylist>,
     expandedPlaylistId: String?,
     expandedPlaylistSongs: List<RemoteSong>,
+    expandedChartId: String?,
+    expandedChartSongs: List<RemoteSong>,
     onPlay: (RemoteSong) -> Unit,
     onPlayRecent: (PlayHistoryEntity) -> Unit,
-    onTogglePlaylist: (RemotePlaylist) -> Unit
+    onTogglePlaylist: (RemotePlaylist) -> Unit,
+    onToggleChart: (RemoteChart) -> Unit
 ) {
-    // 排行榜默认折叠，点击标题展开/收起歌曲列表（可点进榜单）。
-    val expandedCharts = remember { mutableStateMapOf<String, Boolean>() }
-
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
@@ -237,16 +240,16 @@ private fun DiscoverHome(
         if (charts.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.discover_charts)) }
             charts.forEach { chart ->
-                val expanded = expandedCharts[chart.id] ?: false
+                val expanded = expandedChartId == chart.id
                 item(key = "chart_header:${chart.id}") {
                     ChartHeader(
                         name = chart.name,
                         expanded = expanded,
-                        onClick = { expandedCharts[chart.id] = !expanded }
+                        onClick = { onToggleChart(chart) }
                     )
                 }
                 if (expanded) {
-                    items(chart.songs, key = { "chart:${chart.id}:${it.id}" }) { song ->
+                    items(expandedChartSongs, key = { "chart:${chart.id}:${it.id}" }) { song ->
                         SongRow(song = song, onPlay = { onPlay(song) })
                     }
                 }

@@ -1,11 +1,20 @@
 package com.asmrhelper.ui.play.folia
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -58,6 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -87,7 +97,8 @@ fun AudioReactiveBackground(
 ) {
     val accent = LocalAccentColor.current
     val fallbackPrimary = accent.toArgb().toLong() and 0xFFFFFFFFL
-    val fallbackSecondary = Duotone.darken(fallbackPrimary, 55)
+    // 次调做红蓝交换（而非同色加深），保证双色调永不塌成纯色
+    val fallbackSecondary = Duotone.swapRedBlue(fallbackPrimary)
     val (primaryLong, secondaryLong) = rememberCoverPalette(coverUrl, fallbackPrimary, fallbackSecondary)
     val primary = Color(primaryLong.toInt())
     val secondary = Color(secondaryLong.toInt())
@@ -101,6 +112,25 @@ fun AudioReactiveBackground(
             repeatMode = RepeatMode.Reverse
         ),
         label = "coverScale"
+    )
+    // 空闲也流动：一条横移的高光带 + 次色呼吸，无 FFT 数据时背景依旧有动感
+    val drift by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 9000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "flowDrift"
+    )
+    val breathe by transition.animateFloat(
+        initialValue = 0.8f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2600, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breathe"
     )
 
     // 频谱柱：优先 FFT，无 FFT 数据退回波形
@@ -119,29 +149,44 @@ fun AudioReactiveBackground(
                     .fillMaxSize()
                     .graphicsLayer { scaleX = scale; scaleY = scale }
                     .blur(40.dp)
-                    .alpha(0.5f)
+                    .alpha(0.62f)
             )
         }
-        // 双色调渐变（真实主/次色）
+        // 双色调渐变（真实主/次色，降低覆盖度让封面透出来）
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            primary.copy(alpha = 0.82f),
-                            secondary.copy(alpha = 0.35f),
-                            primary.copy(alpha = 0.6f)
+                            primary.copy(alpha = 0.58f),
+                            secondary.copy(alpha = 0.44f * breathe),
+                            primary.copy(alpha = 0.50f)
                         )
                     )
                 )
         )
 
-        // 音频反应层：底部向上流动的柔光柱
-        if (bars.any { it > 0f }) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val w = size.width
-                val h = size.height
+        // 反应层：横移高光带（始终流动）+ 底部向上流动的柔光柱（有音频数据时）
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            // 流动高光带
+            val bandX = drift * w * 1.4f - w * 0.2f
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        accent.copy(alpha = 0.10f),
+                        Color.Transparent
+                    ),
+                    startX = bandX - w * 0.35f,
+                    endX = bandX + w * 0.35f
+                ),
+                size = Size(w, h)
+            )
+            // 底部柔光柱
+            if (bars.any { it > 0f }) {
                 val n = bars.size
                 val bw = w / n
                 bars.forEachIndexed { i, v ->
@@ -234,7 +279,7 @@ fun CenteredLyrics(
 
 /**
  * 底部悬浮命令条（半透明磨砂质感）：
- * 折叠时只有歌名的小胶囊；点一下展开成完整控制条（歌名+作者+进度+上一曲/播放/下一曲/更多），
+ * 折叠时只有歌名的小胶囊；点一下弹性展开成完整控制条（歌名+作者+进度+上一曲/播放/下一曲/更多），
  * 再点收起，展开后约 3 秒无操作自动收起。
  */
 @Composable
@@ -263,43 +308,56 @@ fun FoliaCommandBar(
         }
     }
 
+    val springSpec = spring<IntSize>(
+        dampingRatio = Spring.DampingRatioMediumBouncy,
+        stiffness = Spring.StiffnessMediumLow
+    )
+
+    // 磨砂玻璃：半透明渐变底 + 细高光描边，透过它看到已模糊的背景 → 磨砂质感
     Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(if (expanded) 24.dp else 20.dp),
-        color = DarkSurfaceVariant.copy(alpha = 0.45f)
+        modifier = modifier.animateContentSize(animationSpec = springSpec),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f))
     ) {
-        if (!expanded) {
-            // 折叠：只有歌名，整条可点展开
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = true }
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = title,
-                    color = TextPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
+        Box(
+            modifier = Modifier.background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.10f),
+                        DarkSurfaceVariant.copy(alpha = 0.55f),
+                        DarkSurfaceVariant.copy(alpha = 0.32f)
+                    )
                 )
-                Text("▴", color = TextSecondary, fontSize = 12.sp)
-            }
-        } else {
-            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            text = title,
-                            color = TextPrimary,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+            )
+        ) {
+            Column {
+                // 标题行始终显示：折叠时只有歌名，点按整条切换
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = !expanded }
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = title,
+                        color = TextPrimary,
+                        fontSize = if (expanded) 16.sp else 14.sp,
+                        fontWeight = if (expanded) FontWeight.SemiBold else FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(if (expanded) "▾" else "▴", color = TextSecondary, fontSize = 12.sp)
+                }
+                // 展开区：弹性展开/收缩
+                AnimatedVisibility(
+                    visible = expanded,
+                    enter = expandVertically(animationSpec = springSpec) + fadeIn(),
+                    exit = shrinkVertically(animationSpec = springSpec) + fadeOut()
+                ) {
+                    Column(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 10.dp)) {
                         if (artist?.isNotBlank() == true) {
                             Text(
                                 text = artist,
@@ -308,49 +366,41 @@ fun FoliaCommandBar(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
+                            Spacer(Modifier.height(4.dp))
                         }
-                    }
-                    Text(
-                        text = "▾",
-                        color = TextSecondary,
-                        fontSize = 14.sp,
-                        modifier = Modifier
-                            .clickable { expanded = false }
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-                Spacer(Modifier.height(4.dp))
-                Slider(
-                    value = shownValue,
-                    onValueChange = { dragValue = it },
-                    onValueChangeFinished = {
-                        dragValue?.let { onSeek((it * durationMs).toLong()) }
-                        dragValue = null
-                    },
-                    valueRange = 0f..1f,
-                    colors = SliderDefaults.colors(
-                        thumbColor = accent,
-                        activeTrackColor = accent,
-                        inactiveTrackColor = DarkSurfaceVariant
-                    )
-                )
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    IconButton(onClick = onPrevious) {
-                        Icon(Icons.Filled.SkipPrevious, contentDescription = stringResource(R.string.play_prev_track), tint = TextPrimary)
-                    }
-                    IconButton(onClick = onPlayPause, modifier = Modifier.weight(1f)) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            contentDescription = if (isPlaying) stringResource(R.string.play_pause) else stringResource(R.string.play_play),
-                            tint = TextPrimary,
-                            modifier = Modifier.size(40.dp)
+                        Slider(
+                            value = shownValue,
+                            onValueChange = { dragValue = it },
+                            onValueChangeFinished = {
+                                dragValue?.let { onSeek((it * durationMs).toLong()) }
+                                dragValue = null
+                            },
+                            valueRange = 0f..1f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = accent,
+                                activeTrackColor = accent,
+                                inactiveTrackColor = DarkSurfaceVariant
+                            )
                         )
-                    }
-                    IconButton(onClick = onNext) {
-                        Icon(Icons.Filled.SkipNext, contentDescription = stringResource(R.string.play_next_track), tint = TextPrimary)
-                    }
-                    IconButton(onClick = onMore) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more), tint = TextSecondary)
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            IconButton(onClick = onPrevious) {
+                                Icon(Icons.Filled.SkipPrevious, contentDescription = stringResource(R.string.play_prev_track), tint = TextPrimary)
+                            }
+                            IconButton(onClick = onPlayPause, modifier = Modifier.weight(1f)) {
+                                Icon(
+                                    imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                                    contentDescription = if (isPlaying) stringResource(R.string.play_pause) else stringResource(R.string.play_play),
+                                    tint = TextPrimary,
+                                    modifier = Modifier.size(40.dp)
+                                )
+                            }
+                            IconButton(onClick = onNext) {
+                                Icon(Icons.Filled.SkipNext, contentDescription = stringResource(R.string.play_next_track), tint = TextPrimary)
+                            }
+                            IconButton(onClick = onMore) {
+                                Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more), tint = TextSecondary)
+                            }
+                        }
                     }
                 }
             }

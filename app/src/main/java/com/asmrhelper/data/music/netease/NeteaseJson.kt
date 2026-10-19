@@ -21,7 +21,8 @@ object NeteaseJson {
 
     fun parseSongUrl(json: String): String = try {
         val data = JSONObject(json).optJSONArray("data")
-        data?.optJSONObject(0)?.optString("url")?.takeIf { it.isNotBlank() } ?: ""
+        val url = data?.optJSONObject(0)?.optString("url")?.takeIf { it.isNotBlank() } ?: ""
+        https(url)
     } catch (_: Exception) {
         ""
     }
@@ -171,6 +172,10 @@ object NeteaseJson {
 
     // ── 内部 ────────────────────────────────────────────
 
+    /** Android 默认禁明文 HTTP；网易云封面/流地址常返回 `http://`，统一转 https（CDN 支持 https）。 */
+    private fun https(url: String): String =
+        if (url.startsWith("http://")) "https://" + url.substring(7) else url
+
     private fun parseSongArray(arr: JSONArray?): List<RemoteSong> {
         if (arr == null) return emptyList()
         val list = mutableListOf<RemoteSong>()
@@ -191,8 +196,9 @@ object NeteaseJson {
             names.joinToString(" / ")
         } ?: ""
         val al = s.optJSONObject("al") ?: s.optJSONObject("album")
-        val cover = al?.optString("picUrl")?.takeIf { it.isNotBlank() }
-            ?: s.optString("picUrl").takeIf { it.isNotBlank() }
+        val cover = (al?.optString("picUrl")?.takeIf { it.isNotBlank() }
+            ?: s.optString("picUrl").takeIf { it.isNotBlank() })
+            ?.let { https(it) }
         val duration = if (s.has("dt")) s.optLong("dt") else s.optLong("duration", 0L)
         return RemoteSong(
             id = s.optLong("id").toString(),

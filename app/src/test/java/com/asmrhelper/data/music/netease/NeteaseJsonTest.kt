@@ -19,7 +19,7 @@ class NeteaseJsonTest {
         assertEquals("周杰伦", s.artist)
         assertEquals("叶惠美", s.album)
         assertEquals(269000L, s.durationMs)
-        assertEquals("http://c/1.jpg", s.coverUrl)
+        assertEquals("https://c/1.jpg", s.coverUrl)
         assertEquals("netease", s.sourceId)
     }
 
@@ -110,7 +110,7 @@ class NeteaseJsonTest {
         assertEquals("歌手", songs[0].artist)
         assertEquals("专辑", songs[0].album)
         assertEquals(269000L, songs[0].durationMs)
-        assertEquals("http://c/1.jpg", songs[0].coverUrl)
+        assertEquals("https://c/1.jpg", songs[0].coverUrl)
         assertEquals("netease", songs[0].sourceId)
     }
 
