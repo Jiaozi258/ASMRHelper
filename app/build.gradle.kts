@@ -88,6 +88,7 @@ dependencies {
     // Core
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     // Test
     testImplementation("junit:junit:4.13.2")
