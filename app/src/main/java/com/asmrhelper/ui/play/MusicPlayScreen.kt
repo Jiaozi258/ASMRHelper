@@ -173,7 +173,6 @@ fun MusicPlayScreen(
                     shadowEnabled = lyricsShadowEnabled,
                     alignment = lyricsAlignment,
                     style = lyricsScrollStyle,
-                    onSeek = { viewModel.seekTo(it) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)

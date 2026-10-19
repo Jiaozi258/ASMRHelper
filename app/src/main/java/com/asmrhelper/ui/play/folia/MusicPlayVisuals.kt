@@ -19,9 +19,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -63,9 +60,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -79,7 +74,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -339,8 +333,7 @@ fun CenteredLyrics(
 
 /**
  * 滑动歌词：只展示上下文（上一句 / 当前句 / 下一句），当前句居中强调，
- * 随进度平滑滚动。用户上下拖动时跳到拖到的歌词时间点（松手 seek）；
- * 视觉样式可选平铺或鱼眼。
+ * 随进度平滑滚动；视觉样式可选平铺或鱼眼。
  */
 @Composable
 fun ScrollLyrics(
@@ -351,8 +344,7 @@ fun ScrollLyrics(
     lineSpacing: Float = 1.5f,
     shadowEnabled: Boolean = false,
     alignment: Int = 0,
-    style: LyricScrollStyle = LyricScrollStyle.FLAT,
-    onSeek: (Long) -> Unit = {}
+    style: LyricScrollStyle = LyricScrollStyle.FLAT
 ) {
     val accent = LocalAccentColor.current
     val density = LocalDensity.current
@@ -360,9 +352,6 @@ fun ScrollLyrics(
     val lineHeight = (fontSize * lineSpacing).sp
     val lineHeightPx = with(density) { lineHeight.toPx() }
     val scrollState = rememberScrollState()
-    val autoScrolling = remember { mutableStateOf(false) }
-    val isTouching = remember { mutableStateOf(false) }
-    val userSeekPending = remember { mutableStateOf(false) }
 
     BoxWithConstraints(modifier = modifier) {
         val viewportPx = with(density) { maxHeight.toPx() }
@@ -380,58 +369,16 @@ fun ScrollLyrics(
 
         val centerIndex = remember(lines, progressMs) { lines.currentLineIndex(progressMs) }
 
-        // 让拖动结束的 seek 协程永远读到最新的 lines / 布局 / 回调（切换歌曲或改设置后不读旧值）
-        val linesState by rememberUpdatedState(lines)
-        val topPaddingState by rememberUpdatedState(topPaddingPx)
-        val lineHeightState by rememberUpdatedState(lineHeightPx)
-        val onSeekState by rememberUpdatedState(onSeek)
-
-        // 自动滚动：把当前行居中（用户手指按下时不抢滚动）
+        // 自动滚动：把当前行居中
         LaunchedEffect(centerIndex, lineHeightPx, viewportPx, lines.size) {
-            if (isTouching.value) return@LaunchedEffect
             val target = (centerIndex * lineHeightPx - topPaddingPx).coerceIn(0f, maxScroll)
-            autoScrolling.value = true
-            try {
-                scrollState.animateScrollTo(target.roundToInt())
-            } finally {
-                autoScrolling.value = false
-            }
-        }
-
-        // 区分「程序自动滚动」与「用户拖动」：isScrollInProgress 两者都会为 true。
-        // 手指按下即记为「正在触摸」，若此时发生滚动则标记为用户 seek；滚动结束时才真正 seek。
-        // 自动滚动发生在 autoScrolling=true 期间，不会被误判为用户操作。
-        LaunchedEffect(scrollState) {
-            var wasInProgress = false
-            snapshotFlow { scrollState.isScrollInProgress }.collect { inProgress ->
-                if (!wasInProgress && inProgress && isTouching.value && !autoScrolling.value) {
-                    userSeekPending.value = true
-                }
-                if (wasInProgress && !inProgress && userSeekPending.value) {
-                    userSeekPending.value = false
-                    val ls = linesState
-                    if (ls.isNotEmpty()) {
-                        val idx = ((scrollState.value + topPaddingState) / lineHeightState)
-                            .roundToInt().coerceIn(0, ls.lastIndex)
-                        onSeekState(ls[idx].startMs)
-                    }
-                }
-                wasInProgress = inProgress
-            }
+            scrollState.animateScrollTo(target.roundToInt())
         }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState)
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        awaitFirstDown(requireUnconsumed = false)
-                        isTouching.value = true
-                        waitForUpOrCancellation()
-                        isTouching.value = false
-                    }
-                },
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(topPaddingDp))
