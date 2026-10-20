@@ -117,6 +117,16 @@ object DatabaseModule {
         }
     }
 
+    private val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE audio ADD COLUMN source_id TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE audio ADD COLUMN source_song_id TEXT")
+            db.execSQL("ALTER TABLE audio ADD COLUMN cover_url TEXT")
+            db.execSQL("ALTER TABLE audio ADD COLUMN album TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE audio ADD COLUMN publish_time INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AsmrDatabase =
@@ -124,7 +134,7 @@ object DatabaseModule {
             context,
             AsmrDatabase::class.java,
             "asmr_helper.db"
-        ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+        ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
          .build()
 
     @Provides

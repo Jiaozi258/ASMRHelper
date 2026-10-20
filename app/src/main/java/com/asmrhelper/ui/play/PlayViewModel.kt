@@ -48,6 +48,8 @@ import com.asmrhelper.util.LyricsStore
 import com.asmrhelper.util.maskPrivacy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,6 +59,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -583,18 +586,32 @@ class PlayViewModel @Inject constructor(
 
     fun play(audio: Audio) {
         viewModelScope.launch {
-            playerManager.handleEvent(PlayerEvent.Play(audio, uiState.value.audioList))
-            loadBackgroundForAudio(audio.id)
+            val resolved = resolveRemoteUrl(audio)
+            playerManager.handleEvent(PlayerEvent.Play(resolved, uiState.value.audioList))
+            loadBackgroundForAudio(resolved.id)
         }
     }
 
     fun playPlaylist(audios: List<Audio>) {
-        audios.firstOrNull()?.let { audio ->
-            viewModelScope.launch {
-                playerManager.handleEvent(PlayerEvent.Play(audio, audios))
+        viewModelScope.launch {
+            // 在线歌曲流地址会过期，播前并发解析；本地文件原样保留
+            val resolved = audios.map { async { resolveRemoteUrl(it) } }.awaitAll()
+            resolved.firstOrNull()?.let { audio ->
+                playerManager.handleEvent(PlayerEvent.Play(audio, resolved))
                 loadBackgroundForAudio(audio.id)
             }
         }
+    }
+
+    /** 在线歌曲 → 重新解析流 URL 作为 filePath；本地歌曲/解析失败原样返回。 */
+    private suspend fun resolveRemoteUrl(audio: Audio): Audio {
+        if (!audio.isRemoteSong()) return audio
+        val source = musicSourceManager.sourceForId(audio.sourceId) ?: return audio
+        val songId = audio.sourceSongId ?: audio.id.toString()
+        val url = runCatching {
+            source.getSongUrl(songId, settingsRepository.getPlaybackQuality().first()).first()
+        }.getOrDefault("")
+        return if (url.isBlank()) audio else audio.copy(filePath = url)
     }
 
     /** Load the last-played audio info for shortcut resume / widget. */

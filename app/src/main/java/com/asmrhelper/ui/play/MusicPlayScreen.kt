@@ -222,9 +222,7 @@ fun MusicPlayScreen(
                 onToggleFavorite = { viewModel.toggleFavorite() },
                 onCycleLoopMode = { viewModel.cycleLoopMode() },
                 onMore = { showMoreDialog = true },
-                onAddToPlaylist = if (state.playerState.currentAudio?.isRemoteSong() != true) {
-                    { showPlaylistDialog = true }
-                } else null,
+                onAddToPlaylist = { showPlaylistDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
@@ -656,7 +654,13 @@ fun MusicPlayScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    currentAudio?.let { playlistViewModel.addAudioToPlaylist(pl.id, it.id) }
+                                    currentAudio?.let { audio ->
+                                        if (audio.isRemoteSong()) {
+                                            playlistViewModel.addRemoteAudioToPlaylist(pl.id, audio)
+                                        } else {
+                                            playlistViewModel.addAudioToPlaylist(pl.id, audio.id)
+                                        }
+                                    }
                                     showPlaylistDialog = false
                                 }
                                 .padding(vertical = 12.dp),

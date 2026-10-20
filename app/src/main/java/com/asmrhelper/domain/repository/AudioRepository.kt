@@ -11,4 +11,6 @@ interface AudioRepository {
     suspend fun updateFavorite(id: Long, isFavorite: Boolean)
     suspend fun deleteAudio(id: Long)
     suspend fun searchAudio(keyword: String): List<Audio>
+    /** 持久化在线歌曲（按 sourceId+sourceSongId 查重，存在则复用 id），返回其本地 id。 */
+    suspend fun upsertRemoteAudio(audio: Audio): Long
 }

@@ -16,7 +16,12 @@ fun AudioEntity.toDomain() = Audio(
     filePath = filePath,
     durationMs = durationMs,
     isFavorite = isFavorite,
-    addedAt = addedAt
+    addedAt = addedAt,
+    coverUrl = coverUrl,
+    sourceId = sourceId,
+    sourceSongId = sourceSongId,
+    album = album,
+    publishTime = publishTime
 )
 
 fun Audio.toEntity() = AudioEntity(
@@ -26,7 +31,12 @@ fun Audio.toEntity() = AudioEntity(
     filePath = filePath,
     durationMs = durationMs,
     isFavorite = isFavorite,
-    addedAt = addedAt
+    addedAt = addedAt,
+    coverUrl = coverUrl,
+    sourceId = sourceId,
+    sourceSongId = sourceSongId,
+    album = album,
+    publishTime = publishTime
 )
 
 fun PlaylistEntity.toDomain(audioCount: Int = 0) = Playlist(

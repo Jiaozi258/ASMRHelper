@@ -77,6 +77,14 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
+    /** 在线歌曲加入本地歌单：先持久化元数据拿本地 id，再建关联。 */
+    fun addRemoteAudioToPlaylist(playlistId: Long, audio: Audio) {
+        viewModelScope.launch {
+            val id = audioRepository.upsertRemoteAudio(audio)
+            playlistRepository.addAudioToPlaylist(playlistId, id)
+        }
+    }
+
     fun removeAudioFromPlaylist(playlistId: Long, audioId: Long) {
         viewModelScope.launch {
             playlistRepository.removeAudioFromPlaylist(playlistId, audioId)

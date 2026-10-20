@@ -29,6 +29,13 @@ class AudioRepositoryImpl @Inject constructor(
         return audioDao.insert(audio.toEntity())
     }
 
+    override suspend fun upsertRemoteAudio(audio: Audio): Long {
+        val songId = audio.sourceSongId ?: audio.id.toString()
+        audioDao.getBySource(audio.sourceId, songId)?.let { return it.id }
+        // 在线歌曲的 filePath 是临时流 URL（会过期），不持久化；播放时按 source 动态解析
+        return audioDao.insert(audio.copy(filePath = "").toEntity())
+    }
+
     override suspend fun updateFavorite(id: Long, isFavorite: Boolean) {
         audioDao.getById(id)?.let { entity ->
             audioDao.update(entity.copy(isFavorite = isFavorite))
