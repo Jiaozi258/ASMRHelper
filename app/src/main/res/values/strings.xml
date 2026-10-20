@@ -13,7 +13,7 @@
     <string name="shortcut_history_long">查看播放历史记录</string>
 
     <!-- Widget -->
-    <string name="widget_description">ASMRHelper 桌面快捷播放控制</string>
+    <string name="widget_description">NACRE 桌面快捷播放控制</string>
 
     <!-- 导航三页 -->
     <string name="nav_play">播放</string>
@@ -142,14 +142,10 @@
 
     <!-- 播放页 -->
     <string name="play_menu_playlist">播放列表</string>
-    <string name="play_menu_favorites">我的收藏</string>
-    <string name="play_menu_scan">本地文件扫描</string>
-    <string name="play_menu_file_manager">文件管理器</string>
     <string name="play_menu_background">背景图库</string>
     <string name="play_menu_images">图片</string>
     <string name="play_menu_trigger_pad">触发器面板</string>
     <string name="play_menu_sleep_journal">睡眠记录</string>
-    <string name="play_menu_video_audio">视频音频</string>
     <string name="play_menu_settings">设置</string>
     <string name="play_not_playing">未在播放</string>
     <string name="play_loop_none">→ 播完即止</string>
@@ -368,6 +364,7 @@
     <string name="playlist_list_empty">播放列表为空</string>
     <string name="playlist_import_success">导入成功: %s</string>
     <string name="playlist_import_failed">导入失败: %s</string>
+    <string name="playlist_export_failed">导出失败</string>
 
     <!-- 睡眠记录 -->
     <string name="sleep_title">睡眠记录</string>
@@ -439,13 +436,14 @@
 
     <!-- 个人主页 -->
     <string name="profile_avatar">头像</string>
+    <string name="profile_edit_title">编辑资料</string>
+    <string name="profile_edit_avatar_hint">点击更换头像</string>
+    <string name="profile_avatar_save_failed">头像保存失败</string>
     <string name="profile_default_user">用户</string>
     <string name="profile_not_logged_in">未登录</string>
     <string name="profile_logged_in">已登录</string>
     <string name="profile_login_hint">登录以解锁更多功能</string>
     <string name="profile_welcome">欢迎回来, %s</string>
-    <string name="profile_cloud_sync">云端同步</string>
-    <string name="profile_coming_soon">即将推出</string>
     <string name="profile_logged_out">已退出登录</string>
     <string name="profile_logout">退出登录</string>
     <string name="profile_logout_action">退出</string>
@@ -459,7 +457,7 @@
     <string name="profile_no_account">没有账号？切换为注册</string>
     <string name="profile_online_music">在线音乐平台</string>
     <string name="profile_statistics">数据统计</string>
-    <string name="profile_stat_favorites">收藏音频</string>
+    <string name="profile_stat_favorites">本地音频</string>
     <string name="profile_stat_playlists">播放列表</string>
     <string name="profile_stat_backgrounds">背景图</string>
     <string name="profile_version">版本</string>
@@ -505,7 +503,7 @@
     <string name="settings_background_keep_alive">后台播放保活</string>
     <string name="settings_battery_whitelisted">已关闭电池优化，后台播放受保护</string>
     <string name="settings_battery_not_whitelisted">关闭电池优化可防止切后台或息屏后被系统强行停止播放</string>
-    <string name="settings_battery_find_hint">请在列表中找到 ASMRHelper 并关闭电池优化</string>
+    <string name="settings_battery_find_hint">请在列表中找到 NACRE 并关闭电池优化</string>
     <string name="settings_open_failed">无法打开设置: %s</string>
     <string name="settings_lock_screen">锁屏界面展示</string>
     <string name="settings_lock_screen_desc">开启后，音频信息将在锁屏界面可见</string>
@@ -552,6 +550,8 @@
     <string name="settings_appearance_section">外观设置</string>
     <string name="settings_bg_solid">纯色背景</string>
     <string name="settings_theme_accent">主题色彩</string>
+    <string name="settings_bg_contrast">反差模式</string>
+    <string name="settings_bg_contrast_desc">用主题色的反色调替代「主题色+专辑色」混合，让歌词更显眼</string>
     <string name="theme_apple_blue">苹果蓝</string>
     <string name="theme_purple">暗夜紫</string>
     <string name="theme_warm_orange">暖橙</string>
@@ -559,6 +559,13 @@
     <string name="theme_ocean_blue">海洋蓝</string>
     <string name="theme_rose_gold">玫瑰金</string>
     <string name="theme_monochrome">极简灰</string>
+    <string name="theme_klein_blue">克莱因蓝</string>
+    <string name="theme_dark_gold">暗黑金</string>
+    <string name="theme_brilliant_red">绚烂红</string>
+    <string name="theme_mint_green">薄荷绿</string>
+    <string name="theme_cyan_teal">青碧</string>
+    <string name="theme_lavender">薰衣草紫</string>
+    <string name="theme_sakura_pink">樱花粉</string>
     <string name="settings_bg_deep_black">深空黑</string>
     <string name="settings_bg_deep_blue">深邃蓝</string>
     <string name="settings_bg_dark_purple">暗紫</string>
@@ -690,16 +697,16 @@
 
     <!-- 电池优化引导 -->
     <string name="battery_dialog_title">保持后台播放</string>
-    <string name="battery_dialog_body">为确保息屏或切换应用后音乐不会自动停止，需要将 ASMRHelper 加入电池优化白名单。</string>
+    <string name="battery_dialog_body">为确保息屏或切换应用后音乐不会自动停止，需要将 NACRE 加入电池优化白名单。</string>
     <string name="battery_dialog_rom_hint">您使用的是国产手机系统，建议同时检查以下设置：</string>
     <string name="battery_dialog_action">去省电设置</string>
     <string name="battery_dialog_app_info">请在应用信息页中开启「自启动」和「后台运行」权限</string>
     <string name="battery_dialog_app_details">应用详情 →</string>
     <string name="battery_dialog_later">稍后再说</string>
-    <string name="battery_guidance_xiaomi">小米/HyperOS: 设置 → 应用设置 → 应用管理 → ASMRHelper → 省电策略 → 无限制\n同时开启: 自启动管理 → 允许自启动</string>
-    <string name="battery_guidance_oppo">OPPO/ColorOS: 设置 → 应用 → 应用管理 → ASMRHelper → 耗电保护 → 允许后台运行\n同时开启: 自启动管理 → 允许自启动</string>
+    <string name="battery_guidance_xiaomi">小米/HyperOS: 设置 → 应用设置 → 应用管理 → NACRE → 省电策略 → 无限制\n同时开启: 自启动管理 → 允许自启动</string>
+    <string name="battery_guidance_oppo">OPPO/ColorOS: 设置 → 应用 → 应用管理 → NACRE → 耗电保护 → 允许后台运行\n同时开启: 自启动管理 → 允许自启动</string>
     <string name="battery_guidance_vivo">vivo/OriginOS: 设置 → 应用与权限 → 权限管理 → 后台弹出界面 → 允许\n同时: i管家 → 实用工具 → 自启动管理 → 打开开关</string>
-    <string name="battery_guidance_huawei">华为/HarmonyOS: 设置 → 应用 → 应用启动管理 → ASMRHelper → 手动管理 → 全部开启\n同时: 设置 → 电池 → 更多电池设置 → 休眠时始终保持网络连接</string>
+    <string name="battery_guidance_huawei">华为/HarmonyOS: 设置 → 应用 → 应用启动管理 → NACRE → 手动管理 → 全部开启\n同时: 设置 → 电池 → 更多电池设置 → 休眠时始终保持网络连接</string>
 
     <!-- 模式切换 -->
     <string name="mode_toggle_to_music">切换到 MUSIC 模式</string>

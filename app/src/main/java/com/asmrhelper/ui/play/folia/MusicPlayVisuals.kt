@@ -20,10 +20,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,6 +33,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
@@ -75,7 +73,6 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -102,9 +99,7 @@ import com.asmrhelper.util.WordLyricLine
 import com.asmrhelper.util.currentLineIndex
 import kotlinx.coroutines.delay
 import kotlin.math.PI
-import kotlin.math.abs
 import kotlin.math.cos
-import kotlin.math.roundToInt
 
 /**
  * 全屏音频反应背景：双色调封面为底（真实提取主/次色），叠加随 FFT 频谱
@@ -116,13 +111,20 @@ fun AudioReactiveBackground(
     waveform: ByteArray?,
     fft: FloatArray?,
     mode: PlaybackBackgroundMode = PlaybackBackgroundMode.BLURRED_COVER,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contrastMode: Boolean = false
 ) {
     val accent = LocalAccentColor.current
     val fallbackPrimary = accent.toArgb().toLong() and 0xFFFFFFFFL
     // 次调做红蓝交换（而非同色加深），保证双色调永不塌成纯色
     val fallbackSecondary = Duotone.swapRedBlue(fallbackPrimary)
-    val (primaryLong, secondaryLong) = rememberCoverPalette(coverUrl, fallbackPrimary, fallbackSecondary)
+    // 反差模式：用主题色反色（互补色）替代封面/主题混合，突出歌词
+    val (primaryLong, secondaryLong) = if (contrastMode) {
+        val inverse = Duotone.inverse(fallbackPrimary)
+        inverse to Duotone.swapRedBlue(inverse)
+    } else {
+        rememberCoverPalette(coverUrl, fallbackPrimary, fallbackSecondary)
+    }
     val primary = Color(primaryLong.toInt())
     val secondary = Color(secondaryLong.toInt())
 
@@ -332,8 +334,8 @@ fun CenteredLyrics(
 }
 
 /**
- * 滑动歌词：只展示上下文（上一句 / 当前句 / 下一句），当前句居中强调，
- * 随进度平滑滚动；视觉样式可选平铺或鱼眼。
+ * 滑动歌词（静态展示）：固定居中显示上一句 / 当前句 / 下一句，当前句居中强调，
+ * 上下句渐隐（半透明 + 竖向渐变淡出）。歌词本身不随进度滚动，用户也无法拖动。
  */
 @Composable
 fun ScrollLyrics(
@@ -347,77 +349,102 @@ fun ScrollLyrics(
     style: LyricScrollStyle = LyricScrollStyle.FLAT
 ) {
     val accent = LocalAccentColor.current
-    val density = LocalDensity.current
     val textAlign = lyricTextAlign(alignment)
     val lineHeight = (fontSize * lineSpacing).sp
-    val lineHeightPx = with(density) { lineHeight.toPx() }
-    val scrollState = rememberScrollState()
+    val contextFontSize = (fontSize - 1).coerceAtLeast(10).sp
+    val contextScale = if (style == LyricScrollStyle.FISHEYE) fisheyeScale(1) else 1f
 
-    BoxWithConstraints(modifier = modifier) {
-        val viewportPx = with(density) { maxHeight.toPx() }
-        val topPaddingPx = (viewportPx - lineHeightPx) / 2f
-        val contentHeightPx = lines.size * lineHeightPx + 2f * topPaddingPx
-        val maxScroll = (contentHeightPx - viewportPx).coerceAtLeast(0f)
-        val topPaddingDp = with(density) { topPaddingPx.toDp() }
-
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
         if (lines.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
-            }
-            return@BoxWithConstraints
-        }
-
-        val centerIndex = remember(lines, progressMs) { lines.currentLineIndex(progressMs) }
-
-        // 自动滚动：把当前行居中
-        LaunchedEffect(centerIndex, lineHeightPx, viewportPx, lines.size) {
-            val target = (centerIndex * lineHeightPx - topPaddingPx).coerceIn(0f, maxScroll)
-            scrollState.animateScrollTo(target.roundToInt())
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(Modifier.height(topPaddingDp))
-            lines.forEachIndexed { index, line ->
-                val distance = index - centerIndex
-                val absDist = abs(distance)
-                val isCurrent = absDist == 0
-                // 只展示上下文（上一句 / 当前句 / 下一句），更远的句子隐藏，突出当前句
-                val alpha = when {
-                    isCurrent -> 1f
-                    absDist == 1 -> 0.62f
-                    else -> 0f
+            Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
+        } else {
+            val centerIndex = remember(lines, progressMs) { lines.currentLineIndex(progressMs) }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // 上一句：自下而上淡出
+                lines.getOrNull(centerIndex - 1)?.let { prev ->
+                    StaticLyricText(
+                        text = prev.text,
+                        brush = Brush.verticalGradient(
+                            listOf(Color.Transparent, TextSecondary.copy(alpha = 0.75f))
+                        ),
+                        fontSize = contextFontSize,
+                        lineHeight = lineHeight,
+                        textAlign = textAlign,
+                        alpha = 0.5f,
+                        scale = contextScale
+                    )
                 }
-                val scale = if (style == LyricScrollStyle.FISHEYE) fisheyeScale(absDist) else 1f
-                Text(
-                    text = line.text,
-                    color = if (isCurrent) accent else TextSecondary,
-                    fontSize = (if (isCurrent) fontSize else (fontSize - 1).coerceAtLeast(10)).sp,
-                    lineHeight = lineHeight,
-                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                    textAlign = textAlign,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    style = if (isCurrent && shadowEnabled) TextStyle(
-                        shadow = Shadow(color = accent.copy(alpha = 0.6f), blurRadius = 14f)
-                    ) else TextStyle(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .graphicsLayer {
-                            scaleX = scale
-                            scaleY = scale
-                            this.alpha = alpha
-                        }
-                )
+                // 当前句：全亮强调
+                lines.getOrNull(centerIndex)?.let { cur ->
+                    StaticLyricText(
+                        text = cur.text,
+                        color = accent,
+                        fontSize = fontSize.sp,
+                        lineHeight = lineHeight,
+                        textAlign = textAlign,
+                        fontWeight = FontWeight.Bold,
+                        shadowEnabled = shadowEnabled,
+                        shadowColor = accent,
+                        alpha = 1f,
+                        scale = 1f
+                    )
+                }
+                // 下一句：自上而下淡出
+                lines.getOrNull(centerIndex + 1)?.let { next ->
+                    StaticLyricText(
+                        text = next.text,
+                        brush = Brush.verticalGradient(
+                            listOf(TextSecondary.copy(alpha = 0.75f), Color.Transparent)
+                        ),
+                        fontSize = contextFontSize,
+                        lineHeight = lineHeight,
+                        textAlign = textAlign,
+                        alpha = 0.5f,
+                        scale = contextScale
+                    )
+                }
             }
-            Spacer(Modifier.height(topPaddingDp))
         }
     }
+}
+
+/** 静态歌词单行：可选渐变笔刷（渐隐）或纯色，带缩放/透明度。 */
+@Composable
+private fun StaticLyricText(
+    text: String,
+    fontSize: androidx.compose.ui.unit.TextUnit,
+    lineHeight: androidx.compose.ui.unit.TextUnit,
+    textAlign: TextAlign,
+    color: Color = Color.Unspecified,
+    brush: Brush? = null,
+    fontWeight: FontWeight = FontWeight.Normal,
+    shadowEnabled: Boolean = false,
+    shadowColor: Color = Color.White,
+    alpha: Float = 1f,
+    scale: Float = 1f
+) {
+    Text(
+        text = text,
+        color = if (brush == null) color else Color.Unspecified,
+        style = TextStyle(
+            brush = brush,
+            fontSize = fontSize,
+            lineHeight = lineHeight,
+            fontWeight = fontWeight,
+            textAlign = textAlign,
+            shadow = if (shadowEnabled) Shadow(color = shadowColor.copy(alpha = 0.6f), blurRadius = 14f) else null
+        ),
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                this.alpha = alpha
+            }
+    )
 }
 
 private fun lyricTextAlign(alignment: Int): TextAlign = when (alignment) {
@@ -455,6 +482,7 @@ fun FoliaCommandBar(
     onToggleFavorite: () -> Unit,
     onCycleLoopMode: () -> Unit,
     onMore: () -> Unit,
+    onAddToPlaylist: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val accent = LocalAccentColor.current
@@ -603,6 +631,15 @@ fun FoliaCommandBar(
                                     contentDescription = stringResource(if (isFavorite) R.string.library_remove_favorite else R.string.library_add_favorite),
                                     tint = if (isFavorite) accent else TextSecondary
                                 )
+                            }
+                            if (onAddToPlaylist != null) {
+                                IconButton(onClick = { interactionTick++; onAddToPlaylist() }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+                                        contentDescription = stringResource(R.string.menu_playlist),
+                                        tint = TextSecondary
+                                    )
+                                }
                             }
                             Row(
                                 modifier = Modifier

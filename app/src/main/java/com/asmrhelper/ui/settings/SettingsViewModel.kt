@@ -109,6 +109,17 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // ── 播放页背景反差模式 ─────────────────────────────
+
+    val backgroundContrastMode: StateFlow<Boolean> = settingsRepository.getBackgroundContrastMode()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setBackgroundContrastMode(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setBackgroundContrastMode(enabled)
+        }
+    }
+
     // ── 应用语言（跟随系统/中文/英文） ─────────────────
 
     val appLanguage: StateFlow<Int> = settingsRepository.getAppLanguage()

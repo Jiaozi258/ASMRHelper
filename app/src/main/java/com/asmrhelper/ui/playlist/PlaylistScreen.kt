@@ -201,19 +201,27 @@ fun PlaylistScreen(
                             onExport = {
                                 scope.launch {
                                     val json = viewModel.getExportJson(playlist.id) ?: return@launch
-                                    val file = File(context.cacheDir, "${playlist.name}.json")
-                                    file.writeText(json)
-                                    val uri = FileProvider.getUriForFile(
-                                        context,
-                                        "${context.packageName}.fileprovider",
-                                        file
-                                    )
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "application/json"
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    runCatching {
+                                        // 清理非法文件名字符，避免含路径分隔符导致写入失败/越界。
+                                        val safeName = playlist.name
+                                            .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                                            .trim().ifBlank { "playlist" }
+                                        val file = File(context.cacheDir, "$safeName.json")
+                                        file.writeText(json)
+                                        val uri = FileProvider.getUriForFile(
+                                            context,
+                                            "${context.packageName}.fileprovider",
+                                            file
+                                        )
+                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "application/json"
+                                            putExtra(Intent.EXTRA_STREAM, uri)
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.playlist_export_chooser)))
+                                    }.onFailure {
+                                        Toast.makeText(context, context.getString(R.string.playlist_export_failed), Toast.LENGTH_SHORT).show()
                                     }
-                                    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.playlist_export_chooser)))
                                 }
                             },
                             onPlayAll = {

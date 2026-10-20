@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -962,6 +964,7 @@ private fun EqualizerSettingsScreen(
 //  4. 外观与主题
 // ═══════════════════════════════════════════════════════════
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AppearanceSettingsScreen(
     onBack: () -> Unit,
@@ -970,6 +973,7 @@ private fun AppearanceSettingsScreen(
     val bgColorIndex by viewModel.bgColorIndex.collectAsStateWithLifecycle()
     val themePresetOrdinal by viewModel.themePresetOrdinal.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val backgroundContrastMode by viewModel.backgroundContrastMode.collectAsStateWithLifecycle()
     val appFontPath by viewModel.appFontPath.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showFontDialog by remember { mutableStateOf(false) }
@@ -1087,15 +1091,16 @@ private fun AppearanceSettingsScreen(
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 Text(stringResource(R.string.settings_theme_accent), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(12.dp))
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     ThemePreset.entries.forEach { preset ->
                         val isSelected = preset.ordinal == themePresetOrdinal
                         Box(
                             modifier = Modifier
-                                .weight(1f)
+                                .width(64.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(
                                     if (isSelected) preset.accent.copy(alpha = 0.15f)
@@ -1123,6 +1128,36 @@ private fun AppearanceSettingsScreen(
                         }
                     }
                 }
+            }
+        }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_bg_contrast), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_bg_contrast_desc), color = TextHint, fontSize = 12.sp)
+                }
+                Spacer(Modifier.width(12.dp))
+                Switch(
+                    checked = backgroundContrastMode,
+                    onCheckedChange = { viewModel.setBackgroundContrastMode(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = LocalAccentColor.current,
+                        checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
+                    )
+                )
             }
         }
 
@@ -1949,6 +1984,7 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
+    val versionName = remember { currentVersionName(context) }
 
     SubScreenScaffold(title = stringResource(R.string.category_about), onBack = onBack) {
         SectionHeader(icon = Icons.Filled.Info, title = stringResource(R.string.category_about))
@@ -1960,7 +1996,7 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = DarkSurface)
         ) {
-            AboutRow(label = stringResource(R.string.settings_version_info), value = "ASMRHelper v1.0.0")
+            AboutRow(label = stringResource(R.string.settings_version_info), value = "NACRE $versionName")
 
             HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
 
@@ -1981,7 +2017,7 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
             ) {
                 Text(stringResource(R.string.settings_check_update), color = TextPrimary, fontSize = 14.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (checking) stringResource(R.string.settings_checking) else "v1.0.0", color = TextSecondary, fontSize = 13.sp)
+                    Text(if (checking) stringResource(R.string.settings_checking) else versionName, color = TextSecondary, fontSize = 13.sp)
                     Spacer(Modifier.width(4.dp))
                     Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
                 }
@@ -2005,7 +2041,7 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
             ) {
                 Text(stringResource(R.string.profile_github), color = TextPrimary, fontSize = 14.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("JiaoZi258/ASMRHelper", color = TextSecondary, fontSize = 13.sp)
+                    Text("JiaoZi258/NACRE", color = TextSecondary, fontSize = 13.sp)
                     Spacer(Modifier.width(4.dp))
                     Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
                 }
@@ -2014,37 +2050,47 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
     }
 }
 
+/** 读取当前安装版本名，失败时回退 "0.1"。 */
+private fun currentVersionName(context: android.content.Context): String =
+    runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
+        .getOrNull() ?: "0.1"
+
 /** 拉取 GitHub latest release 的 tag 与本地版本对比，返回展示给用户的提示文案。 */
 private fun checkForUpdate(context: android.content.Context): String {
     return try {
-        val conn = (URL("https://api.github.com/repos/JiaoZi258/ASMRHelper/releases/latest")
+        val conn = (URL("https://api.github.com/repos/JiaoZi258/NACRE/releases/latest")
             .openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = 10_000
             readTimeout = 10_000
             setRequestProperty("Accept", "application/vnd.github+json")
-            setRequestProperty("User-Agent", "ASMRHelper")
+            setRequestProperty("User-Agent", "NACRE")
         }
-        val code = conn.responseCode
-        if (code == 404) return context.getString(R.string.settings_update_none)
-        if (code !in 200..299) return context.getString(R.string.settings_update_failed_http, code)
-        val body = conn.inputStream.bufferedReader().use { it.readText() }
-        val tag = Regex("\"tag_name\"\\s*:\\s*\"([^\"]+)\"")
-            .find(body)?.groupValues?.get(1)
-            ?: return context.getString(R.string.settings_update_not_found)
-        val latest = tag.trim().removePrefix("v")
-        val current = (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.0.0")
-            .trim().removePrefix("v")
-        if (compareVersions(latest, current) > 0) context.getString(R.string.settings_update_new, latest) else context.getString(R.string.settings_update_latest)
+        try {
+            val code = conn.responseCode
+            if (code == 404) return context.getString(R.string.settings_update_none)
+            if (code !in 200..299) return context.getString(R.string.settings_update_failed_http, code)
+            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            val tag = Regex("\"tag_name\"\\s*:\\s*\"([^\"]+)\"")
+                .find(body)?.groupValues?.get(1)
+                ?: return context.getString(R.string.settings_update_not_found)
+            val latest = tag.trim().removePrefix("v")
+            val current = (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.0.0")
+                .trim().removePrefix("v")
+            if (compareVersions(latest, current) > 0) context.getString(R.string.settings_update_new, latest) else context.getString(R.string.settings_update_latest)
+        } finally {
+            conn.disconnect()
+        }
     } catch (e: Exception) {
         context.getString(R.string.settings_update_failed, e.message ?: context.getString(R.string.common_network_error))
     }
 }
 
-/** 简单语义化版本比较：a > b 返回正数，a == b 返回 0，a < b 返回负数。 */
+/** 简单语义化版本比较：a > b 返回正数，a == b 返回 0，a < b 返回负数。
+ *  忽略前导 v/V 与非数字后缀（如 "0.1-beta"），按数字段逐段比较。 */
 private fun compareVersions(a: String, b: String): Int {
-    val pa = a.split(".").map { it.toIntOrNull() ?: 0 }
-    val pb = b.split(".").map { it.toIntOrNull() ?: 0 }
+    val pa = parseVersion(a)
+    val pb = parseVersion(b)
     for (i in 0 until maxOf(pa.size, pb.size)) {
         val x = pa.getOrElse(i) { 0 }
         val y = pb.getOrElse(i) { 0 }
@@ -2052,6 +2098,12 @@ private fun compareVersions(a: String, b: String): Int {
     }
     return 0
 }
+
+/** 把版本串拆成数字段：去前导 v、每段只取前导数字（忽略 -beta 等后缀）。 */
+private fun parseVersion(v: String): List<Int> =
+    v.trim().removePrefix("v").removePrefix("V")
+        .split(".")
+        .map { seg -> seg.takeWhile { it.isDigit() }.toIntOrNull() ?: 0 }
 
 // ── 辅助组件 ──────────────────────────────────────────────
 

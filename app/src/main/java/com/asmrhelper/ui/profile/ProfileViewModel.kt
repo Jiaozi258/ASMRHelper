@@ -44,6 +44,9 @@ class ProfileViewModel @Inject constructor(
     private val _username = MutableStateFlow(prefs.getString("username", "") ?: "")
     val username: StateFlow<String> = _username.asStateFlow()
 
+    private val _avatarPath = MutableStateFlow(prefs.getString("avatar_path", "") ?: "")
+    val avatarPath: StateFlow<String> = _avatarPath.asStateFlow()
+
     fun login(name: String, password: String) {
         _isLoggedIn.value = true
         _username.value = name
@@ -58,12 +61,23 @@ class ProfileViewModel @Inject constructor(
         login(name, password)
     }
 
+    fun updateProfile(name: String, avatarPath: String) {
+        _username.value = name
+        _avatarPath.value = avatarPath
+        prefs.edit()
+            .putString("username", name)
+            .putString("avatar_path", avatarPath)
+            .apply()
+    }
+
     fun logout() {
         _isLoggedIn.value = false
         _username.value = ""
+        _avatarPath.value = ""
         prefs.edit()
             .remove("is_logged_in")
             .remove("username")
+            .remove("avatar_path")
             .apply()
     }
 

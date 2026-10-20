@@ -98,7 +98,6 @@ import com.asmrhelper.ui.components.PlayPauseButton
 import com.asmrhelper.ui.settings.SettingsViewModel
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
-import com.asmrhelper.ui.theme.DynamicIsland
 import com.asmrhelper.ui.theme.ErrorRed
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -186,41 +185,25 @@ fun PlayScreen(
             }
         }
 
-        // 灵动岛「正在播放」胶囊（切歌/恢复播放时展开）
-        DynamicIsland(
-            title = state.displayTitle.ifEmpty { null },
-            isPlaying = state.playerState.isPlaying,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(top = 6.dp)
-        )
-
         // 右上角下拉菜单
         AsmrDropdownMenu(
             items = listOf(
+                MenuItem("library", stringResource(R.string.library_title)),
                 MenuItem("playlist", stringResource(R.string.play_menu_playlist)),
-                MenuItem("favorites", stringResource(R.string.play_menu_favorites)),
-                MenuItem("scan", stringResource(R.string.play_menu_scan)),
-                MenuItem("file_manager", stringResource(R.string.play_menu_file_manager)),
                 MenuItem("background", stringResource(R.string.play_menu_background)),
                 MenuItem("slideshow", stringResource(R.string.play_menu_images)),
                 MenuItem("trigger_pad", stringResource(R.string.play_menu_trigger_pad)),
                 MenuItem("sleep_journal", stringResource(R.string.play_menu_sleep_journal)),
-                MenuItem("video_audio", stringResource(R.string.play_menu_video_audio)),
                 MenuItem("settings", stringResource(R.string.play_menu_settings))
             ),
             onItemClick = { item ->
                 when (item.id) {
+                    "library" -> onNavigateToLibrary(0)
                     "playlist" -> onNavigateToPlaylist()
-                    "favorites" -> onNavigateToLibrary(1)
-                    "scan" -> onNavigateToLibrary(0)
-                    "file_manager" -> onNavigateToLibrary(2)
                     "trigger_pad" -> onNavigateToTriggerPad()
                     "background" -> onNavigateToBackground()
                     "slideshow" -> onNavigateToSlideshow()
                     "sleep_journal" -> onNavigateToSleepJournal()
-                    "video_audio" -> onNavigateToLibrary(3)
                     "settings" -> onNavigateToSettings()
                 }
             },

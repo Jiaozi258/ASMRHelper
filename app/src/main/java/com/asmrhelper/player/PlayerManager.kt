@@ -105,6 +105,7 @@ class PlayerManager @Inject constructor(
             .remove("playlist_json")
             .remove("playlist_index")
             .remove("loop_mode")
+            .remove("was_playing")
             .apply()
     }
 
@@ -142,6 +143,12 @@ class PlayerManager @Inject constructor(
             .apply()
     }
 
+    /** 持久化循环模式（独立于队列，队列为空时也生效）。 */
+    private fun saveLoopMode() {
+        if (!isRememberPlaybackEnabled()) return
+        prefs.edit().putString("loop_mode", _state.value.loopMode.name).apply()
+    }
+
     private fun loadPlaylistState(): List<Audio> {
         val json = prefs.getString("playlist_json", null) ?: return emptyList()
         return PlaylistStateCodec.decode(json, context.getString(R.string.common_unknown))
@@ -169,9 +176,14 @@ class PlayerManager @Inject constructor(
         mainPlayer.setMediaItem(mediaItem)
         mainPlayer.prepare()
         mainPlayer.seekTo(loadLastPosition())
+        audioFocusManager.requestFocus()
         mainPlayer.play()
         _state.update { it.copy(currentAudio = audio, isPlaying = true) }
     }
+
+    /** 进程被杀时是否处于播放中，用于前台服务重启后判断是否续播。 */
+    fun shouldResumeAfterProcessDeath(): Boolean =
+        isRememberPlaybackEnabled() && prefs.getBoolean("was_playing", false)
 
     init {
         // ── 音频焦点：统一管理主播放器与环境音的暂停/恢复 ──
@@ -248,6 +260,10 @@ class PlayerManager @Inject constructor(
                 // 暂停时立即保存进度，实现精准定位
                 if (!isPlaying) {
                     saveLastPosition(mainPlayer.currentPosition)
+                }
+                // 持久化播放状态，供进程被杀后判断是否应续播
+                if (isRememberPlaybackEnabled()) {
+                    prefs.edit().putBoolean("was_playing", isPlaying).apply()
                 }
             }
 
@@ -410,6 +426,7 @@ class PlayerManager @Inject constructor(
                 if (mainPlayer.playbackState == Player.STATE_ENDED) {
                     mainPlayer.seekTo(0)
                 }
+                audioFocusManager.requestFocus()
                 playWithVolumeFade()
             }
             PlayerEvent.Next -> skipToNext()
@@ -418,6 +435,7 @@ class PlayerManager @Inject constructor(
             is PlayerEvent.SetLoopMode -> {
                 _state.update { it.copy(loopMode = event.mode) }
                 savePlaylistState()
+                saveLoopMode()
             }
             PlayerEvent.ToggleBackground -> toggleBackground()
             is PlayerEvent.SetBackgroundAudio -> setBackgroundAudio(event.filePath)
@@ -516,9 +534,15 @@ class PlayerManager @Inject constructor(
         currentPlaylist = playlist.ifEmpty { listOf(audio) }
         // 优先按 filePath（稳定唯一）匹配，其次按 id 兜底——避免多个 id==0
         // 的音频（记忆播放/历史/触发器）互相碰撞导致下一首/上一首定位错位。
-        currentIndex = currentPlaylist.indexOfFirst { a -> a.filePath == audio.filePath }
+        val matchedIndex = currentPlaylist.indexOfFirst { a -> a.filePath == audio.filePath }
             .let { if (it >= 0) it else currentPlaylist.indexOfFirst { a -> a.id == audio.id } }
-            .coerceAtLeast(0)
+        if (matchedIndex < 0) {
+            // 音频不在传入队列中：退化为单曲队列，避免定位到错误的曲目。
+            currentPlaylist = listOf(audio)
+            currentIndex = 0
+        } else {
+            currentIndex = matchedIndex
+        }
 
         val crossfadeMs = _state.value.crossfadeDurationMs
         if (crossfadeMs > 0 && mainPlayer.isPlaying) {
@@ -602,8 +626,10 @@ class PlayerManager @Inject constructor(
 
     private fun skipToPrevious() {
         if (currentPlaylist.isEmpty() || currentIndex < 0) return
+        // 随机模式没有"上一首"的顺序概念，回到本曲开头即可。
         // 超过 3 秒：回到本曲开头；否则跳到上一首，但在第一首时不再回绕到最后。
-        if (mainPlayer.currentPosition > 3000L || currentIndex == 0) {
+        if (_state.value.loopMode == LoopMode.SHUFFLE ||
+            mainPlayer.currentPosition > 3000L || currentIndex == 0) {
             mainPlayer.seekTo(0)
             return
         }

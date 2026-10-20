@@ -37,8 +37,12 @@ class QqMusicSource(
     private var cookie: String = persistedCookie
     private var nickname: String = persistedNickname
 
-    private val _isLoggedIn = MutableStateFlow(persistedCookie.contains("uin"))
+    private val _isLoggedIn = MutableStateFlow(hasLoginCookie(persistedCookie))
     override val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    /** 判定 cookie 是否已登录：提取非零 uin（`uin=o<号码>`；匿名 `uin=0` 视为未登录）。 */
+    private fun hasLoginCookie(c: String): Boolean =
+        QqMusicJson.uin(c).toLongOrNull()?.let { it > 0L } == true
 
     override val webLogin: WebLoginConfig =
         WebLoginConfig("https://y.qq.com/", "https://y.qq.com", setOf("qm_keyst", "uin"))
@@ -68,7 +72,7 @@ class QqMusicSource(
                 .put("uin", "0")
                 .put("guid", "10000")
                 .put("songmid", JSONArray().put(songId))
-                .put("filename", JSONArray().put("$prefix$songId$songId.mp3"))
+                .put("filename", JSONArray().put("$prefix$songId$songId" + if (prefix == "F000") ".flac" else ".mp3"))
                 .put("songtype", JSONArray().put(0))
                 .put("loginflag", 1)
                 .put("platform", "20")
@@ -122,7 +126,7 @@ class QqMusicSource(
     override fun importLogin(cookie: String, nickname: String) {
         this.cookie = cookie
         this.nickname = nickname
-        _isLoggedIn.value = cookie.contains("uin")
+        _isLoggedIn.value = hasLoginCookie(cookie)
         onLoginChanged(cookie, nickname)
     }
 

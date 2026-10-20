@@ -13,7 +13,7 @@
     <string name="shortcut_history_long">View playback history</string>
 
     <!-- Widget -->
-    <string name="widget_description">ASMRHelper quick playback control</string>
+    <string name="widget_description">NACRE quick playback control</string>
 
     <!-- Navigation -->
     <string name="nav_play">Play</string>
@@ -142,14 +142,10 @@
 
     <!-- Play -->
     <string name="play_menu_playlist">Playlist</string>
-    <string name="play_menu_favorites">Favorites</string>
-    <string name="play_menu_scan">Scan local files</string>
-    <string name="play_menu_file_manager">File manager</string>
     <string name="play_menu_background">Background gallery</string>
     <string name="play_menu_images">Images</string>
     <string name="play_menu_trigger_pad">Trigger pad</string>
     <string name="play_menu_sleep_journal">Sleep journal</string>
-    <string name="play_menu_video_audio">Video audio</string>
     <string name="play_menu_settings">Settings</string>
     <string name="play_not_playing">Not playing</string>
     <string name="play_loop_none">→ Stop when finished</string>
@@ -368,6 +364,7 @@
     <string name="playlist_list_empty">Playlist is empty</string>
     <string name="playlist_import_success">Imported: %s</string>
     <string name="playlist_import_failed">Import failed: %s</string>
+    <string name="playlist_export_failed">Export failed</string>
 
     <!-- Sleep journal -->
     <string name="sleep_title">Sleep journal</string>
@@ -439,13 +436,14 @@
 
     <!-- Profile -->
     <string name="profile_avatar">Avatar</string>
+    <string name="profile_edit_title">Edit profile</string>
+    <string name="profile_edit_avatar_hint">Tap to change avatar</string>
+    <string name="profile_avatar_save_failed">Failed to save avatar</string>
     <string name="profile_default_user">User</string>
     <string name="profile_not_logged_in">Not signed in</string>
     <string name="profile_logged_in">Signed in</string>
     <string name="profile_login_hint">Sign in to unlock more features</string>
     <string name="profile_welcome">Welcome back, %s</string>
-    <string name="profile_cloud_sync">Cloud sync</string>
-    <string name="profile_coming_soon">Coming soon</string>
     <string name="profile_logged_out">Signed out</string>
     <string name="profile_logout">Log out</string>
     <string name="profile_logout_action">Log out</string>
@@ -459,7 +457,7 @@
     <string name="profile_no_account">No account? Switch to sign up</string>
     <string name="profile_online_music">Online music platforms</string>
     <string name="profile_statistics">Statistics</string>
-    <string name="profile_stat_favorites">Favorite audio</string>
+    <string name="profile_stat_favorites">Local audio</string>
     <string name="profile_stat_playlists">Playlists</string>
     <string name="profile_stat_backgrounds">Backgrounds</string>
     <string name="profile_version">Version</string>
@@ -505,7 +503,7 @@
     <string name="settings_background_keep_alive">Keep alive in background</string>
     <string name="settings_battery_whitelisted">Battery optimization off, background playback protected</string>
     <string name="settings_battery_not_whitelisted">Turn off battery optimization to prevent playback from being stopped in the background</string>
-    <string name="settings_battery_find_hint">Find ASMRHelper in the list and turn off battery optimization</string>
+    <string name="settings_battery_find_hint">Find NACRE in the list and turn off battery optimization</string>
     <string name="settings_open_failed">Cannot open settings: %s</string>
     <string name="settings_lock_screen">Show on lock screen</string>
     <string name="settings_lock_screen_desc">When enabled, audio info is shown on the lock screen</string>
@@ -552,6 +550,8 @@
     <string name="settings_appearance_section">Appearance</string>
     <string name="settings_bg_solid">Solid background</string>
     <string name="settings_theme_accent">Accent color</string>
+    <string name="settings_bg_contrast">Contrast mode</string>
+    <string name="settings_bg_contrast_desc">Use the inverse of the theme color instead of the theme + album blend, making lyrics stand out</string>
     <string name="theme_apple_blue">Apple blue</string>
     <string name="theme_purple">Night purple</string>
     <string name="theme_warm_orange">Warm orange</string>
@@ -559,6 +559,13 @@
     <string name="theme_ocean_blue">Ocean blue</string>
     <string name="theme_rose_gold">Rose gold</string>
     <string name="theme_monochrome">Monochrome</string>
+    <string name="theme_klein_blue">Klein blue</string>
+    <string name="theme_dark_gold">Dark gold</string>
+    <string name="theme_brilliant_red">Brilliant red</string>
+    <string name="theme_mint_green">Mint green</string>
+    <string name="theme_cyan_teal">Cyan teal</string>
+    <string name="theme_lavender">Lavender</string>
+    <string name="theme_sakura_pink">Sakura pink</string>
     <string name="settings_bg_deep_black">Deep black</string>
     <string name="settings_bg_deep_blue">Deep blue</string>
     <string name="settings_bg_dark_purple">Dark purple</string>
@@ -690,16 +697,16 @@
 
     <!-- Battery optimization guidance -->
     <string name="battery_dialog_title">Keep background playback</string>
-    <string name="battery_dialog_body">To keep music playing after screen-off or app switching, add ASMRHelper to the battery optimization whitelist.</string>
+    <string name="battery_dialog_body">To keep music playing after screen-off or app switching, add NACRE to the battery optimization whitelist.</string>
     <string name="battery_dialog_rom_hint">You are using a Chinese ROM; we also suggest checking these settings:</string>
     <string name="battery_dialog_action">Battery settings</string>
     <string name="battery_dialog_app_info">In the app info page, enable Auto-start and Run in background permissions</string>
     <string name="battery_dialog_app_details">App details →</string>
     <string name="battery_dialog_later">Later</string>
-    <string name="battery_guidance_xiaomi">Xiaomi/HyperOS: Settings → Apps → Manage apps → ASMRHelper → Battery saver → No restrictions\nAlso enable: Auto-start → Allow</string>
-    <string name="battery_guidance_oppo">OPPO/ColorOS: Settings → Apps → Manage apps → ASMRHelper → Battery → Allow background\nAlso enable: Auto-start → Allow</string>
+    <string name="battery_guidance_xiaomi">Xiaomi/HyperOS: Settings → Apps → Manage apps → NACRE → Battery saver → No restrictions\nAlso enable: Auto-start → Allow</string>
+    <string name="battery_guidance_oppo">OPPO/ColorOS: Settings → Apps → Manage apps → NACRE → Battery → Allow background\nAlso enable: Auto-start → Allow</string>
     <string name="battery_guidance_vivo">vivo/OriginOS: Settings → Apps &amp; permissions → Permissions → Background pop-ups → Allow\nAlso: i Manager → Tools → Auto-start → On</string>
-    <string name="battery_guidance_huawei">Huawei/HarmonyOS: Settings → Apps → App launch → ASMRHelper → Manual → Enable all\nAlso: Settings → Battery → More battery settings → Keep network connected during sleep</string>
+    <string name="battery_guidance_huawei">Huawei/HarmonyOS: Settings → Apps → App launch → NACRE → Manual → Enable all\nAlso: Settings → Battery → More battery settings → Keep network connected during sleep</string>
 
     <!-- Mode toggle -->
     <string name="mode_toggle_to_music">Switch to MUSIC mode</string>

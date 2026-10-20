@@ -39,6 +39,13 @@ class AsmrMediaService : Service() {
     private var lastPostedProgress: Long = -10000L
     private val minNotifInterval = 1000L  // rebuild at most once per second
 
+    // ── MediaSession throttle: avoid setPlaybackState/setMetadata spam ──
+    private var lastSessionPlaying: Boolean? = null
+    private var lastSessionTitle: String? = null
+    private var lastSessionArtist: String? = null
+    private var lastSessionDuration: Long = -1L
+    private var lastSessionTime: Long = 0L
+
     // ── Widget throttle: only notify on actual state changes ──
     private var lastWidgetPlaying: Boolean? = null
     private var lastWidgetTitle: String? = null
@@ -61,10 +68,10 @@ class AsmrMediaService : Service() {
         playerManager.setStateListener { state ->
             updateNotification(state)
             updateMediaSessionState(state)
-            manageWakeLock(state.isPlaying)
+            manageWakeLock(state.isPlaying || state.isBackgroundPlaying)
             // Notify widget only on actual play/pause or title changes (not
             // on every 200ms progress tick — avoids excessive broadcasts).
-            val currentTitle = state.currentAudio?.title ?: "ASMRHelper"
+            val currentTitle = state.currentAudio?.title ?: getString(R.string.app_name)
             if (state.isPlaying != lastWidgetPlaying || currentTitle != lastWidgetTitle) {
                 lastWidgetPlaying = state.isPlaying
                 lastWidgetTitle = currentTitle
@@ -107,9 +114,8 @@ class AsmrMediaService : Service() {
 
         // ── Process-death recovery: resume playback if the service was
         //     recreated by START_STICKY after being killed by the OS. ──
-        // (记忆播放功能现在会在 init 时恢复 currentAudio，因此不能再依赖
-        //  currentAudio == null 来判断是否需要自动续播。)
-        if (intent == null && !state.isPlaying) {
+        // 仅在进程被杀前处于"播放中"才续播；若用户本已暂停，不应自动出声。
+        if (intent == null && playerManager.shouldResumeAfterProcessDeath()) {
             android.util.Log.i("AsmrMedia", "Restarting from process death — resuming playback")
             playerManager.resumeLastPlayback()
         }
@@ -186,7 +192,7 @@ class AsmrMediaService : Service() {
             LoopMode.SHUFFLE -> " | " + getString(R.string.settings_loop_shuffle)
             else -> ""
         }
-        val title = state.currentAudio?.title ?: "ASMRHelper"
+        val title = state.currentAudio?.title ?: getString(R.string.app_name)
         val subtitle = (state.currentAudio?.artist ?: getString(R.string.play_not_playing)) + loopLabel
 
         val builder = NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID)
@@ -326,10 +332,28 @@ class AsmrMediaService : Service() {
     }
 
     private fun updateMediaSessionState(state: PlayerState) {
+        val playing = state.isPlaying
+        val title = state.currentAudio?.title
+        val artist = state.currentAudio?.artist
+        val duration = state.durationMs
+        val now = System.currentTimeMillis()
+
+        // 仅在实际状态/元数据变化、或进度节流到期时才重建，避免 200ms 一刷。
+        val stateChanged = playing != lastSessionPlaying
+        val metaChanged = title != lastSessionTitle || artist != lastSessionArtist || duration != lastSessionDuration
+        val progressDue = now - lastSessionTime >= minNotifInterval
+        if (!stateChanged && !metaChanged && !progressDue) return
+
+        lastSessionPlaying = playing
+        lastSessionTitle = title
+        lastSessionArtist = artist
+        lastSessionDuration = duration
+        lastSessionTime = now
+
         mediaSession.setPlaybackState(
             PlaybackStateCompat.Builder()
                 .setState(
-                    if (state.isPlaying) PlaybackStateCompat.STATE_PLAYING
+                    if (playing) PlaybackStateCompat.STATE_PLAYING
                     else PlaybackStateCompat.STATE_PAUSED,
                     state.progressMs, 1.0f
                 )
@@ -341,9 +365,9 @@ class AsmrMediaService : Service() {
         )
         mediaSession.setMetadata(
             android.support.v4.media.MediaMetadataCompat.Builder()
-                .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE, state.currentAudio?.title)
-                .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST, state.currentAudio?.artist)
-                .putLong(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DURATION, state.durationMs)
+                .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE, title)
+                .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
+                .putLong(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DURATION, duration)
                 .build()
         )
     }

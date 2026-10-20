@@ -192,6 +192,14 @@ class PlayViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setPlaybackBackgroundMode(mode.name) }
     }
 
+    // ── 播放页背景反差模式 ──────────────────────────────
+    val backgroundContrastMode: StateFlow<Boolean> = settingsRepository.getBackgroundContrastMode()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setBackgroundContrastMode(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setBackgroundContrastMode(enabled) }
+    }
+
     // ── 音质（仅影响下一首） ────────────────────────────
     val playbackQuality: StateFlow<PlaybackQuality> = settingsRepository.getPlaybackQuality()
         .map { key -> PlaybackQuality.entries.firstOrNull { it.key == key } ?: PlaybackQuality.EXCELLENT }
@@ -673,8 +681,10 @@ class PlayViewModel @Inject constructor(
             if (path != null) {
                 setBackgroundAudio(path)
             } else {
-                // Deselecting ambient — stop background playback
-                playerManager.handleEvent(PlayerEvent.ToggleBackground)
+                // 取消选择环境音：仅当环境音正在播放时才停止，避免误置 isBackgroundPlaying。
+                if (_uiState.value.playerState.isBackgroundPlaying) {
+                    playerManager.handleEvent(PlayerEvent.ToggleBackground)
+                }
             }
         }
     }

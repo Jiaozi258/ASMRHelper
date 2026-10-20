@@ -501,6 +501,13 @@ class SettingsRepositoryImpl @Inject constructor(
         _playbackBackgroundMode.value = mode
     }
 
+    private val _backgroundContrastMode = MutableStateFlow(prefs.getBoolean("playback_bg_contrast", false))
+    override fun getBackgroundContrastMode(): Flow<Boolean> = _backgroundContrastMode
+    override suspend fun setBackgroundContrastMode(enabled: Boolean) {
+        prefs.edit().putBoolean("playback_bg_contrast", enabled).apply()
+        _backgroundContrastMode.value = enabled
+    }
+
     private val _playbackQuality = MutableStateFlow(
         prefs.getString("playback_quality", "excellent") ?: "excellent"
     )

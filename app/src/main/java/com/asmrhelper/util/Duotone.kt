@@ -22,6 +22,15 @@ object Duotone {
         val b = argb and 0xFF
         return (a.toLong() shl 24) or (b.toLong() shl 16) or (g.toLong() shl 8) or r.toLong()
     }
+
+    /** 反色：RGB 逐通道取反（白↔黑、红↔青/绿蓝），保留 alpha。用于反差模式。 */
+    fun inverse(argb: Long): Long {
+        val a = (argb shr 24) and 0xFF
+        val r = ((argb shr 16) and 0xFF)
+        val g = ((argb shr 8) and 0xFF)
+        val b = (argb and 0xFF)
+        return (a.toLong() shl 24) or ((255 - r).toLong() shl 16) or ((255 - g).toLong() shl 8) or (255 - b).toLong()
+    }
 }
 
 /** 把 24 位 RGB 补全为不透明的 32 位 ARGB（Long）。 */

@@ -141,6 +141,9 @@ interface SettingsRepository {
     // 背景模式：PlaybackBackgroundMode.name（默认 BLURRED_COVER）
     fun getPlaybackBackgroundMode(): Flow<String>
     suspend fun setPlaybackBackgroundMode(mode: String)
+    // 反差模式：用主题色反色替代「主题色+专辑色」混合（默认关闭）
+    fun getBackgroundContrastMode(): Flow<Boolean>
+    suspend fun setBackgroundContrastMode(enabled: Boolean)
     // 音质档位：PlaybackQuality.key（默认 excellent）
     fun getPlaybackQuality(): Flow<String>
     suspend fun setPlaybackQuality(quality: String)

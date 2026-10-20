@@ -13,6 +13,8 @@ object LrcParser {
 
     // 时间标签：分:秒，可选小数位（1~3 位，用 . 或 : 分隔）
     private val TIME_TAG = Regex("""\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?]""")
+    // 小时格式 [hh:mm:ss(.x)]：时长超过 1 小时的音频
+    private val HOUR_TAG = Regex("""\[(\d{1,2}):(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?]""")
 
     fun parse(raw: String): List<LrcLine> {
         var offsetMs = 0L
@@ -23,13 +25,31 @@ object LrcParser {
             if (trimmed.isEmpty()) return@forEach
 
             // 元数据标签（[xx:...] 且不是时间标签）
-            if (trimmed.startsWith("[") && !TIME_TAG.containsMatchIn(trimmed)) {
+            val isTimeTag = TIME_TAG.containsMatchIn(trimmed) || HOUR_TAG.containsMatchIn(trimmed)
+            if (trimmed.startsWith("[") && !isTimeTag) {
                 val meta = Regex("""^\[([a-zA-Z]+):(.*)]$""").find(trimmed)
                 if (meta != null) {
                     val key = meta.groupValues[1]
                     val value = meta.groupValues[2]
                     if (key.equals("offset", true)) {
                         offsetMs = value.toLongOrNull() ?: 0L
+                    }
+                }
+                return@forEach
+            }
+
+            // 小时格式优先，避免 [01:23:45] 被误解析为分:秒.小数
+            val hourTags = HOUR_TAG.findAll(trimmed).toList()
+            if (hourTags.isNotEmpty()) {
+                val text = trimmed.substring(hourTags.last().range.last + 1).trim()
+                if (text.isNotEmpty()) {
+                    hourTags.forEach { m ->
+                        val h = m.groupValues[1].toInt()
+                        val min = m.groupValues[2].toInt()
+                        val sec = m.groupValues[3].toInt()
+                        val ms = fractionMs(m.groupValues[4])
+                        val time = (h * 3_600_000L + min * 60_000L + sec * 1000L + ms + offsetMs).coerceAtLeast(0L)
+                        result.add(LrcLine(time, text))
                     }
                 }
                 return@forEach
@@ -45,17 +65,19 @@ object LrcParser {
             tags.forEach { m ->
                 val min = m.groupValues[1].toInt()
                 val sec = m.groupValues[2].toInt()
-                val frac = m.groupValues[3]
-                // 小数位语义：1 位=十分秒，2 位=百分秒，3 位=毫秒
-                val ms = if (frac.isEmpty()) 0L else when (frac.length) {
-                    1 -> frac.toLong() * 100L
-                    2 -> frac.toLong() * 10L
-                    else -> frac.take(3).toLong()
-                }
+                val ms = fractionMs(m.groupValues[3])
                 val time = (min * 60_000L + sec * 1000L + ms + offsetMs).coerceAtLeast(0L)
                 result.add(LrcLine(time, text))
             }
         }
         return result.sortedBy { it.timeMs }
     }
+
+    /** 小数位语义：1 位=十分秒，2 位=百分秒，3 位=毫秒。 */
+    private fun fractionMs(frac: String): Long =
+        if (frac.isEmpty()) 0L else when (frac.length) {
+            1 -> frac.toLong() * 100L
+            2 -> frac.toLong() * 10L
+            else -> frac.take(3).toLong()
+        }
 }

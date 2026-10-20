@@ -1,6 +1,9 @@
 package com.asmrhelper.ui.profile
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,11 +24,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Settings
@@ -51,12 +53,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +68,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.asmrhelper.R
 import com.asmrhelper.domain.music.MusicSource
 import com.asmrhelper.domain.music.SourceConfig
@@ -75,6 +81,10 @@ import com.asmrhelper.ui.theme.ErrorRed
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
+import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +95,7 @@ fun ProfileScreen(
 ) {
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val username by viewModel.username.collectAsStateWithLifecycle()
+    val avatarPath by viewModel.avatarPath.collectAsStateWithLifecycle()
     val audioCount by viewModel.audioCount.collectAsStateWithLifecycle()
     val playlistCount by viewModel.playlistCount.collectAsStateWithLifecycle()
     val bgImageCount by viewModel.bgImageCount.collectAsStateWithLifecycle()
@@ -92,6 +103,7 @@ fun ProfileScreen(
 
     var loginConfig by remember { mutableStateOf<SourceConfig?>(null) }
     var logoutConfig by remember { mutableStateOf<SourceConfig?>(null) }
+    var showEditDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -130,33 +142,63 @@ fun ProfileScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // 头像占位圆
+                    // 头像（登录后点击可编辑）
                     Box(
                         modifier = Modifier
                             .size(80.dp)
                             .clip(CircleShape)
-                            .background(LocalAccentColor.current.copy(alpha = 0.2f)),
+                            .background(LocalAccentColor.current.copy(alpha = 0.2f))
+                            .then(
+                                if (isLoggedIn) Modifier.clickable { showEditDialog = true }
+                                else Modifier
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Filled.Person,
-                            contentDescription = stringResource(R.string.profile_avatar),
-                            tint = LocalAccentColor.current,
-                            modifier = Modifier.size(42.dp)
-                        )
+                        if (isLoggedIn && avatarPath.isNotEmpty() && File(avatarPath).exists()) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(File(avatarPath))
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = stringResource(R.string.profile_avatar),
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                Icons.Filled.Person,
+                                contentDescription = stringResource(R.string.profile_avatar),
+                                tint = LocalAccentColor.current,
+                                modifier = Modifier.size(42.dp)
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(12.dp))
 
                     if (isLoggedIn) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { showEditDialog = true }
+                        ) {
+                            Text(
+                                username.ifEmpty { stringResource(R.string.profile_default_user) },
+                                color = TextPrimary,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Icon(
+                                Icons.Filled.Edit,
+                                contentDescription = stringResource(R.string.profile_edit_title),
+                                tint = TextHint,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                         Text(
-                            username.ifEmpty { stringResource(R.string.profile_default_user) },
-                            color = TextPrimary,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "${username}@asmr.helper",
+                            "${username}@nacre",
                             color = TextHint,
                             fontSize = 13.sp
                         )
@@ -197,36 +239,6 @@ fun ProfileScreen(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold
                         )
-
-                        Spacer(Modifier.height(16.dp))
-
-                        // 云端同步（即将推出）
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = CardDefaults.cardColors(containerColor = DarkSurfaceVariant)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.Cloud, null, tint = LocalAccentColor.current, modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(10.dp))
-                                    Text(stringResource(R.string.profile_cloud_sync), color = TextPrimary, fontSize = 14.sp)
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .background(LocalAccentColor.current.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
-                                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                                ) {
-                                    Text(stringResource(R.string.profile_coming_soon), color = LocalAccentColor.current, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
 
                         Spacer(Modifier.height(16.dp))
 
@@ -401,7 +413,7 @@ fun ProfileScreen(
             ) {
                 StatCard(
                     modifier = Modifier.weight(1f),
-                    icon = Icons.Filled.Favorite,
+                    icon = Icons.Filled.MusicNote,
                     label = stringResource(R.string.profile_stat_favorites),
                     count = audioCount,
                     color = LocalAccentColor.current
@@ -462,6 +474,147 @@ fun ProfileScreen(
             }
         )
     }
+
+    // ── 编辑资料（头像 + 名字） ─────────────────────────
+
+    if (showEditDialog) {
+        EditProfileDialog(
+            currentName = username,
+            currentAvatarPath = avatarPath,
+            onDismiss = { showEditDialog = false },
+            onSave = { name, path ->
+                viewModel.updateProfile(name, path)
+                showEditDialog = false
+            }
+        )
+    }
+}
+
+// ── 编辑资料对话框 ──────────────────────────────────────────
+
+@Composable
+private fun EditProfileDialog(
+    currentName: String,
+    currentAvatarPath: String,
+    onDismiss: () -> Unit,
+    onSave: (String, String) -> Unit
+) {
+    var name by remember { mutableStateOf(currentName) }
+    var avatarPath by remember { mutableStateOf(currentAvatarPath) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val avatarPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { selectedUri ->
+            // 头像复制走 IO 线程，避免在主线程拷贝大图造成卡顿。
+            scope.launch(Dispatchers.IO) {
+                val destFile = File(context.filesDir, "avatar.png")
+                try {
+                    context.contentResolver.openInputStream(selectedUri)?.use { input ->
+                        destFile.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    if (destFile.exists() && destFile.length() > 0) {
+                        withContext(Dispatchers.Main) { avatarPath = destFile.absolutePath }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, context.getString(R.string.profile_avatar_save_failed), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, context.getString(R.string.profile_avatar_save_failed), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = DarkSurface,
+        shape = RoundedCornerShape(16.dp),
+        title = { Text(stringResource(R.string.profile_edit_title), color = TextPrimary) },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(LocalAccentColor.current.copy(alpha = 0.2f))
+                        .clickable { avatarPickerLauncher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (avatarPath.isNotEmpty() && File(avatarPath).exists()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(File(avatarPath))
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = stringResource(R.string.profile_avatar),
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            Icons.Filled.Person,
+                            contentDescription = stringResource(R.string.profile_avatar),
+                            tint = LocalAccentColor.current,
+                            modifier = Modifier.size(38.dp)
+                        )
+                    }
+                }
+                Text(
+                    stringResource(R.string.profile_edit_avatar_hint),
+                    color = LocalAccentColor.current,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                val fieldColors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = LocalAccentColor.current,
+                    unfocusedBorderColor = DarkSurfaceVariant,
+                    focusedContainerColor = DarkSurfaceVariant.copy(alpha = 0.3f),
+                    unfocusedContainerColor = DarkSurfaceVariant.copy(alpha = 0.3f),
+                    cursorColor = LocalAccentColor.current,
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary,
+                    unfocusedLabelColor = TextHint,
+                    focusedLabelColor = LocalAccentColor.current
+                )
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.profile_username)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = fieldColors,
+                    shape = RoundedCornerShape(10.dp)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (name.isBlank()) {
+                    Toast.makeText(context, context.getString(R.string.profile_enter_username), Toast.LENGTH_SHORT).show()
+                } else {
+                    onSave(name.trim(), avatarPath)
+                }
+            }) { Text(stringResource(R.string.common_save), color = LocalAccentColor.current) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel), color = TextSecondary) }
+        }
+    )
 }
 
 // ── 统计卡片组件 ──────────────────────────────────────────

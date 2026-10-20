@@ -102,6 +102,7 @@ fun MusicPlayScreen(
     val waveform by viewModel.waveformBytes.collectAsStateWithLifecycle()
     val fft by viewModel.fftMagnitudes.collectAsStateWithLifecycle()
     val backgroundMode by viewModel.backgroundMode.collectAsStateWithLifecycle()
+    val backgroundContrastMode by viewModel.backgroundContrastMode.collectAsStateWithLifecycle()
     val playbackQuality by viewModel.playbackQuality.collectAsStateWithLifecycle()
     val lyricOffsetMs by viewModel.lyricOffsetMs.collectAsStateWithLifecycle()
     val currentFavorite by viewModel.currentFavorite.collectAsStateWithLifecycle()
@@ -151,7 +152,7 @@ fun MusicPlayScreen(
             .fillMaxSize()
             .pointerInput(Unit) { detectTapGestures { interactionTick++ } }
     ) {
-        AudioReactiveBackground(coverUrl, waveform, fft, backgroundMode, Modifier.fillMaxSize())
+        AudioReactiveBackground(coverUrl, waveform, fft, backgroundMode, Modifier.fillMaxSize(), contrastMode = backgroundContrastMode)
 
         Column(
             modifier = Modifier
@@ -206,6 +207,9 @@ fun MusicPlayScreen(
                 onToggleFavorite = { viewModel.toggleFavorite() },
                 onCycleLoopMode = { viewModel.cycleLoopMode() },
                 onMore = { showMoreDialog = true },
+                onAddToPlaylist = if (state.playerState.currentAudio?.isRemoteSong() != true) {
+                    { showPlaylistDialog = true }
+                } else null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
@@ -233,27 +237,21 @@ fun MusicPlayScreen(
             AsmrDropdownMenu(
                 items = listOf(
                     MenuItem("slideshow", stringResource(R.string.play_menu_images)),
-                    MenuItem("favorites", stringResource(R.string.play_menu_favorites)),
-                    MenuItem("scan", stringResource(R.string.play_menu_scan)),
-                    MenuItem("file_manager", stringResource(R.string.play_menu_file_manager)),
+                    MenuItem("library", stringResource(R.string.library_title)),
                     MenuItem("playlist", stringResource(R.string.play_menu_playlist)),
                     MenuItem("background", stringResource(R.string.play_menu_background)),
                     MenuItem("trigger_pad", stringResource(R.string.play_menu_trigger_pad)),
                     MenuItem("sleep_journal", stringResource(R.string.play_menu_sleep_journal)),
-                    MenuItem("video_audio", stringResource(R.string.play_menu_video_audio)),
                     MenuItem("settings", stringResource(R.string.play_menu_settings))
                 ).filter { item -> PlaybackMode.MUSIC.isMenuItemVisible(item.id) },
                 onItemClick = { item ->
                     when (item.id) {
                         "slideshow" -> onNavigateToSlideshow()
-                        "favorites" -> onNavigateToLibrary(1)
-                        "scan" -> onNavigateToLibrary(0)
-                        "file_manager" -> onNavigateToLibrary(2)
+                        "library" -> onNavigateToLibrary(0)
                         "playlist" -> onNavigateToPlaylist()
                         "trigger_pad" -> onNavigateToTriggerPad()
                         "background" -> onNavigateToBackground()
                         "sleep_journal" -> onNavigateToSleepJournal()
-                        "video_audio" -> onNavigateToLibrary(3)
                         "settings" -> onNavigateToSettings()
                     }
                 }

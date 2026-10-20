@@ -37,7 +37,7 @@ class AsmrWidgetProvider : AppWidgetProvider() {
         super.onReceive(context, intent)
         if (intent.action == ACTION_UPDATE) {
             val isPlaying = intent.getBooleanExtra(EXTRA_IS_PLAYING, false)
-            val title = intent.getStringExtra(EXTRA_TITLE) ?: "ASMRHelper"
+            val title = intent.getStringExtra(EXTRA_TITLE) ?: context.getString(R.string.app_name)
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val ids = appWidgetManager.getAppWidgetIds(
                 ComponentName(context, AsmrWidgetProvider::class.java)
@@ -54,7 +54,7 @@ class AsmrWidgetProvider : AppWidgetProvider() {
         appWidgetIds: IntArray
     ) {
         for (id in appWidgetIds) {
-            updateWidget(context, appWidgetManager, id, false, "ASMRHelper")
+            updateWidget(context, appWidgetManager, id, false, context.getString(R.string.app_name))
         }
     }
 

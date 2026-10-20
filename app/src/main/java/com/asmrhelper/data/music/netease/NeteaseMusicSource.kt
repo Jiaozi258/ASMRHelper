@@ -64,7 +64,8 @@ class NeteaseMusicSource(
 
     override val supportsAccountLogin: Boolean = true
     override val webLogin: WebLoginConfig =
-        WebLoginConfig("https://music.163.com/#/login", "https://music.163.com", setOf("MUSIC_U", "__csrf"))
+        // `__csrf` 在登录页匿名状态下也会下发，会导致"未登录也判登录"；仅以 MUSIC_U 为准。
+        WebLoginConfig("https://music.163.com/#/login", "https://music.163.com", setOf("MUSIC_U"))
 
     override fun search(keyword: String, page: Int): Flow<List<RemoteSong>> = flow {
         ensureAnonymousSession()
