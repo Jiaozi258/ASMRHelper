@@ -72,6 +72,9 @@ import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.ui.theme.appleClickable
 import com.asmrhelper.util.LyricMode
 import com.asmrhelper.util.LyricScrollStyle
+import com.asmrhelper.util.LyricCaptionMode
+import com.asmrhelper.util.captionFor
+import com.asmrhelper.util.currentLineIndex
 import kotlinx.coroutines.delay
 
 /**
@@ -112,6 +115,9 @@ fun MusicPlayScreen(
     val lyricsLineSpacing by viewModel.lyricsLineSpacing.collectAsStateWithLifecycle()
     val lyricsAlignment by viewModel.lyricsAlignment.collectAsStateWithLifecycle()
     val lyricsScrollStyle by viewModel.lyricsScrollStyle.collectAsStateWithLifecycle()
+    val lyricCaptionMode by viewModel.lyricCaptionMode.collectAsStateWithLifecycle()
+    val translatedLyrics by viewModel.translatedLyrics.collectAsStateWithLifecycle()
+    val romanizedLyrics by viewModel.romanizedLyrics.collectAsStateWithLifecycle()
 
     var showTimerDialog by remember { mutableStateOf(false) }
     var showLyricsDialog by remember { mutableStateOf(false) }
@@ -128,6 +134,7 @@ fun MusicPlayScreen(
     var showQualityDialog by remember { mutableStateOf(false) }
     var showQueueDialog by remember { mutableStateOf(false) }
     var showLyricOffsetDialog by remember { mutableStateOf(false) }
+    var showLyricCaptionDialog by remember { mutableStateOf(false) }
 
     // 模式按钮 2 秒无交互淡出；任意触摸递增 tick 重置计时（Review Focus #6）。
     var interactionTick by remember { mutableIntStateOf(0) }
@@ -165,6 +172,12 @@ fun MusicPlayScreen(
 
             // 歌词：跳转=逐词蹦出（单行）；滑动=多行带上下文
             val lyricProgress = (progressMs + lyricOffsetMs).coerceAtLeast(0L)
+            // 副文本（翻译/谐音）：按模式选源，取与当前行时间戳对齐的一行，二者不同时显示
+            val caption = when (lyricCaptionMode) {
+                LyricCaptionMode.TRANSLATION -> lyrics.getOrNull(lyrics.currentLineIndex(lyricProgress))?.let { translatedLyrics.captionFor(it) }
+                LyricCaptionMode.ROMANIZATION -> lyrics.getOrNull(lyrics.currentLineIndex(lyricProgress))?.let { romanizedLyrics.captionFor(it) }
+                LyricCaptionMode.OFF -> null
+            }
             if (lyricsMode == LyricMode.SCROLL) {
                 ScrollLyrics(
                     lines = lyrics,
@@ -174,6 +187,7 @@ fun MusicPlayScreen(
                     shadowEnabled = lyricsShadowEnabled,
                     alignment = lyricsAlignment,
                     style = lyricsScrollStyle,
+                    caption = caption,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -185,6 +199,7 @@ fun MusicPlayScreen(
                     fontSize = lyricsFontSize,
                     shadowEnabled = lyricsShadowEnabled,
                     alignment = lyricsAlignment,
+                    caption = caption,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -274,6 +289,18 @@ fun MusicPlayScreen(
                     MoreRow(stringResource(R.string.menu_song_info), "") { showMoreDialog = false; showSongInfoDialog = true }
                     MoreRow(stringResource(R.string.menu_lyric_offset), "") { showMoreDialog = false; showLyricOffsetDialog = true }
                     MoreRow(
+                        stringResource(R.string.lyric_caption_title),
+                        stringResource(
+                            when (lyricCaptionMode) {
+                                LyricCaptionMode.TRANSLATION -> R.string.lyric_caption_translation
+                                LyricCaptionMode.ROMANIZATION -> R.string.lyric_caption_romanization
+                                LyricCaptionMode.OFF -> R.string.lyric_caption_off
+                            }
+                        )
+                    ) {
+                        showMoreDialog = false; showLyricCaptionDialog = true
+                    }
+                    MoreRow(
                         stringResource(R.string.lyric_mode),
                         stringResource(if (lyricsMode == LyricMode.SCROLL) R.string.lyric_mode_scroll else R.string.lyric_mode_jump)
                     ) {
@@ -296,6 +323,42 @@ fun MusicPlayScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showMoreDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 歌词副文本（翻译/谐音）选择 ──────────────────────
+    if (showLyricCaptionDialog) {
+        AlertDialog(
+            onDismissRequest = { showLyricCaptionDialog = false },
+            title = { Text(stringResource(R.string.lyric_caption_title), color = TextPrimary) },
+            text = {
+                Column {
+                    val options = listOf(
+                        LyricCaptionMode.OFF to R.string.lyric_caption_off,
+                        LyricCaptionMode.TRANSLATION to R.string.lyric_caption_translation,
+                        LyricCaptionMode.ROMANIZATION to R.string.lyric_caption_romanization
+                    )
+                    options.forEach { (mode, labelRes) ->
+                        val selected = lyricCaptionMode == mode
+                        TextButton(onClick = {
+                            viewModel.setLyricCaptionMode(mode)
+                            showLyricCaptionDialog = false
+                        }) {
+                            Text(
+                                text = if (selected) "▶ ${stringResource(labelRes)}" else stringResource(labelRes),
+                                color = if (selected) LocalAccentColor.current else TextSecondary,
+                                fontSize = 15.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showLyricCaptionDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)

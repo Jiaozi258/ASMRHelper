@@ -23,6 +23,7 @@ import com.asmrhelper.data.repository.SceneRepository
 import com.asmrhelper.data.music.MusicSourceManager
 import com.asmrhelper.data.music.RemoteFavoritesStore
 import com.asmrhelper.data.music.isRemoteSong
+import com.asmrhelper.data.music.toSecondaryWordLines
 import com.asmrhelper.data.music.toWordLyricLines
 import com.asmrhelper.player.AudioVisualizerController
 import com.asmrhelper.player.BinauralBeatEngine
@@ -38,6 +39,7 @@ import com.asmrhelper.player.SpatialMode
 import com.asmrhelper.player.SceneEffectsController
 import com.asmrhelper.player.SceneEffect
 import com.asmrhelper.util.LrcParser
+import com.asmrhelper.util.LyricCaptionMode
 import com.asmrhelper.util.LyricMode
 import com.asmrhelper.util.LyricScrollStyle
 import com.asmrhelper.util.WordLyricLine
@@ -244,6 +246,15 @@ class PlayViewModel @Inject constructor(
     val lyricsAlignment: StateFlow<Int> = settingsRepository.getLyricsAlignment()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    // ── 歌词副文本（翻译/谐音）显示模式 ───────────────────
+    val lyricCaptionMode: StateFlow<LyricCaptionMode> = settingsRepository.getLyricCaptionMode()
+        .map { mode -> LyricCaptionMode.entries.firstOrNull { it.ordinal == mode } ?: LyricCaptionMode.OFF }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LyricCaptionMode.OFF)
+
+    fun setLyricCaptionMode(mode: LyricCaptionMode) {
+        viewModelScope.launch { settingsRepository.setLyricCaptionMode(mode.ordinal) }
+    }
+
     // ── 收藏 / 快进时间：必须在 init 之前声明 ──
     // init 里的协程会立即运行并写这些 StateFlow，声明在 init 之后会导致 NPE
     private val _currentFavorite = MutableStateFlow(false)
@@ -258,6 +269,11 @@ class PlayViewModel @Inject constructor(
     val hasLyrics: StateFlow<Boolean> = _hasLyrics.asStateFlow()
     private val _rawLyricsText = MutableStateFlow("")
     val rawLyricsText: StateFlow<String> = _rawLyricsText.asStateFlow()
+    // 副歌词（翻译/谐音）：与主歌词时间戳对齐，仅在对应模式下展示
+    private val _translatedLyrics = MutableStateFlow<List<WordLyricLine>>(emptyList())
+    val translatedLyrics: StateFlow<List<WordLyricLine>> = _translatedLyrics.asStateFlow()
+    private val _romanizedLyrics = MutableStateFlow<List<WordLyricLine>>(emptyList())
+    val romanizedLyrics: StateFlow<List<WordLyricLine>> = _romanizedLyrics.asStateFlow()
 
     init {
         // 合并播放器状态、音频列表和隐私模式
@@ -514,6 +530,8 @@ class PlayViewModel @Inject constructor(
                 _lyrics.value = emptyList()
                 _hasLyrics.value = false
                 _rawLyricsText.value = ""
+                _translatedLyrics.value = emptyList()
+                _romanizedLyrics.value = emptyList()
                 return@launch
             }
             if (audio.isRemoteSong()) {
@@ -522,12 +540,16 @@ class PlayViewModel @Inject constructor(
                     _lyrics.value = emptyList()
                     _hasLyrics.value = false
                     _rawLyricsText.value = ""
+                    _translatedLyrics.value = emptyList()
+                    _romanizedLyrics.value = emptyList()
                 } else {
                     source.getLyric(audio.sourceSongId ?: audio.id.toString()).collect { remote ->
                         val lines = remote.toWordLyricLines()
                         _lyrics.value = lines
                         _hasLyrics.value = lines.isNotEmpty()
                         _rawLyricsText.value = remote.rawText
+                        _translatedLyrics.value = remote.translatedLines.toSecondaryWordLines()
+                        _romanizedLyrics.value = remote.romanizedLines.toSecondaryWordLines()
                     }
                 }
             } else {
@@ -536,6 +558,8 @@ class PlayViewModel @Inject constructor(
                 _lyrics.value = lines
                 _hasLyrics.value = lines.isNotEmpty()
                 _rawLyricsText.value = text ?: ""
+                _translatedLyrics.value = emptyList()
+                _romanizedLyrics.value = emptyList()
             }
         }
     }

@@ -116,6 +116,9 @@ interface SettingsRepository {
     suspend fun setLyricsMode(mode: Int)
     fun getLyricsScrollStyle(): Flow<Int> // 滑动歌词样式：0=平铺（默认），1=鱼眼
     suspend fun setLyricsScrollStyle(style: Int)
+    // 歌词副文本（翻译/谐音）显示模式：0=关闭（默认），1=翻译，2=谐音
+    fun getLyricCaptionMode(): Flow<Int>
+    suspend fun setLyricCaptionMode(mode: Int)
     fun getAppFontPath(): Flow<String?> // 自定义字体文件路径，null=跟随系统
     suspend fun setAppFontPath(path: String?)
 

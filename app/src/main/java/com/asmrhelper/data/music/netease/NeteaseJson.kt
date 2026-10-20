@@ -34,6 +34,22 @@ object NeteaseJson {
         val obj = JSONObject(json)
         val raw = obj.optJSONObject("lrc")?.optString("lyric") ?: ""
         val yrc = obj.optJSONObject("yrc")?.optString("lyric") ?: ""
+        val tlyric = obj.optJSONObject("tlyric")?.optString("lyric") ?: ""
+        val romalrc = obj.optJSONObject("romalrc")?.optString("lyric") ?: ""
+        RemoteLyric(
+            lines = parseTimestampedLines(raw),
+            rawText = raw,
+            yrc = yrc,
+            translatedLines = parseTimestampedLines(tlyric),
+            romanizedLines = parseTimestampedLines(romalrc)
+        )
+    } catch (_: Exception) {
+        RemoteLyric()
+    }
+
+    /** 解析带 `[mm:ss.xx]` 时间标签的歌词文本为带时间戳的行（供 lrc/tlyric/romalrc 复用）。 */
+    private fun parseTimestampedLines(raw: String): List<RemoteLyricLine> {
+        if (raw.isBlank()) return emptyList()
         val lines = mutableListOf<RemoteLyricLine>()
         for (line in raw.split('\n')) {
             val m = LYRIC_TIME.find(line) ?: continue
@@ -43,9 +59,7 @@ object NeteaseJson {
             val text = line.substring(m.range.last + 1).trim()
             if (text.isNotEmpty()) lines.add(RemoteLyricLine(timeMs, text))
         }
-        RemoteLyric(lines = lines, rawText = raw, yrc = yrc)
-    } catch (_: Exception) {
-        RemoteLyric()
+        return lines
     }
 
     fun parseCharts(json: String): List<RemoteChart> = try {

@@ -18,6 +18,19 @@ data class WordLyricLine(
 fun List<WordLyricLine>.currentLineIndex(progressMs: Long): Int =
     indexOfLast { it.startMs <= progressMs }.coerceAtLeast(0)
 
+/**
+ * 在副歌词（翻译/谐音）中查找与 [reference] 时间对齐的一行文本。
+ * 精确时间戳优先；否则取前后 1.5s 内最近的一行，超出则视为该句无副文本返回 null。
+ */
+fun List<WordLyricLine>.captionFor(reference: WordLyricLine): String? {
+    if (isEmpty()) return null
+    val t = reference.startMs
+    firstOrNull { it.startMs == t }?.let { return it.text }
+    return minByOrNull { kotlin.math.abs(it.startMs - t) }
+        ?.takeIf { kotlin.math.abs(it.startMs - t) <= 1500L }
+        ?.text
+}
+
 /** 当前行内唱到的词下标：最后一个 startMs <= progressMs 的下标。 */
 fun List<WordLyric>.wordIndexAt(progressMs: Long): Int =
     indexOfLast { it.startMs <= progressMs }.coerceAtLeast(0)

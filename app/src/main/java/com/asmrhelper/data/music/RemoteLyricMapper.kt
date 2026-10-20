@@ -2,6 +2,7 @@ package com.asmrhelper.data.music
 
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.music.RemoteLyric
+import com.asmrhelper.domain.model.music.RemoteLyricLine
 import com.asmrhelper.util.LrcLine
 import com.asmrhelper.util.WordLyricLine
 import com.asmrhelper.util.YrcParser
@@ -19,6 +20,10 @@ fun RemoteLyric.toWordLyricLines(): List<WordLyricLine> {
         WordLyricLine(l.timeMs, end, l.text)
     }
 }
+
+/** 翻译/谐音行 → 展示用 WordLyricLine（仅按时间对齐取文本，endMs 无实际意义）。 */
+fun List<RemoteLyricLine>.toSecondaryWordLines(): List<WordLyricLine> =
+    map { WordLyricLine(it.timeMs, it.timeMs, it.text) }
 
 /** 是否为可拉取在线歌词的远程歌曲：有来源，且 id 为正数或带字符串平台 id（QQ 的非数字 songmid）。 */
 fun Audio.isRemoteSong(): Boolean = sourceId.isNotBlank() && (id > 0L || !sourceSongId.isNullOrBlank())

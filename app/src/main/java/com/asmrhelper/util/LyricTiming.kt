@@ -2,6 +2,9 @@ package com.asmrhelper.util
 
 enum class LyricMode { JUMP, SCROLL }
 
+/** 歌词副文本展示模式：关闭 / 翻译 / 谐音（翻译与谐音不会同时显示）。 */
+enum class LyricCaptionMode { OFF, TRANSLATION, ROMANIZATION }
+
 /** 滑动歌词的视觉样式：平铺（普通居中高亮）或鱼眼（圆柱式缩放衰减）。 */
 enum class LyricScrollStyle { FLAT, FISHEYE }
 

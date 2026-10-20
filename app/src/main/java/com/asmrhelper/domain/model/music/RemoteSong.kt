@@ -16,11 +16,14 @@ data class RemoteSong(
 /** 单行歌词。 */
 data class RemoteLyricLine(val timeMs: Long, val text: String)
 
-/** 归一化后的歌词：带时间戳的行 + 原始文本 + 逐词歌词原文（yrc，可为空）。 */
+/** 归一化后的歌词：带时间戳的行 + 原始文本 + 逐词歌词原文（yrc，可为空）。
+ *  [translatedLines] 为翻译（网易云 tlyric）、[romanizedLines] 为谐音/罗马音（romalrc）。 */
 data class RemoteLyric(
     val lines: List<RemoteLyricLine> = emptyList(),
     val rawText: String = "",
-    val yrc: String = ""
+    val yrc: String = "",
+    val translatedLines: List<RemoteLyricLine> = emptyList(),
+    val romanizedLines: List<RemoteLyricLine> = emptyList()
 )
 
 /** 在线歌单。 */

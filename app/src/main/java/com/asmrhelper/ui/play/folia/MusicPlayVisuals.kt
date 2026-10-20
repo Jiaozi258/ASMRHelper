@@ -292,7 +292,8 @@ fun CenteredLyrics(
     modifier: Modifier = Modifier,
     fontSize: Int = 16,
     shadowEnabled: Boolean = false,
-    alignment: Int = 0
+    alignment: Int = 0,
+    caption: String? = null
 ) {
     val accent = LocalAccentColor.current
     val currentIndex = remember(lines, progressMs) { lines.currentLineIndex(progressMs) }
@@ -302,32 +303,36 @@ fun CenteredLyrics(
         if (lines.isEmpty() || currentLine == null) {
             Text(stringResource(R.string.no_lyrics), color = TextSecondary, fontSize = 15.sp)
         } else {
-            // key(currentIndex) 让换句时重启动画：整句从 0.92 弹到 1
-            key(currentIndex) {
-                var popped by remember { mutableStateOf(false) }
-                LaunchedEffect(Unit) { popped = true }
-                val scale by animateFloatAsState(
-                    targetValue = if (popped) 1f else 0.92f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    ),
-                    label = "linePop"
-                )
-                Text(
-                    text = currentLine.text,
-                    color = accent,
-                    fontSize = fontSize.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = lyricTextAlign(alignment),
-                    style = if (shadowEnabled) TextStyle(
-                        shadow = Shadow(color = accent.copy(alpha = 0.6f), blurRadius = 14f)
-                    ) else TextStyle(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .graphicsLayer { scaleX = scale; scaleY = scale }
-                )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // key(currentIndex) 让换句时重启动画：整句从 0.92 弹到 1
+                key(currentIndex) {
+                    var popped by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) { popped = true }
+                    val scale by animateFloatAsState(
+                        targetValue = if (popped) 1f else 0.92f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        ),
+                        label = "linePop"
+                    )
+                    Text(
+                        text = currentLine.text,
+                        color = accent,
+                        fontSize = fontSize.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = lyricTextAlign(alignment),
+                        style = if (shadowEnabled) TextStyle(
+                            shadow = Shadow(color = accent.copy(alpha = 0.6f), blurRadius = 14f)
+                        ) else TextStyle(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .graphicsLayer { scaleX = scale; scaleY = scale }
+                    )
+                }
+                // 副文本（翻译/谐音）：紧贴当前句下方，小一号、弱化颜色
+                LyricCaption(caption, fontSize = fontSize, alignment = alignment)
             }
         }
     }
@@ -346,7 +351,8 @@ fun ScrollLyrics(
     lineSpacing: Float = 1.5f,
     shadowEnabled: Boolean = false,
     alignment: Int = 0,
-    style: LyricScrollStyle = LyricScrollStyle.FLAT
+    style: LyricScrollStyle = LyricScrollStyle.FLAT,
+    caption: String? = null
 ) {
     val accent = LocalAccentColor.current
     val textAlign = lyricTextAlign(alignment)
@@ -389,6 +395,8 @@ fun ScrollLyrics(
                         scale = 1f
                     )
                 }
+                // 副文本（翻译/谐音）：贴当前句下方，小一号、弱化颜色
+                LyricCaption(caption, fontSize = fontSize, alignment = alignment)
                 // 下一句：自上而下淡出
                 lines.getOrNull(centerIndex + 1)?.let { next ->
                     StaticLyricText(
@@ -406,6 +414,24 @@ fun ScrollLyrics(
             }
         }
     }
+}
+
+/** 歌词副文本：小一号、弱化色、与主歌词同对齐，仅在有内容时渲染。 */
+@Composable
+private fun LyricCaption(caption: String?, fontSize: Int, alignment: Int) {
+    if (caption.isNullOrBlank()) return
+    Text(
+        text = caption,
+        color = TextSecondary.copy(alpha = 0.85f),
+        fontSize = (fontSize - 3).coerceAtLeast(10).sp,
+        fontWeight = FontWeight.Normal,
+        textAlign = lyricTextAlign(alignment),
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 2.dp)
+    )
 }
 
 /** 静态歌词单行：可选渐变笔刷（渐隐）或纯色，带缩放/透明度。 */

@@ -96,6 +96,10 @@
     <string name="lyrics_scroll_style_flat">平铺</string>
     <string name="lyrics_scroll_style_fisheye">鱼眼</string>
     <string name="no_lyrics">暂无歌词</string>
+    <string name="lyric_caption_title">歌词副文本</string>
+    <string name="lyric_caption_off">关闭</string>
+    <string name="lyric_caption_translation">开启翻译</string>
+    <string name="lyric_caption_romanization">开启谐音</string>
     <string name="visualizer_style">可视化风格</string>
     <string name="visualizer_bar">柱状</string>
     <string name="visualizer_wave">波形</string>

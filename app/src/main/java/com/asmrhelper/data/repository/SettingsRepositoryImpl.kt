@@ -427,6 +427,13 @@ class SettingsRepositoryImpl @Inject constructor(
         _lyricsScrollStyle.value = style
     }
 
+    private val _lyricCaptionMode = MutableStateFlow(prefs.getInt("lyric_caption_mode", 0))
+    override fun getLyricCaptionMode(): Flow<Int> = _lyricCaptionMode
+    override suspend fun setLyricCaptionMode(mode: Int) {
+        prefs.edit().putInt("lyric_caption_mode", mode.coerceIn(0, 2)).apply()
+        _lyricCaptionMode.value = mode.coerceIn(0, 2)
+    }
+
     private val _appFontPath = MutableStateFlow(prefs.getString("app_font_path", null))
     override fun getAppFontPath(): Flow<String?> = _appFontPath
     override suspend fun setAppFontPath(path: String?) {

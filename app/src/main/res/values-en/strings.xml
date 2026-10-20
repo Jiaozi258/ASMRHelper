@@ -96,6 +96,10 @@
     <string name="lyrics_scroll_style_flat">Flat</string>
     <string name="lyrics_scroll_style_fisheye">Fisheye</string>
     <string name="no_lyrics">No lyrics</string>
+    <string name="lyric_caption_title">Lyric caption</string>
+    <string name="lyric_caption_off">Off</string>
+    <string name="lyric_caption_translation">Translation</string>
+    <string name="lyric_caption_romanization">Romanization</string>
     <string name="visualizer_style">Visualizer style</string>
     <string name="visualizer_bar">Bars</string>
     <string name="visualizer_wave">Wave</string>
